@@ -1,0 +1,244 @@
+@media (prefers-color-scheme: dark) {
+    .container {
+        background: #1e1e2f;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    h1, .subtitle {
+        color: #e0e0e0;
+    }
+
+    .side-tabs {
+        background: #2a2a3a;
+    }
+
+    .side-btn {
+        color: #b0b0b0;
+    }
+
+    .side-btn.active {
+        background: #3a3a4a;
+        color: #a0b0ff;
+    }
+
+    .plate-inputs input,
+    #customText {
+        background: #2a2a3a;
+        border-color: #3a3a4a;
+        color: #e0e0e0;
+    }
+
+    .plate-inputs input:focus,
+    #customText:focus {
+        border-color: #a0b0ff;
+    }
+
+    .preview-area {
+        background: #2a2a3a;
+        border-color: #4a4a5a;
+    }
+
+    .settings-panel {
+        background: #2a2a3a;
+        border-color: #4a4a5a;
+    }
+
+    .settings-panel h3 {
+        color: #ffffff;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+
+    .settings-group {
+        background: #3a3a4a;
+        border-color: #4a4a5a;
+    }
+
+    .settings-group-title {
+        color: #e0e0e0;
+    }
+
+    .emoji-panel,
+    .text-settings {
+        background: #2a2a3a;
+        border-color: #4a4a5a;
+    }
+
+    .emoji-title {
+        color: #b0b0b0;
+    }
+
+    .emoji-btn {
+        background: #3a3a4a;
+        border-color: #4a4a5a;
+        color: #e0e0e0;
+    }
+
+    .text-settings select {
+        background: #3a3a4a;
+        border-color: #4a4a5a;
+        color: #e0e0e0;
+    }
+
+    .setting-item label {
+        color: #b0b0b0;
+    }
+
+    .setting-item .value {
+        background: #4a4a5a;
+        color: #a0b0ff;
+    }
+
+    .instruction {
+        background: #2a2a3a;
+        color: #e0e0e0;
+        border-left-color: #a0b0ff;
+    }
+
+    .flag-toggle-container {
+        background: linear-gradient(135deg, #8a9ef020 0%, #965bb520 100%);
+        border-color: #8a9ef040;
+    }
+
+    .toggle-label {
+        color: #e0e0e0;
+    }
+
+    .toggle-slider {
+        background: #4a4a5a;
+    }
+
+    .show-settings-btn {
+        background: #5a67d8;
+        box-shadow: 0 4px 12px rgba(90, 103, 216, 0.3);
+    }
+
+    .show-settings-btn:hover {
+        background: #4c51bf;
+    }
+
+    .font-select-trigger {
+        background: #3a3a4a;
+        border-color: #4a4a5a;
+    }
+
+    .selected-font-preview {
+        color: #e0e0e0;
+    }
+
+    .arrow {
+        color: #b0b0b0;
+    }
+
+    .font-dropdown {
+        background: #3a3a4a;
+        border-color: #4a4a5a;
+    }
+
+    .font-option {
+        color: #e0e0e0;
+        border-bottom-color: #4a4a5a;
+    }
+
+    .font-option:hover {
+        background: #667eea;
+    }
+
+    .font-option.selected {
+        background: #4a4a5a;
+    }
+
+    .checkbox-custom {
+        background: #3a3a4a;
+        border-color: #4a4a5a;
+    }
+
+    .checkbox-text {
+        color: #e0e0e0;
+    }
+
+    .checkbox-label:hover .checkbox-custom {
+        border-color: #a0b0ff;
+    }
+
+    #resetFrontSettingsBtn {
+        background: #5a67d8;
+    }
+
+    #resetBackSettingsBtn {
+        background: #805ad5;
+    }
+
+    .radio-label {
+        background: #3a3a4a;
+    }
+
+    .radio-label:hover {
+        background: #4a4a5a;
+    }
+
+    .radio-text {
+        color: #e0e0e0;
+    }
+
+    .radio-label input[type="radio"]:checked ~ .radio-text {
+        color: #a0b0ff;
+    }
+
+    .font-select {
+        background: #3a3a4a;
+        border-color: #4a4a5a;
+        color: #e0e0e0;
+    }
+
+    .font-select:hover {
+        border-color: #a0b0ff;
+    }
+
+    .checkbox-custom {
+        background: #3a3a4a;
+        border-color: #4a4a5a;
+    }
+
+    .checkbox-text {
+        color: #e0e0e0;
+    }
+
+    .checkbox-label:hover .checkbox-custom {
+        border-color: #a0b0ff;
+    }
+
+    .logo-panel {
+        background: #2a2a3a;
+        border-color: #4a4a5a;
+    }
+
+    .panel-title {
+        color: #e0e0e0;
+    }
+
+    .logo-btn {
+        background: #3a3a4a;
+        border-color: #4a4a5a;
+    }
+
+    .loading-logos, .no-logos {
+        color: #b0b0b0;
+    }
+
+    .logo-size-control {
+        color: #b0b0b0;
+    }
+
+    #logoSizeValue {
+        color: #a0b0ff;
+    }
+
+    .toggle-text {
+        color: #e0e0e0;
+    }
+
+
+    .toggle-label:before {
+        font-size: 20px;
+    }
+}

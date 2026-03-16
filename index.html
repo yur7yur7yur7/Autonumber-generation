@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор макета брелка</title>
+
+    <!-- CSS файлы -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/tabs.css">
+    <link rel="stylesheet" href="css/preview.css">
+    <link rel="stylesheet" href="css/emoji-panel.css">
+    <link rel="stylesheet" href="css/settings-panel.css">
+    <link rel="stylesheet" href="css/dark-theme.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+<div class="container">
+    <h1>✨ Создай макет своего брелка ✨</h1>
+
+    <!-- Область предпросмотра - ПЕРВАЯ (всегда сверху) -->
+    <div class="preview-area">
+        <canvas id="previewCanvas" width="1224" height="252"></canvas>
+    </div>
+
+    <!-- Вкладки для сторон - ВТОРЫЕ -->
+    <div class="side-tabs">
+        <button class="side-btn active" data-side="front">🚗 Передняя сторона (номер)</button>
+        <button class="side-btn" data-side="back">🎨 Задняя сторона (текст)</button>
+    </div>
+
+    <!-- Контент для передней стороны - ТРЕТИЙ -->
+    <div class="side-content active" id="side-front">
+        <p class="subtitle">Введи номер как на машине</p>
+        <div class="input-group">
+            <div class="plate-inputs">
+                <input type="text" id="plateNumber" placeholder="Номер (пример: М123ММ)" value="М123ММ" maxlength="6" autocomplete="off">
+                <input type="text" id="plateRegion" placeholder="Код региона" value="777" maxlength="3" autocomplete="off">
+            </div>
+        </div>
+    </div>
+
+    <!-- Контент для задней стороны - ТРЕТИЙ -->
+    <div class="side-content" id="side-back">
+        <p class="subtitle">Напиши что хочешь на обратной стороне</p>
+
+        <!-- Поле для текста -->
+        <div class="input-group">
+            <input type="text" id="customText" placeholder="Твой текст (например: ✨ BMW ✨)" value="🚗 МОЯ ТАЧКА 🚗" autocomplete="off">
+        </div>
+
+        <!-- Быстрые смайлики -->
+        <div class="emoji-panel">
+            <p class="emoji-title">Нажми, чтобы вставить:</p>
+            <div class="emoji-grid">
+                <button class="emoji-btn" data-emoji="🚗">🚗</button>
+                <button class="emoji-btn" data-emoji="🚙">🚙</button>
+                <button class="emoji-btn" data-emoji="🏎️">🏎️</button>
+                <button class="emoji-btn" data-emoji="🚘">🚘</button>
+                <button class="emoji-btn" data-emoji="🚔">🚔</button>
+                <button class="emoji-btn" data-emoji="🚖">🚖</button>
+                <button class="emoji-btn" data-emoji="⭐">⭐</button>
+                <button class="emoji-btn" data-emoji="✨">✨</button>
+                <button class="emoji-btn" data-emoji="🔥">🔥</button>
+                <button class="emoji-btn" data-emoji="💯">💯</button>
+                <button class="emoji-btn" data-emoji="👍">👍</button>
+                <button class="emoji-btn" data-emoji="👑">👑</button>
+                <button class="emoji-btn" data-emoji="❤️">❤️</button>
+                <button class="emoji-btn" data-emoji="💙">💙</button>
+                <button class="emoji-btn" data-emoji="💚">💚</button>
+                <button class="emoji-btn" data-emoji="🖤">🖤</button>
+                <button class="emoji-btn" data-emoji="⚡">⚡</button>
+                <button class="emoji-btn" data-emoji="💪">💪</button>
+                <button class="emoji-btn" data-emoji="👊">👊</button>
+                <button class="emoji-btn" data-emoji="🎯">🎯</button>
+            </div>
+        </div>
+
+        <!-- Настройки текста -->
+        <div class="text-settings">
+            <div class="setting-item">
+                <label>Размер текста: <span class="value" id="textSizeValue">63</span></label>
+                <input type="range" id="textSize" min="40" max="180" value="63">
+            </div>
+            <div class="setting-item">
+                <label class="flag-toggle" style="justify-content: flex-start; padding: 0;">
+                    <input type="checkbox" id="textWeightBold" checked>
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-label bold">Жирный текст</span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <label>Цвет:</label>
+                <input type="color" id="textColor" value="#000000">
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Кнопки (скачать + показать настройки) -->
+    <div class="actions">
+<!--        <button id="downloadBtn" class="download-btn">⬇ Скачать макет</button>-->
+        <!-- сюда JS добавит кнопку "Показать настройки" -->
+    </div>
+
+    <!-- 5. Панель настроек (появляется после кнопок) -->
+    <!-- сюда JS добавит settings-panel -->
+
+    <!-- 6. Инструкция в самом низу -->
+    <div class="instruction">
+        <p>📌 Как сделать заказ: скачай макет и пришли его мне в Telegram @dukas666</p>
+    </div>
+</div>
+
+<!-- JavaScript файлы (как модули) -->
+<script type="module" src="js/config.js"></script>
+<script type="module" src="js/transliteration.js"></script>
+<script type="module" src="js/validation.js"></script>
+<script type="module" src="js/drawing-utils.js"></script>
+<script type="module" src="js/drawing-front.js"></script>
+<script type="module" src="js/drawing-back.js"></script>
+<script type="module" src="js/settings-panel.js"></script>
+<script type="module" src="js/download.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
