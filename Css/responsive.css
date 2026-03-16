@@ -1,0 +1,371 @@
+/* ============================================
+   МОБИЛЬНАЯ ВЕРСИЯ (до 768px)
+   ============================================ */
+
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+    }
+
+    h1 {
+        font-size: 24px;
+    }
+
+    .subtitle {
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+
+    /* Вкладки */
+    .side-tabs {
+        flex-direction: column;
+        gap: 5px;
+        border-radius: 25px;
+    }
+
+    .side-btn {
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    /* Поля ввода */
+    .plate-inputs {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .plate-inputs input,
+    #customText {
+        padding: 12px;
+        font-size: 16px;
+    }
+
+    /* Панель эмодзи и логотипов */
+    .emoji-grid,
+    .logo-grid {
+        grid-template-columns: repeat(5, 1fr);  /* больше колонок */
+        gap: 4px;  /* меньше отступы */
+        max-height: 120px;  /* меньше высота */
+    }
+
+    .emoji-btn {
+        font-size: 18px;  /* меньше эмодзи */
+        padding: 4px;  /* меньше отступы */
+    }
+
+    .logo-btn {
+        padding: 3px;  /* меньше отступы */
+    }
+
+    .logo-btn canvas {
+        width: 30px;  /* фиксированный размер */
+        height: 30px;
+    }
+
+    /* Заголовки панелей */
+    .panel-header {
+        margin-bottom: 8px;
+    }
+
+    .panel-title {
+        font-size: 14px;  /* меньше текст */
+    }
+
+    .clear-logos-btn {
+        padding: 4px 8px;  /* меньше кнопка */
+        font-size: 11px;
+    }
+
+    /* Настройки текста */
+    .text-settings {
+        padding: 12px;
+        gap: 10px;
+    }
+
+    .setting-item {
+        gap: 3px;
+    }
+
+    .setting-item label {
+        font-size: 13px;
+    }
+
+    /* Тумблеры (флаг, точки, жирный текст) */
+    .flag-toggle-container {
+        padding: 10px 15px;
+        margin-bottom: 15px;
+    }
+
+    .flag-toggle {
+        gap: 10px;
+    }
+
+    .toggle-slider {
+        width: 50px;
+        height: 26px;
+    }
+
+    .toggle-slider:before {
+        width: 22px;
+        height: 22px;
+    }
+
+    .flag-toggle input:checked + .toggle-slider:before {
+        left: 26px;
+    }
+
+    .toggle-label {
+        font-size: 14px;
+    }
+
+    .toggle-label:before,
+    .toggle-label.dots:before,
+    .toggle-label.bold:before {
+        font-size: 18px;
+    }
+
+    /* Панель настроек */
+    .settings-panel {
+        padding: 15px;
+        margin: 15px 0 30px;
+    }
+
+    .settings-panel h3 {
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+
+    .settings-group {
+        padding: 12px;
+        margin-bottom: 15px;
+    }
+
+    .settings-group-title span {
+        font-size: 12px;
+        padding: 4px 12px;
+    }
+
+    .settings-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .setting-slider {
+        height: 5px;
+    }
+
+    .setting-slider::-webkit-slider-thumb {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* Радио-кнопки выравнивания */
+    .align-radio-group {
+        gap: 5px;
+    }
+
+    .radio-label {
+        padding: 6px 8px;
+    }
+
+    .radio-text {
+        font-size: 12px;
+    }
+
+    .radio-custom {
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Кастомный селект шрифта */
+    .font-select-trigger {
+        padding: 8px 12px;
+    }
+
+    .selected-font-preview {
+        font-size: 14px;
+    }
+
+    .font-option {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+
+    /* Кнопки */
+    .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .download-btn,
+
+
+    .reset-group {
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .reset-btn {
+        width: 100%;
+        padding: 12px 15px;  /* одинаковые отступы для всех */
+        font-size: 14px;
+        justify-content: center;
+        border-radius: 10px;
+        min-height: 48px;  /* минимальная высота для удобного нажатия */
+    }
+
+    .hide-settings-btn {
+        width: 100%;
+        padding: 12px 15px;  /* ТОЧНО ТАКИЕ ЖЕ отступы */
+        font-size: 14px;     /* ТОТ ЖЕ размер шрифта */
+        justify-content: center;
+        border-radius: 10px;
+        min-height: 48px;
+        margin-top: 0;  /* убираем лишние отступы */
+    }
+
+    /* Специально для "Скрыть настройки" текст по центру */
+    .hide-settings-btn {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    /* Кнопка показа настроек */
+    .show-settings-btn {
+        width: 100%;
+        padding: 12px 20px;
+        font-size: 14px;
+        min-height: 48px;
+    }
+
+    /* Инструкция */
+    .instruction {
+        padding: 12px;
+        font-size: 13px;
+        margin-top: 15px;
+    }
+
+    /* Валидация */
+    .validation-message {
+        font-size: 12px;
+        padding: 8px 15px;
+        white-space: normal;
+        max-width: 250px;
+        text-align: center;
+        bottom: -50px;
+    }
+
+    /* Кнопки панели настроек */
+    .settings-actions {
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 15px;
+        padding-top: 12px;
+    }
+
+
+}
+
+/* ============================================
+   ОЧЕНЬ МАЛЕНЬКИЕ ЭКРАНЫ (до 480px)
+   ============================================ */
+
+@media (max-width: 480px) {
+    .container {
+        padding: 15px;
+    }
+
+    h1 {
+        font-size: 20px;
+    }
+
+    .emoji-grid,
+    .logo-grid {
+        grid-template-columns: repeat(4, 1fr);  /* 4 колонки */
+        max-height: 100px;
+    }
+
+    .emoji-btn {
+        font-size: 16px;
+    }
+
+    .logo-btn canvas {
+        width: 25px;
+        height: 25px;
+    }
+
+    .settings-group-title span {
+        font-size: 11px;
+        padding: 3px 10px;
+    }
+
+    .setting-item label {
+        font-size: 12px;
+    }
+
+    .value {
+        font-size: 11px;
+        padding: 1px 6px;
+    }
+
+    .toggle-label {
+        font-size: 13px;
+    }
+
+    .toggle-label:before,
+    .toggle-label.dots:before,
+    .toggle-label.bold:before {
+        font-size: 16px;
+    }
+
+    .reset-btn,
+    .hide-settings-btn {
+        padding: 10px 12px;  /* чуть меньше на совсем маленьких */
+        font-size: 13px;
+        min-height: 44px;
+    }
+
+    .show-settings-btn {
+        padding: 10px 16px;
+        font-size: 13px;
+        min-height: 44px;
+    }
+}
+
+/* ============================================
+   СОВСЕМ КРОХОТНЫЕ (до 360px)
+   ============================================ */
+
+@media (max-width: 360px) {
+    .emoji-grid,
+    .logo-grid {
+        grid-template-columns: repeat(3, 1fr);  /* 3 колонки */
+    }
+
+    .panel-title {
+        font-size: 13px;
+    }
+
+    .side-btn {
+        font-size: 13px;
+        padding: 8px;
+    }
+
+    .toggle-slider {
+        width: 45px;
+        height: 24px;
+    }
+
+    .toggle-slider:before {
+        width: 20px;
+        height: 20px;
+    }
+
+    .flag-toggle input:checked + .toggle-slider:before {
+        left: 23px;
+    }
+}
