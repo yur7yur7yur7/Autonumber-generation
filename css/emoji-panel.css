@@ -266,3 +266,86 @@
     font-family: monospace; /* чтобы было видно структуру */
 }
 
+/* Табы для смайликов */
+.emoji-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+    background: #f0f0f0;
+    padding: 6px;
+    border-radius: 60px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.emoji-tab {
+    flex: 1;
+    min-width: 120px;  /* было 80px */
+    padding: 12px 18px;  /* было 12px 16px */
+    border: none;
+    border-radius: 50px;
+    background: transparent;
+    color: #555;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+    position: relative;
+    overflow: hidden;
+
+}
+
+.emoji-tab:hover {
+    background: rgba(255, 255, 255, 0.7);
+    color: #333;
+    transform: translateY(-1px);
+}
+
+.emoji-tab.active {
+    background: white;
+    color: #667eea;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.25);
+    font-weight: 700;
+    transform: scale(1.02);
+}
+
+.emoji-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 3px;
+    background: #667eea;
+    border-radius: 3px;
+    transition: width 0.2s;
+}
+
+.emoji-tab.active:hover::after {
+    width: 50px;
+}
+
+.emoji-content {
+    min-height: 220px;
+    background: #fafafa;
+    border-radius: 20px;
+    padding: 15px;
+    border: 1px solid #eaeaea;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.settings-group-title span {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 8px 20px;  /* было 5px 15px, увеличили */
+    border-radius: 35px;  /* было 20px, увеличили */
+    font-size: 12px;  /* было 13px, чуть увеличили */
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    white-space: nowrap;  /* текст в одну строку */
+    display: inline-block;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}

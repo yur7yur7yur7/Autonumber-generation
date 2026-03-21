@@ -41,27 +41,82 @@
         font-size: 16px;
     }
 
-    /* Панель эмодзи и логотипов */
-    .emoji-grid,
-    .logo-grid {
-        grid-template-columns: repeat(5, 1fr);  /* больше колонок */
-        gap: 4px;  /* меньше отступы */
-        max-height: 120px;  /* меньше высота */
+    /* Панель эмодзи */
+    .emoji-panel {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        max-height: 450px;
+        padding: 12px;
+    }
+
+    .emoji-tabs {
+        flex: 0 0 auto;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-bottom: 10px;
+    }
+
+    .emoji-tab {
+        flex: 0 1 auto;
+        min-width: 70px;
+        padding: 8px 12px;
+        font-size: 13px;
+        white-space: nowrap;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .emoji-content {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+    }
+
+    #emojiGridContainer {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        display: flex;  /* добавить */
+        flex-direction: column;  /* добавить */
+        height: 100%;
+    }
+
+    .emoji-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+        height: 100%;
+        flex: 1;
+        overflow-y: auto;
+        max-height: 100%;
+        padding: 5px;
     }
 
     .emoji-btn {
-        font-size: 18px;  /* меньше эмодзи */
-        padding: 4px;  /* меньше отступы */
+        aspect-ratio: 1;
+        font-size: 22px;
+        padding: 6px;
+    }
+
+    /* Логотипы */
+    .logo-grid {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 4px;
+        max-height: 120px;
     }
 
     .logo-btn {
-        padding: 3px;  /* меньше отступы */
+        padding: 3px;
     }
 
     .logo-btn canvas {
-        width: 30px;  /* фиксированный размер */
+        width: 30px;
         height: 30px;
     }
+
 
     /* Заголовки панелей */
     .panel-header {
@@ -69,11 +124,11 @@
     }
 
     .panel-title {
-        font-size: 14px;  /* меньше текст */
+        font-size: 14px; /* меньше текст */
     }
 
     .clear-logos-btn {
-        padding: 4px 8px;  /* меньше кнопка */
+        padding: 4px 8px; /* меньше кнопка */
         font-size: 11px;
     }
 
@@ -200,8 +255,6 @@
     }
 
     .download-btn,
-
-
     .reset-group {
         flex-direction: column;
         gap: 8px;
@@ -210,21 +263,21 @@
 
     .reset-btn {
         width: 100%;
-        padding: 12px 15px;  /* одинаковые отступы для всех */
+        padding: 12px 15px; /* одинаковые отступы для всех */
         font-size: 14px;
         justify-content: center;
         border-radius: 10px;
-        min-height: 48px;  /* минимальная высота для удобного нажатия */
+        min-height: 48px; /* минимальная высота для удобного нажатия */
     }
 
     .hide-settings-btn {
         width: 100%;
-        padding: 12px 15px;  /* ТОЧНО ТАКИЕ ЖЕ отступы */
-        font-size: 14px;     /* ТОТ ЖЕ размер шрифта */
+        padding: 12px 15px; /* ТОЧНО ТАКИЕ ЖЕ отступы */
+        font-size: 14px; /* ТОТ ЖЕ размер шрифта */
         justify-content: center;
         border-radius: 10px;
         min-height: 48px;
-        margin-top: 0;  /* убираем лишние отступы */
+        margin-top: 0; /* убираем лишние отступы */
     }
 
     /* Специально для "Скрыть настройки" текст по центру */
@@ -267,6 +320,51 @@
         padding-top: 12px;
     }
 
+    .preview-area {
+        position: sticky;
+        top: 10px;
+        z-index: 100;
+        background: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transition: all 0.3s;
+        margin-bottom: 15px;
+    }
+
+    /* Когда клавиатура открыта - делаем preview фиксированным */
+    .keyboard-open .preview-area {
+        position: fixed;
+        top: 5px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 30px);
+        max-width: 400px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        animation: slideDown 0.3s;
+    }
+
+    /* Добавляем отступ для контента под фиксированным preview */
+    .keyboard-open .container {
+        padding-top: calc(252px * 500 / 1224 + 50px);
+    }
+
+    @keyframes slideDown {
+        from {
+            transform: translate(-50%, -100%);
+            opacity: 0;
+        }
+        to {
+            transform: translate(-50%, 0);
+            opacity: 1;
+        }
+    }
+
+    .mobile-keyboard-toolbar {
+        display: none;
+    }
+
+    .keyboard-open .mobile-keyboard-toolbar {
+        display: flex;
+    }
 
 }
 
@@ -283,9 +381,9 @@
         font-size: 20px;
     }
 
-    .emoji-grid,
+
     .logo-grid {
-        grid-template-columns: repeat(4, 1fr);  /* 4 колонки */
+        grid-template-columns: repeat(4, 1fr); /* 4 колонки */
         max-height: 100px;
     }
 
@@ -324,7 +422,7 @@
 
     .reset-btn,
     .hide-settings-btn {
-        padding: 10px 12px;  /* чуть меньше на совсем маленьких */
+        padding: 10px 12px; /* чуть меньше на совсем маленьких */
         font-size: 13px;
         min-height: 44px;
     }
@@ -334,6 +432,34 @@
         font-size: 13px;
         min-height: 44px;
     }
+
+    .emoji-tabs {
+        flex-wrap: wrap;
+        border-radius: 15px;
+    }
+
+    .emoji-tab {
+        min-width: 60px;
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .emoji-content {
+        min-height: 300px;
+        height: 300px;
+    }
+
+    .emoji-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .emoji-btn {
+        font-size: 20px;
+    }
+
+    #emojiGridContainer {
+        min-height: 180px;
+    }
 }
 
 /* ============================================
@@ -341,9 +467,24 @@
    ============================================ */
 
 @media (max-width: 360px) {
-    .emoji-grid,
+    .emoji-content {
+        min-height: 280px;
+        height: 280px;
+    }
+
+    .emoji-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .emoji-tab {
+        min-width: 55px;
+        padding: 5px 8px;
+        font-size: 11px;
+    }
+
+
     .logo-grid {
-        grid-template-columns: repeat(3, 1fr);  /* 3 колонки */
+        grid-template-columns: repeat(3, 1fr); /* 3 колонки */
     }
 
     .panel-title {
@@ -368,4 +509,5 @@
     .flag-toggle input:checked + .toggle-slider:before {
         left: 23px;
     }
+
 }
