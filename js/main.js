@@ -13,6 +13,7 @@ import {setupDownloadButton, setDownloadContext} from './download.js';
 import {setLogoContext, createLogoPanel} from './logos.js';
 // import { drawLogos } from './logos.js';
 import {drawSideDots} from './drawing-utils.js';
+import {EMOJI_CATEGORIES} from './emojis.js';
 
 const {CANVAS_WIDTH, CANVAS_HEIGHT, SCALE_FACTOR, STORAGE_KEY} = CONFIG;
 
@@ -144,6 +145,13 @@ if (textWeightBold) {
     textWeightBold.addEventListener('change', drawPlate);
 }
 
+const doneBtn = document.querySelector('.keyboard-done-btn');
+if (doneBtn) {
+    doneBtn.addEventListener('click', () => {
+        document.activeElement.blur(); // убираем фокус с поля
+    });
+}
+
 // Валидация полей
 setupNumberValidation(numberInput, drawPlate);
 setupRegionValidation(regionInput, drawPlate);
@@ -194,7 +202,7 @@ customText.addEventListener('keyup', function (e) {
     }
 });
 
-customText.addEventListener('keydown', function(e) {
+customText.addEventListener('keydown', function (e) {
     if (e.key === 'Backspace') {
         const cursorPos = this.selectionStart;
         const text = this.value;
@@ -377,6 +385,65 @@ async function initializeWithFont() {
             emojiPanel.insertAdjacentElement('afterend', logoPanel);
         }
 
+        // Инициализируем табы для смайликов
+        function initEmojiTabs() {
+            const tabs = document.querySelectorAll('.emoji-tab');
+            const gridContainer = document.getElementById('emojiGridContainer');
+
+            if (!tabs.length || !gridContainer) return;
+
+            // Функция отрисовки сетки для категории
+            function renderEmojiGrid(category) {
+                const emojis = EMOJI_CATEGORIES[category] || [];
+                gridContainer.innerHTML = `
+            <div class="emoji-grid">
+                ${emojis.map(emoji => `
+                    <button class="emoji-btn" data-emoji="${emoji}">${emoji}</button>
+                `).join('')}
+            </div>
+        `;
+
+                // Добавляем обработчики для новых кнопок
+                document.querySelectorAll('.emoji-btn').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const emoji = this.dataset.emoji;
+                        const cursorPos = customText.selectionStart;
+                        const textBefore = customText.value.substring(0, cursorPos);
+                        const textAfter = customText.value.substring(cursorPos);
+
+                        customText.value = textBefore + emoji + textAfter;
+                        customText.focus();
+                        customText.selectionStart = customText.selectionEnd = cursorPos + emoji.length;
+
+                        drawPlate();
+                    });
+                });
+            }
+
+            // Обработчики для табов
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Убираем active со всех табов
+                    tabs.forEach(t => t.classList.remove('active'));
+                    // Добавляем active текущему
+                    tab.classList.add('active');
+
+                    // Рендерим соответствующую категорию
+                    const category = tab.dataset.category;
+                    renderEmojiGrid(category);
+                });
+            });
+
+            // Активируем первый таб
+            if (tabs[0]) {
+                tabs[0].classList.add('active');
+                renderEmojiGrid(tabs[0].dataset.category);
+            }
+        }
+
+        // Вызвать после создания панели логотипов
+        initEmojiTabs();
+
         // Первая отрисовка
         drawPlate();
 
@@ -391,6 +458,84 @@ async function initializeWithFont() {
         drawPlate();
     }
 }
+
+// ============================================
+// МОБИЛЬНАЯ КЛАВИАТУРА
+// ============================================
+
+let isKeyboardOpen = false;
+let originalViewportHeight = window.innerHeight;
+let keyboardScrollTimer = null;
+
+// Функция для определения открытия клавиатуры
+function detectKeyboard() {
+    const currentHeight = window.innerHeight;
+    const heightDiff = originalViewportHeight - currentHeight;
+
+    // Если высота уменьшилась более чем на 150px - скорее всего клавиатура
+    if (heightDiff > 150 && !isKeyboardOpen) {
+        isKeyboardOpen = true;
+        document.body.classList.add('keyboard-open');
+
+        // Плавно скроллим к preview
+        clearTimeout(keyboardScrollTimer);
+        keyboardScrollTimer = setTimeout(() => {
+            document.querySelector('.preview-area').scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }, 100);
+    }
+
+    // Если высота вернулась - клавиатура закрылась
+    else if (heightDiff <= 150 && isKeyboardOpen) {
+        isKeyboardOpen = false;
+        document.body.classList.remove('keyboard-open');
+    }
+}
+
+// Слушаем resize с задержкой
+let resizeTimer;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(detectKeyboard, 100);
+});
+
+// Для полей ввода
+const inputs = [
+    document.getElementById('plateNumber'),
+    document.getElementById('plateRegion'),
+    document.getElementById('customText')
+];
+
+inputs.forEach(input => {
+    if (!input) return;
+
+    input.addEventListener('focus', () => {
+        // Если на мобилке - ждем появления клавиатуры
+        if (window.innerWidth <= 768) {
+            setTimeout(() => {
+                detectKeyboard();
+            }, 300);
+        }
+    });
+
+    input.addEventListener('blur', () => {
+        // Даем время на закрытие клавиатуры
+        setTimeout(() => {
+            detectKeyboard();
+        }, 300);
+    });
+});
+
+// Сохраняем оригинальную высоту при повороте экрана
+window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+        originalViewportHeight = window.innerHeight;
+        isKeyboardOpen = false;
+        document.body.classList.remove('keyboard-open');
+    }, 100);
+});
 
 // Настраиваем кнопку скачивания
 // setupDownloadButton(

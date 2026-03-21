@@ -64,7 +64,8 @@ export async function getLogo(brand) {
  * Разбирает текст на фрагменты (текст и логотипы)
  */
 export function parseTextWithLogos(text) {
-    const regex = /\{([a-z0-9-]+)\}/gi; // ищем {bmw}, {audi}, {bmw-m} и т.д.
+    // Ищем {любые_символы}, разрешаем буквы, цифры, дефис, подчеркивание, пробелы, скобки
+    const regex = /\{([^{}]+)\}/gi; // ← проще: всё что угодно между { и }
     const fragments = [];
     let lastIndex = 0;
     let match;
@@ -78,16 +79,16 @@ export function parseTextWithLogos(text) {
             });
         }
 
-        // Сам логотип
+        // Сам логотип (всё содержимое скобок)
         fragments.push({
             type: 'logo',
-            brand: match[1].toLowerCase()
+            brand: match[1] // сохраняем как есть
         });
 
         lastIndex = match.index + match[0].length;
     }
 
-    // Остаток текста после последнего логотипа
+    // Остаток текста
     if (lastIndex < text.length) {
         fragments.push({
             type: 'text',
@@ -127,64 +128,57 @@ export async function createLogoPanel() {
  * Загружает логотипы из папки и создает кнопки
  */
 async function loadLogos(grid) {
-    const formats = ['svg', 'png', 'webp', 'jpg', 'jpeg', 'eps'];
+    try {
+        // Показываем загрузку
+        grid.innerHTML = '<div class="loading-logos">⏳ Загрузка логотипов...</div>';
 
-    const possibleLogos = [
-        'bmw', 'mercedes', 'audi', 'volkswagen', 'porsche', 'bmw-m', 'amg',
-        'toyota', 'honda', 'nissan', 'mazda', 'subaru', 'mitsubishi',
-        'ford', 'chevrolet', 'dodge', 'tesla', 'ferrari', 'lamborghini',
-        'volvo', 'renault', 'peugeot', 'citroen', 'fiat', 'alfa-romeo', 'mers', 'geely','toyota2'
-    ];
+        // Один запрос к манифесту
+        const response = await fetch('images/logos/manifest.json');
 
-    const logoButtons = [];
+        if (!response.ok) {
+            throw new Error('Манифест не найден');
+        }
 
-    for (const logoName of possibleLogos) {
-        let found = false;
+        const manifest = await response.json();
 
-        for (const format of formats) {
-            const fileName = `images/logos/${logoName}.${format}`;
-            const exists = await checkImageExists(fileName);
+        if (!manifest.logos || manifest.logos.length === 0) {
+            grid.innerHTML = '<div class="no-logos">Логотипы не найдены</div>';
+            return;
+        }
 
-            if (exists) {
-                // Загружаем логотип в кеш
-                await loadLogo(logoName, fileName);
+        // Очищаем сетку
+        grid.innerHTML = '';
 
+        // Загружаем логотипы параллельно
+        const logoPromises = manifest.logos.map(async (fileName) => {
+            // Получаем имя бренда из имени файла (без расширения)
+            const brand = fileName.replace(/\.[^/.]+$/, '');
+            const filePath = `images/logos/${fileName}`;
+
+            try {
+                // Загружаем в кеш
+                await loadLogo(brand, filePath);
                 // Создаем кнопку
-                const btn = await createLogoButton(logoName, fileName);
-                if (btn) logoButtons.push(btn);
-                found = true;
-                break;
+                return await createLogoButton(brand, filePath);
+            } catch (e) {
+                console.warn(`Не удалось загрузить ${fileName}:`, e);
+                return null;
             }
-        }
-
-        if (!found) {
-            const capitalized = logoName.charAt(0).toUpperCase() + logoName.slice(1);
-            for (const format of formats) {
-                const fileName = `images/logos/${capitalized}.${format}`;
-                const exists = await checkImageExists(fileName);
-
-                if (exists) {
-                    await loadLogo(logoName, fileName);
-                    const btn = await createLogoButton(logoName, fileName);
-                    if (btn) logoButtons.push(btn);
-                    break;
-                }
-            }
-        }
-    }
-
-    grid.innerHTML = '';
-
-    if (logoButtons.length === 0) {
-        grid.innerHTML = '<div class="no-logos">Логотипы не найдены</div>';
-    } else {
-        logoButtons.sort((a, b) => {
-            const nameA = a.dataset.brand.toLowerCase();
-            const nameB = b.dataset.brand.toLowerCase();
-            return nameA.localeCompare(nameB);
         });
 
-        logoButtons.forEach(btn => grid.appendChild(btn));
+        // Ждем все загрузки
+        const buttons = await Promise.all(logoPromises);
+
+        // Добавляем только успешные кнопки
+        buttons
+            .filter(btn => btn !== null)
+            .forEach(btn => grid.appendChild(btn));
+
+        console.log(`✅ Загружено ${buttons.filter(b => b).length} логотипов`);
+
+    } catch (e) {
+        console.error('Ошибка загрузки логотипов:', e);
+        grid.innerHTML = '<div class="no-logos">❌ Ошибка загрузки логотипов</div>';
     }
 }
 
