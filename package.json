@@ -1,10 +1,11 @@
 {
-  "name": "brelok-generation v2",
+  "name": "brelok-generation-v2",
   "version": "1.0.0",
-  "description": "",
+  "description": "Генератор макетов брелоков",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "update-logos": "node update-logos.js"
   },
   "private": true
 }

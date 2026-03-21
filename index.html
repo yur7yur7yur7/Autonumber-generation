@@ -49,30 +49,24 @@
             <input type="text" id="customText" placeholder="Твой текст (например: ✨ BMW ✨)" value="🚗 МОЯ ТАЧКА 🚗" autocomplete="off">
         </div>
 
-        <!-- Быстрые смайлики -->
+        <div class="mobile-keyboard-toolbar" style="display: none;">
+            <button class="keyboard-done-btn">Готово</button>
+        </div>
+
+        <!-- Быстрые смайлики с табами -->
         <div class="emoji-panel">
-            <p class="emoji-title">Нажми, чтобы вставить:</p>
-            <div class="emoji-grid">
-                <button class="emoji-btn" data-emoji="🚗">🚗</button>
-                <button class="emoji-btn" data-emoji="🚙">🚙</button>
-                <button class="emoji-btn" data-emoji="🏎️">🏎️</button>
-                <button class="emoji-btn" data-emoji="🚘">🚘</button>
-                <button class="emoji-btn" data-emoji="🚔">🚔</button>
-                <button class="emoji-btn" data-emoji="🚖">🚖</button>
-                <button class="emoji-btn" data-emoji="⭐">⭐</button>
-                <button class="emoji-btn" data-emoji="✨">✨</button>
-                <button class="emoji-btn" data-emoji="🔥">🔥</button>
-                <button class="emoji-btn" data-emoji="💯">💯</button>
-                <button class="emoji-btn" data-emoji="👍">👍</button>
-                <button class="emoji-btn" data-emoji="👑">👑</button>
-                <button class="emoji-btn" data-emoji="❤️">❤️</button>
-                <button class="emoji-btn" data-emoji="💙">💙</button>
-                <button class="emoji-btn" data-emoji="💚">💚</button>
-                <button class="emoji-btn" data-emoji="🖤">🖤</button>
-                <button class="emoji-btn" data-emoji="⚡">⚡</button>
-                <button class="emoji-btn" data-emoji="💪">💪</button>
-                <button class="emoji-btn" data-emoji="👊">👊</button>
-                <button class="emoji-btn" data-emoji="🎯">🎯</button>
+            <div class="emoji-tabs">
+                <button class="emoji-tab active" data-category="cars">🚗 Машины</button>
+                <button class="emoji-tab" data-category="faces">😀 Смайлы</button>
+                <button class="emoji-tab" data-category="symbols">✨ Символы</button>
+                <button class="emoji-tab" data-category="nature">🌳 Природа</button>
+                <button class="emoji-tab" data-category="food">🍔 Еда</button>
+                <button class="emoji-tab" data-category="flags">🏁 Флаги</button>
+            </div>
+
+            <div class="emoji-content">
+                <!-- Контент будет загружаться через JS -->
+                <div id="emojiGridContainer"></div>
             </div>
         </div>
 
