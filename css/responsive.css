@@ -103,18 +103,28 @@
 
     /* Логотипы */
     .logo-grid {
-        grid-template-columns: repeat(5, 1fr);
-        gap: 4px;
-        max-height: 120px;
+        max-height: 450px;
+        gap: 6px;
+    }
+
+    .logo-brand-grid {
+        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+        gap: 8px;
     }
 
     .logo-btn {
-        padding: 3px;
+        min-height: 80px;
+        padding: 8px 4px 6px;
     }
 
-    .logo-btn canvas {
-        width: 30px;
-        height: 30px;
+    .logo-btn canvas,
+    .logo-btn img {
+        width: 40px;
+        height: 40px;
+    }
+
+    .logo-btn-label {
+        font-size: 9px;
     }
 
 
@@ -366,6 +376,18 @@
         display: flex;
     }
 
+    .back-text-input .custom-text-input {
+        font-size: 14px;
+        padding: 8px 10px;
+        min-height: 40px;
+        max-height: 100px;
+    }
+
+    .inline-logo-canvas {
+        width: 20px;
+        height: 20px;
+    }
+
 }
 
 /* ============================================
@@ -381,20 +403,30 @@
         font-size: 20px;
     }
 
-
     .logo-grid {
-        grid-template-columns: repeat(4, 1fr); /* 4 колонки */
-        max-height: 100px;
+        max-height: 400px;
+    }
+
+    .logo-brand-grid {
+        grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+        gap: 6px;
+    }
+
+    .logo-btn {
+        min-height: 75px;
+        padding: 6px 3px 5px;
+    }
+
+    .logo-btn canvas,
+    .logo-btn img {
+        width: 36px;
+        height: 36px;
     }
 
     .emoji-btn {
         font-size: 16px;
     }
 
-    .logo-btn canvas {
-        width: 25px;
-        height: 25px;
-    }
 
     .settings-group-title span {
         font-size: 11px;
@@ -482,9 +514,15 @@
         font-size: 11px;
     }
 
+    .logo-brand-grid {
+        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+        gap: 5px;
+    }
 
-    .logo-grid {
-        grid-template-columns: repeat(3, 1fr); /* 3 колонки */
+    .logo-btn canvas,
+    .logo-btn img {
+        width: 32px;
+        height: 32px;
     }
 
     .panel-title {

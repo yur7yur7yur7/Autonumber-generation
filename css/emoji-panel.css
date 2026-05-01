@@ -170,47 +170,47 @@
     margin: 0;
 }
 
-.logo-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
-    gap: 8px;
-    max-height: 150px;
-    overflow-y: auto;
-    padding: 5px;
-}
+/*.logo-grid {*/
+/*    display: grid;*/
+/*    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));*/
+/*    gap: 8px;*/
+/*    max-height: 150px;*/
+/*    overflow-y: auto;*/
+/*    padding: 5px;*/
+/*}*/
 
-.logo-btn {
-    aspect-ratio: 1;
-    padding: 6px;
-    background: white;
-    border: 2px solid #e0e0e0;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
+/*.logo-btn {*/
+/*    aspect-ratio: 1;*/
+/*    padding: 6px;*/
+/*    background: white;*/
+/*    border: 2px solid #e0e0e0;*/
+/*    border-radius: 10px;*/
+/*    cursor: pointer;*/
+/*    transition: all 0.2s;*/
+/*    display: flex;*/
+/*    align-items: center;*/
+/*    justify-content: center;*/
+/*    box-shadow: 0 2px 8px rgba(0,0,0,0.05);*/
+/*}*/
 
-.logo-btn:hover {
-    border-color: #667eea;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(102, 126, 234, 0.2);
-}
+/*.logo-btn:hover {*/
+/*    border-color: #667eea;*/
+/*    transform: translateY(-2px);*/
+/*    box-shadow: 0 8px 16px rgba(102, 126, 234, 0.2);*/
+/*}*/
 
-.logo-btn img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-}
+/*.logo-btn img {*/
+/*    width: 100%;*/
+/*    height: 100%;*/
+/*    object-fit: contain;*/
+/*}*/
 
-.logo-btn canvas {
-    width: 100%;
-    height: 100%;
-    display: block;
-    image-rendering: crisp-edges;
-}
+/*.logo-btn canvas {*/
+/*    width: 100%;*/
+/*    height: 100%;*/
+/*    display: block;*/
+/*    image-rendering: crisp-edges;*/
+/*}*/
 
 .loading-logos, .no-logos {
     text-align: center;
@@ -348,4 +348,453 @@
     white-space: nowrap;  /* текст в одну строку */
     display: inline-block;
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+/* ============================================
+   ПОИСК И ФИЛЬТРЫ ЛОГОТИПОВ
+   ============================================ */
+
+.logo-search-container {
+    margin-bottom: 12px;
+}
+
+.logo-search-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 25px;
+    font-size: 14px;
+    background: white;
+    transition: border-color 0.3s;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.logo-search-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.logo-search-input::placeholder {
+    color: #aaa;
+}
+
+/* Фильтры по типу */
+.logo-filter-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 15px;
+    background: #f0f0f0;
+    padding: 4px;
+    border-radius: 25px;
+}
+
+.logo-filter-btn {
+    flex: 1;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 25px;
+    background: transparent;
+    color: #666;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.logo-filter-btn.active {
+    background: white;
+    color: #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+.logo-filter-btn:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.5);
+    color: #333;
+}
+
+/* ============================================
+   ГРУППИРОВКА ПО БРЕНДАМ
+   ============================================ */
+
+/* Контейнер с логотипами */
+.logo-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 8px 4px;
+}
+
+.logo-brand-group {
+    margin-bottom: 4px;
+}
+
+.logo-brand-group:last-child {
+    margin-bottom: 0;
+}
+
+.logo-brand-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #667eea;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    padding-left: 6px;
+    position: sticky;
+    top: 0;
+    background: #f8f9fa;
+    z-index: 2;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+.logo-brand-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 10px;
+}
+
+/* ============================================
+   КНОПКИ ЛОГОТИПОВ
+   ============================================ */
+
+.logo-btn {
+    padding: 10px 6px 8px;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    min-height: 90px;
+    box-sizing: border-box;
+}
+
+.logo-btn:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.25);
+}
+
+.logo-btn canvas,
+.logo-btn img {
+    width: 48px;
+    height: 48px;
+    display: block;
+    image-rendering: auto;
+    flex-shrink: 0;
+    object-fit: contain;
+}
+
+.logo-btn-label {
+    font-size: 10px;
+    color: #666;
+    text-align: center;
+    line-height: 1.3;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    word-break: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.logo-btn:hover .logo-btn-label {
+    color: #667eea;
+}
+
+/* ============================================
+   ТЁМНАЯ ТЕМА
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+    .logo-search-input {
+        background: #3a3a4a;
+        border-color: #4a4a5a;
+        color: #e0e0e0;
+    }
+
+    .logo-search-input::placeholder {
+        color: #888;
+    }
+
+    .logo-search-input:focus {
+        border-color: #a0b0ff;
+        box-shadow: 0 0 0 3px rgba(160, 176, 255, 0.1);
+    }
+
+    .logo-filter-tabs {
+        background: #2a2a3a;
+    }
+
+    .logo-filter-btn {
+        color: #b0b0b0;
+    }
+
+    .logo-filter-btn.active {
+        background: #3a3a4a;
+        color: #a0b0ff;
+    }
+
+    .logo-filter-btn:hover:not(.active) {
+        background: rgba(255, 255, 255, 0.1);
+        color: #e0e0e0;
+    }
+
+    .logo-brand-title {
+        color: #a0b0ff;
+        background: #2a2a3a;
+    }
+
+    .logo-btn {
+        background: #3a3a4a;
+        border-color: #4a4a5a;
+    }
+
+    .logo-btn:hover {
+        border-color: #a0b0ff;
+    }
+
+    .logo-btn-label {
+        color: #b0b0b0;
+    }
+
+    .logo-btn:hover .logo-btn-label {
+        color: #a0b0ff;
+    }
+}
+
+/* ============================================
+   ГРУППИРОВКА ПО БРЕНДАМ
+   ============================================ */
+
+/* Контейнер с логотипами */
+.logo-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 8px 4px;
+}
+
+.logo-brand-group {
+    margin-bottom: 4px;
+}
+
+.logo-brand-group:last-child {
+    margin-bottom: 0;
+}
+
+.logo-brand-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #667eea;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    padding-left: 6px;
+    position: sticky;
+    top: 0;
+    background: #f8f9fa;
+    z-index: 2;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+.logo-brand-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 10px;
+}
+
+/* ============================================
+   КНОПКИ ЛОГОТИПОВ
+   ============================================ */
+
+.logo-btn {
+    padding: 10px 6px 8px;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    min-height: 90px;
+    box-sizing: border-box;
+}
+
+.logo-btn:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.25);
+}
+
+.logo-btn canvas,
+.logo-btn img {
+    width: 48px;
+    height: 48px;
+    display: block;
+    image-rendering: auto;
+    flex-shrink: 0;
+    object-fit: contain;
+}
+
+.logo-btn-label {
+    font-size: 10px;
+    color: #666;
+    text-align: center;
+    line-height: 1.3;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    word-break: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.logo-btn:hover .logo-btn-label {
+    color: #667eea;
+}
+
+/* ============================================
+   МОБИЛЬНАЯ ВЕРСИЯ
+   ============================================ */
+
+@media (max-width: 768px) {
+    .logo-grid {
+        max-height: 450px;
+        gap: 6px;
+    }
+
+    .logo-brand-title {
+        font-size: 13px;
+        padding: 5px 6px;
+    }
+
+    .logo-brand-grid {
+        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+        gap: 8px;
+    }
+
+    .logo-btn {
+        min-height: 80px;
+        padding: 8px 4px 6px;
+    }
+
+    .logo-btn canvas,
+    .logo-btn img {
+        width: 40px;
+        height: 40px;
+    }
+
+    .logo-btn-label {
+        font-size: 9px;
+    }
+}
+
+@media (max-width: 480px) {
+    .logo-grid {
+        max-height: 400px;
+    }
+
+    .logo-brand-grid {
+        grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+        gap: 6px;
+    }
+
+    .logo-btn {
+        min-height: 75px;
+        padding: 6px 3px 5px;
+    }
+
+    .logo-btn canvas,
+    .logo-btn img {
+        width: 36px;
+        height: 36px;
+    }
+
+    .logo-btn-label {
+        font-size: 8px;
+        -webkit-line-clamp: 2;
+    }
+}
+
+/* ============================================
+   ТЁМНАЯ ТЕМА
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+    .logo-search-input {
+        background: #3a3a4a;
+        border-color: #4a4a5a;
+        color: #e0e0e0;
+    }
+
+    .logo-search-input::placeholder {
+        color: #888;
+    }
+
+    .logo-search-input:focus {
+        border-color: #a0b0ff;
+        box-shadow: 0 0 0 3px rgba(160, 176, 255, 0.1);
+    }
+
+    .logo-filter-tabs {
+        background: #2a2a3a;
+    }
+
+    .logo-filter-btn {
+        color: #b0b0b0;
+    }
+
+    .logo-filter-btn.active {
+        background: #3a3a4a;
+        color: #a0b0ff;
+    }
+
+    .logo-filter-btn:hover:not(.active) {
+        background: rgba(255, 255, 255, 0.1);
+        color: #e0e0e0;
+    }
+
+    .logo-brand-title {
+        color: #a0b0ff;
+        background: #2a2a3a;
+    }
+
+    .logo-btn {
+        background: #3a3a4a;
+        border-color: #4a4a5a;
+    }
+
+    .logo-btn:hover {
+        border-color: #a0b0ff;
+    }
+
+    .logo-btn-label {
+        color: #b0b0b0;
+    }
+
+    .logo-btn:hover .logo-btn-label {
+        color: #a0b0ff;
+    }
 }

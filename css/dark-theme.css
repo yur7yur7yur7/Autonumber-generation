@@ -21,15 +21,13 @@
         color: #a0b0ff;
     }
 
-    .plate-inputs input,
-    #customText {
+    .plate-inputs input {
         background: #2a2a3a;
         border-color: #3a3a4a;
         color: #e0e0e0;
     }
 
-    .plate-inputs input:focus,
-    #customText:focus {
+    .plate-inputs input:focus {
         border-color: #a0b0ff;
     }
 
@@ -269,5 +267,34 @@
     .emoji-content {
         background: #2a2a3a;
         border-color: #4a4a5a;
+    }
+
+    .custom-text-input {
+        background: #2a2a3a;
+        border-color: #3a3a4a;
+        color: #e0e0e0;
+    }
+
+    .custom-text-input:focus {
+        border-color: #a0b0ff;
+    }
+
+    .inline-logo:hover {
+        background: rgba(160, 176, 255, 0.2);
+    }
+
+    .back-text-input .custom-text-input {
+        background: #2a2a3a;
+        border-color: #3a3a4a;
+        color: #e0e0e0;
+    }
+
+    .back-text-input .custom-text-input:focus {
+        border-color: #a0b0ff;
+        background: #2a2a3a;
+    }
+
+    .back-text-input .custom-text-input:empty::before {
+        color: #666;
     }
 }

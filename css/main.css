@@ -103,6 +103,64 @@ h1 {
     border-color: #667eea;
 }
 
+/* Contenteditable поле для текста с логотипами */
+.custom-text-input {
+    width: 100%;
+    min-height: 50px;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 18px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: white;
+    transition: border-color 0.3s;
+    cursor: text;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.8;
+    outline: none;
+}
+
+.custom-text-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.custom-text-input:empty::before {
+    content: attr(placeholder);
+    color: #aaa;
+    pointer-events: none;
+}
+
+.custom-text-input:focus:empty::before {
+    content: attr(placeholder);
+    color: #ccc;
+}
+
+/* Логотип внутри текстового поля */
+.inline-logo {
+    display: inline-block;
+    vertical-align: middle;
+    user-select: none;
+    margin: 0 2px;
+    cursor: default;
+    border-radius: 4px;
+    padding: 2px;
+    transition: background 0.2s;
+}
+
+.inline-logo:hover {
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.inline-logo-canvas {
+    vertical-align: middle;
+    width: 24px;
+    height: 24px;
+    display: inline-block;
+    pointer-events: none;
+}
+
 /* Кнопки */
 .download-btn {
     background: #48bb78;
@@ -210,6 +268,40 @@ h1 {
 
 .preview-area {
     order: 1;
+}
+/* Поле ввода текста внутри preview (задняя сторона) */
+.back-text-input {
+    margin-top: 12px;
+}
+
+.back-text-input .custom-text-input {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 16px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #fafafa;
+    transition: border-color 0.3s;
+    cursor: text;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.6;
+    outline: none;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.back-text-input .custom-text-input:focus {
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.back-text-input .custom-text-input:empty::before {
+    content: attr(placeholder);
+    color: #aaa;
 }
 
 .side-tabs {
