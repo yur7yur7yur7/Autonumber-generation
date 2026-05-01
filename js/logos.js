@@ -10,6 +10,48 @@ let drawPlateCallback = null;
 // Кеш для загруженных логотипов
 const logoCache = {};
 
+// Данные манифеста
+let logoManifest = [];
+
+// Размер логотипов в тексте (px)
+const LOGO_SIZE_IN_TEXT = 24;
+
+
+/**
+ * Разбирает текст на фрагменты (текст и логотипы)
+ * Используется для обратной совместимости со старым форматом {brand}
+ */
+export function parseTextWithLogos(text) {
+    const regex = /\{([^{}]+)\}/gi;
+    const fragments = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+            fragments.push({
+                type: 'text',
+                content: text.substring(lastIndex, match.index)
+            });
+        }
+
+        fragments.push({
+            type: 'logo',
+            brand: match[1]
+        });
+
+        lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex < text.length) {
+        fragments.push({
+            type: 'text',
+            content: text.substring(lastIndex)
+        });
+    }
+
+    return fragments;
+}
 /**
  * Устанавливает ссылки на нужные элементы
  */
@@ -21,239 +63,305 @@ export function setLogoContext(canvasElement, context, sideGetter, drawCallback)
 }
 
 /**
- * Проверяет существование файла
- */
-async function checkImageExists(url) {
-    try {
-        const response = await fetch(url, { method: 'HEAD' });
-        return response.ok;
-    } catch {
-        return false;
-    }
-}
-
-/**
  * Загружает логотип в кеш
  */
-async function loadLogo(brand, fileName) {
+async function loadLogo(fileName) {
+    if (logoCache[fileName]) return logoCache[fileName];
+
     return new Promise((resolve) => {
         const img = new Image();
         img.crossOrigin = 'anonymous';
-        img.src = fileName;
+        img.src = `images/logos/${fileName}`;
 
         img.onload = () => {
-            logoCache[brand] = img;
+            logoCache[fileName] = img;
             resolve(img);
         };
 
         img.onerror = () => {
-            console.warn(`Не удалось загрузить логотип: ${brand}`);
+            console.warn(`Не удалось загрузить логотип: ${fileName}`);
             resolve(null);
         };
     });
 }
 
 /**
- * Получает логотип из кеша или загружает
+ * Получает логотип из кеша по имени файла
  */
-export async function getLogo(brand) {
-    return logoCache[brand] || null;
+export function getLogoByFile(fileName) {
+    return logoCache[fileName] || null;
 }
 
 /**
- * Разбирает текст на фрагменты (текст и логотипы)
+ * Создает DOM-элемент логотипа для вставки в contenteditable
  */
-export function parseTextWithLogos(text) {
-    // Ищем {любые_символы}, разрешаем буквы, цифры, дефис, подчеркивание, пробелы, скобки
-    const regex = /\{([^{}]+)\}/gi; // ← проще: всё что угодно между { и }
-    const fragments = [];
-    let lastIndex = 0;
-    let match;
+function createLogoElement(fileName) {
+    const img = logoCache[fileName];
+    if (!img) return null;
 
-    while ((match = regex.exec(text)) !== null) {
-        // Текст до логотипа
-        if (match.index > lastIndex) {
-            fragments.push({
-                type: 'text',
-                content: text.substring(lastIndex, match.index)
-            });
-        }
+    const span = document.createElement('span');
+    span.className = 'inline-logo';
+    span.contentEditable = 'false';
+    span.dataset.logoFile = fileName;
 
-        // Сам логотип (всё содержимое скобок)
-        fragments.push({
-            type: 'logo',
-            brand: match[1] // сохраняем как есть
-        });
+    const canvas = document.createElement('canvas');
+    canvas.width = LOGO_SIZE_IN_TEXT * 2;
+    canvas.height = LOGO_SIZE_IN_TEXT * 2;
+    canvas.className = 'inline-logo-canvas';
 
-        lastIndex = match.index + match[0].length;
+    const c = canvas.getContext('2d');
+    const aspect = img.width / img.height;
+    let dw = LOGO_SIZE_IN_TEXT * 2 - 4;
+    let dh = LOGO_SIZE_IN_TEXT * 2 - 4;
+
+    if (aspect > 1) {
+        dh = dw / aspect;
+    } else {
+        dw = dh * aspect;
     }
 
-    // Остаток текста
-    if (lastIndex < text.length) {
-        fragments.push({
-            type: 'text',
-            content: text.substring(lastIndex)
-        });
-    }
+    c.drawImage(img,
+        (LOGO_SIZE_IN_TEXT * 2 - dw) / 2,
+        (LOGO_SIZE_IN_TEXT * 2 - dh) / 2,
+        dw, dh
+    );
 
-    return fragments;
+    span.appendChild(canvas);
+
+    // Невидимый пробел после логотипа для удобства навигации
+    const space = document.createTextNode('\u200B');
+    span.appendChild(space);
+
+    return span;
 }
 
 /**
- * Сканирует папку с логотипами и создает кнопки
+ * Загружает манифест и создает панель логотипов
  */
 export async function createLogoPanel() {
     const panel = document.createElement('div');
     panel.className = 'logo-panel';
 
+    // Заголовок
     const header = document.createElement('div');
     header.className = 'panel-header';
-    header.innerHTML = `<p class="panel-title">🏭 Логотипы (клик - вставить в текст как {brand})</p>`;
+    header.innerHTML = `<p class="panel-title">🏭 Логотипы</p>`;
 
+    // Поиск
+    const searchContainer = document.createElement('div');
+    searchContainer.className = 'logo-search-container';
+    searchContainer.innerHTML = `
+        <input type="text" class="logo-search-input" placeholder="🔍 Поиск по бренду..." autocomplete="off">
+    `;
+
+    // Фильтры по типу
+    const filterContainer = document.createElement('div');
+    filterContainer.className = 'logo-filter-tabs';
+    filterContainer.innerHTML = `
+        <button class="logo-filter-btn active" data-filter="all">Все</button>
+        <button class="logo-filter-btn" data-filter="badge">Значки</button>
+        <button class="logo-filter-btn" data-filter="text">С надписью</button>
+    `;
+
+    // Сетка логотипов
     const grid = document.createElement('div');
     grid.className = 'logo-grid';
     grid.id = 'logoGrid';
-
     grid.innerHTML = '<div class="loading-logos">Загрузка логотипов...</div>';
 
     panel.appendChild(header);
+    panel.appendChild(searchContainer);
+    panel.appendChild(filterContainer);
     panel.appendChild(grid);
 
-    setTimeout(() => loadLogos(grid), 100);
+    // Загружаем манифест и отрисовываем
+    await loadManifestAndRender(grid);
+
+    // Обработчики поиска и фильтров
+    const searchInput = searchContainer.querySelector('.logo-search-input');
+    const filterBtns = filterContainer.querySelectorAll('.logo-filter-btn');
+
+    let currentFilter = 'all';
+    let searchQuery = '';
+
+    searchInput.addEventListener('input', (e) => {
+        searchQuery = e.target.value.toLowerCase().trim();
+        renderLogoGrid(grid, currentFilter, searchQuery);
+    });
+
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = btn.dataset.filter;
+            renderLogoGrid(grid, currentFilter, searchQuery);
+        });
+    });
 
     return panel;
 }
 
 /**
- * Загружает логотипы из папки и создает кнопки
+ * Загружает манифест и рендерит сетку
  */
-async function loadLogos(grid) {
+async function loadManifestAndRender(grid) {
     try {
-        // Показываем загрузку
         grid.innerHTML = '<div class="loading-logos">⏳ Загрузка логотипов...</div>';
 
-        // Один запрос к манифесту
         const response = await fetch('images/logos/manifest.json');
+        if (!response.ok) throw new Error('Манифест не найден');
 
-        if (!response.ok) {
-            throw new Error('Манифест не найден');
-        }
+        logoManifest = (await response.json()).logos || [];
 
-        const manifest = await response.json();
-
-        if (!manifest.logos || manifest.logos.length === 0) {
+        if (logoManifest.length === 0) {
             grid.innerHTML = '<div class="no-logos">Логотипы не найдены</div>';
             return;
         }
 
-        // Очищаем сетку
-        grid.innerHTML = '';
+        // Загружаем все логотипы в кеш
+        const loadPromises = logoManifest.map(logo => loadLogo(logo.file));
+        await Promise.allSettled(loadPromises);
 
-        // Загружаем логотипы параллельно
-        const logoPromises = manifest.logos.map(async (fileName) => {
-            // Получаем имя бренда из имени файла (без расширения)
-            const brand = fileName.replace(/\.[^/.]+$/, '');
-            const filePath = `images/logos/${fileName}`;
-
-            try {
-                // Загружаем в кеш
-                await loadLogo(brand, filePath);
-                // Создаем кнопку
-                return await createLogoButton(brand, filePath);
-            } catch (e) {
-                console.warn(`Не удалось загрузить ${fileName}:`, e);
-                return null;
-            }
-        });
-
-        // Ждем все загрузки
-        const buttons = await Promise.all(logoPromises);
-
-        // Добавляем только успешные кнопки
-        buttons
-            .filter(btn => btn !== null)
-            .forEach(btn => grid.appendChild(btn));
-
-        console.log(`✅ Загружено ${buttons.filter(b => b).length} логотипов`);
+        renderLogoGrid(grid, 'all', '');
+        console.log(`✅ Загружено ${logoManifest.length} логотипов`);
 
     } catch (e) {
-        console.error('Ошибка загрузки логотипов:', e);
-        grid.innerHTML = '<div class="no-logos">❌ Ошибка загрузки логотипов</div>';
+        console.error('Ошибка загрузки манифеста:', e);
+        grid.innerHTML = '<div class="no-logos">❌ Ошибка загрузки</div>';
     }
+}
+
+/**
+ * Рендерит сетку логотипов с учётом фильтров
+ */
+function renderLogoGrid(grid, filter, query) {
+    let filtered = [...logoManifest];
+
+    if (filter === 'badge') {
+        filtered = filtered.filter(l => l.type === 'badge');
+    } else if (filter === 'text') {
+        filtered = filtered.filter(l => l.type === 'text');
+    }
+
+    if (query) {
+        filtered = filtered.filter(l =>
+            l.brand.toLowerCase().includes(query) ||
+            l.label.toLowerCase().includes(query)
+        );
+    }
+
+    if (filtered.length === 0) {
+        grid.innerHTML = '<div class="no-logos">Ничего не найдено</div>';
+        return;
+    }
+
+    // Группируем по бренду
+    const grouped = {};
+    filtered.forEach(logo => {
+        if (!grouped[logo.brand]) grouped[logo.brand] = [];
+        grouped[logo.brand].push(logo);
+    });
+
+    const sortedBrands = Object.keys(grouped).sort();
+
+    grid.innerHTML = '';
+
+    sortedBrands.forEach(brand => {
+        const brandGroup = document.createElement('div');
+        brandGroup.className = 'logo-brand-group';
+
+        const brandTitle = document.createElement('div');
+        brandTitle.className = 'logo-brand-title';
+        brandTitle.textContent = brand.toUpperCase();
+        brandGroup.appendChild(brandTitle);
+
+        const brandGrid = document.createElement('div');
+        brandGrid.className = 'logo-brand-grid';
+
+        grouped[brand].forEach(logo => {
+            const btn = createLogoButton(logo);
+            brandGrid.appendChild(btn);
+        });
+
+        brandGroup.appendChild(brandGrid);
+        grid.appendChild(brandGroup);
+    });
 }
 
 /**
  * Создает кнопку с логотипом
  */
-async function createLogoButton(logoName, fileName) {
-    return new Promise((resolve) => {
-        const btn = document.createElement('button');
-        btn.className = 'logo-btn';
-        btn.dataset.brand = logoName;
-        btn.dataset.file = fileName;
+function createLogoButton(logo) {
+    const btn = document.createElement('button');
+    btn.className = 'logo-btn';
+    btn.title = logo.label;
 
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.src = fileName;
+    const img = logoCache[logo.file];
+    if (!img) {
+        btn.textContent = '...';
+        return btn;
+    }
 
-        img.onload = () => {
-            // Создаем canvas для предпросмотра
-            const previewCanvas = document.createElement('canvas');
-            previewCanvas.width = 40;
-            previewCanvas.height = 40;
-            const previewCtx = previewCanvas.getContext('2d');
+    // Превью на канвасе
+    const previewCanvas = document.createElement('canvas');
+    previewCanvas.width = 40;
+    previewCanvas.height = 40;
+    const previewCtx = previewCanvas.getContext('2d');
+    previewCtx.clearRect(0, 0, 40, 40);
 
-            previewCtx.clearRect(0, 0, 40, 40);
+    const aspect = img.width / img.height;
+    let dw = 36, dh = 36;
+    if (aspect > 1) dh = 36 / aspect;
+    else dw = 36 * aspect;
 
-            const aspectRatio = img.width / img.height;
-            let drawWidth = 36;
-            let drawHeight = 36;
+    previewCtx.drawImage(img, (40 - dw) / 2, (40 - dh) / 2, dw, dh);
 
-            if (aspectRatio > 1) {
-                drawHeight = 36 / aspectRatio;
-            } else {
-                drawWidth = 36 * aspectRatio;
-            }
+    btn.appendChild(previewCanvas);
 
-            previewCtx.drawImage(img,
-                (40 - drawWidth)/2, (40 - drawHeight)/2,
-                drawWidth, drawHeight
-            );
+    // Подпись
+    const label = document.createElement('span');
+    label.className = 'logo-btn-label';
+    label.textContent = logo.label.length > 20
+        ? logo.label.substring(0, 18) + '...'
+        : logo.label;
+    btn.appendChild(label);
 
-            btn.innerHTML = '';
-            btn.appendChild(previewCanvas);
+    // Клик — вставка логотипа в contenteditable
+    btn.addEventListener('click', () => {
+        if (currentSide() !== 'back') {
+            alert('Переключись на заднюю сторону для вставки логотипа!');
+            return;
+        }
 
-            // Обработчик клика - вставка кода логотипа в текст
-            btn.addEventListener('click', () => {
-                if (currentSide() !== 'back') {
-                    alert('Переключись на заднюю сторону для вставки логотипа!');
-                    return;
-                }
+        const customText = document.getElementById('customText');
+        if (!customText) return;
 
-                const customText = document.getElementById('customText');
-                if (!customText) return;
+        const sideBack = document.getElementById('side-back');
+        if (sideBack && !sideBack.classList.contains('active')) {
+            alert('Переключись на заднюю сторону для вставки логотипа!');
+            return;
+        }
 
-                const cursorPos = customText.selectionStart;
-                const textBefore = customText.value.substring(0, cursorPos);
-                const textAfter = customText.value.substring(cursorPos);
+        const logoEl = createLogoElement(logo.file);
+        if (!logoEl) return;
 
-                // Вставляем код логотипа {brand}
-                const logoCode = `{${logoName}}`;
-                customText.value = textBefore + logoCode + textAfter;
+        const selection = window.getSelection();
 
-                // Возвращаем курсор после вставленного кода
-                // customText.focus();
-                // customText.selectionStart = customText.selectionEnd = cursorPos + logoCode.length;
+        // Проверяем, что курсор внутри customText
+        if (selection.rangeCount === 0 || !customText.contains(selection.anchorNode)) {
+            // Вставляем в конец, без фокуса
+            customText.appendChild(logoEl);
+        } else {
+            const range = selection.getRangeAt(0);
+            range.insertNode(logoEl);
+            range.setStartAfter(logoEl);
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
 
-                if (drawPlateCallback) drawPlateCallback();
-            });
-
-            resolve(btn);
-        };
-
-        img.onerror = () => {
-            console.warn(`Не удалось загрузить: ${fileName}`);
-            resolve(null);
-        };
+        drawPlateCallback();
     });
+
+    return btn;
 }

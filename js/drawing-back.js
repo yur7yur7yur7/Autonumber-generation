@@ -4,7 +4,7 @@
 
 import { CONFIG } from './config.js';
 import { drawRoundedRect } from './drawing-utils.js';
-import { parseTextWithLogos, getLogo } from './logos.js';
+import { parseTextWithLogos, getLogoByFile } from './logos.js';
 
 let ctx = null;
 let settings = {};
@@ -24,10 +24,17 @@ export function setBackContext(context, appSettings) {
 /**
  * Рисует заднюю сторону с поддержкой логотипов в тексте
  */
-export async function drawBackSide(text, fontSize, fontWeight, color, plateWidth, plateHeight) {
+export async function drawBackSide(fragments, fontSize, fontWeight, color, plateWidth, plateHeight) {
     if (!ctx) return;
 
-    const content = text || '🚗 МОЯ ТАЧКА 🚗';
+    // Обратная совместимость со строкой
+    let parsedFragments = fragments;
+    if (typeof fragments === 'string') {
+        parsedFragments = parseTextWithLogos(fragments || '🚗 МОЯ ТАЧКА 🚗');
+    }
+    if (!parsedFragments || parsedFragments.length === 0) {
+        parsedFragments = [{ type: 'text', content: '🚗 МОЯ ТАЧКА 🚗' }];
+    }
     const scaledMargin = settings.margin * SCALE_FACTOR;
     const scaledBackTextPadding = (settings.backTextPadding || 0) * SCALE_FACTOR;
     const scaledBackTextY = (settings.backTextY || 11) * SCALE_FACTOR;
@@ -57,7 +64,8 @@ export async function drawBackSide(text, fontSize, fontWeight, color, plateWidth
     ctx.textBaseline = 'middle';
 
     // Разбираем текст на фрагменты
-    const fragments = parseTextWithLogos(content);
+    // Используем переданные фрагменты
+    const contentFragments = parsedFragments;
 
     // Доступная ширина для текста - БЕЗ вычета точек
     const availableWidth = innerWidth - (scaledBackTextPadding * 2);
@@ -68,7 +76,7 @@ export async function drawBackSide(text, fontSize, fontWeight, color, plateWidth
     const contentWidth = innerWidth;
 
     // Разбиваем на строки с учетом логотипов
-    const lines = await wrapTextWithLogos(fragments, maxLineWidth, fontSize, fontWeight, fontFamily);
+    const lines = await wrapTextWithLogos(contentFragments, maxLineWidth, fontSize, fontWeight, fontFamily);
 
     // Вычисляем позиции
     const lineHeight = fontSize * SCALE_FACTOR * lineSpacing;
@@ -125,10 +133,10 @@ async function wrapTextWithLogos(fragments, maxWidth, fontSize, fontWeight, font
                 currentWidth += wordWidth;
             }
         } else {
-            // Для логотипа
-            const logo = await getLogo(fragment.brand);
+            const logoFileName = fragment.file || fragment.brand;
+            const logo = await getLogoByFile(logoFileName);
             if (logo) {
-                const logoWidth = fontSize * SCALE_FACTOR * 1.2; // примерно как буква
+                const logoWidth = fontSize * SCALE_FACTOR * 1.2;
 
                 if (currentWidth + logoWidth > maxWidth && currentLine.length > 0) {
                     lines.push([...currentLine]);
@@ -195,7 +203,8 @@ async function drawLine(fragments, innerX, innerWidth, padding, y, textAlign, fo
 
             x += ctx.measureText(fragment.content).width;
         } else {
-            const logo = await getLogo(fragment.brand);
+            const logoFileName = fragment.file || fragment.brand;
+            const logo = await getLogoByFile(logoFileName);
             if (logo) {
                 const logoHeight = fontSize * SCALE_FACTOR;
                 const logoWidth = logoHeight * (logo.width / logo.height);

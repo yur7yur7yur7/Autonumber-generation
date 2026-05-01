@@ -104,9 +104,14 @@ document.querySelectorAll('.side-btn').forEach(btn => {
         document.getElementById(`side-${side}`).classList.add('active');
 
         currentSide = side;
-        drawPlate();
 
-        // Обновляем видимость настроек
+        // ✅ Показываем/скрываем поле ввода в preview
+        const backTextInput = document.getElementById('backTextInput');
+        if (backTextInput) {
+            backTextInput.style.display = (side === 'back') ? 'block' : 'none';
+        }
+
+        drawPlate();
         updateSettingsVisibility(side);
     });
 });
@@ -114,20 +119,6 @@ document.querySelectorAll('.side-btn').forEach(btn => {
 // ============================================
 // ЭМОДЗИ И НАСТРОЙКИ ТЕКСТА
 // ============================================
-document.querySelectorAll('.emoji-btn').forEach(btn => {
-    btn.addEventListener('click', function () {
-        const emoji = this.dataset.emoji;
-        const cursorPos = customText.selectionStart;
-        const textBefore = customText.value.substring(0, cursorPos);
-        const textAfter = customText.value.substring(cursorPos);
-
-        customText.value = textBefore + emoji + textAfter;
-        customText.focus();
-        customText.selectionStart = customText.selectionEnd = cursorPos + emoji.length;
-
-        drawPlate();
-    });
-});
 
 textSize.addEventListener('input', function () {
     textSizeValue.textContent = this.value;
@@ -138,6 +129,17 @@ textSize.addEventListener('input', function () {
 // СЛУШАТЕЛИ ИЗМЕНЕНИЙ
 // ============================================
 customText.addEventListener('input', drawPlate);
+customText.addEventListener('paste', function (e) {
+    // При вставке plain text — ок, при вставке форматированного — чистим
+    setTimeout(() => {
+        // Убираем вложенные div'ы от браузерного форматирования
+        const divs = this.querySelectorAll('div');
+        divs.forEach(div => {
+            div.replaceWith(...div.childNodes);
+        });
+        drawPlate();
+    }, 0);
+});
 textColor.addEventListener('input', drawPlate);
 
 const textWeightBold = document.getElementById('textWeightBold');
@@ -156,110 +158,90 @@ if (doneBtn) {
 setupNumberValidation(numberInput, drawPlate);
 setupRegionValidation(regionInput, drawPlate);
 
-// Добавить после других обработчиков
-customText.addEventListener('click', function (e) {
-    const cursorPos = this.selectionStart;
-    const text = this.value;
 
-    // Ищем все вхождения {brand}
-    const logoRegex = /\{([a-z0-9-]+)\}/gi;
-    let match;
+/**
+ * Извлекает содержимое contenteditable в формате для отрисовки:
+ * [{type: 'text', content: '...'}, {type: 'logo', file: 'audi_badge.png'}, ...]
+ */
+function getCustomTextFragments() {
+    const container = document.getElementById('customText');
+    if (!container) return [];
 
-    while ((match = logoRegex.exec(text)) !== null) {
-        const start = match.index;
-        const end = match.index + match[0].length;
+    const fragments = [];
 
-        // Если курсор внутри скобок (включая сами скобки)
-        if (cursorPos > start && cursorPos < end) {
-            // Перемещаем курсор сразу после закрывающей скобки
-            this.selectionStart = end;
-            this.selectionEnd = end;
-            break;
-        }
-    }
-});
-
-// То же для клавиш
-customText.addEventListener('keyup', function (e) {
-    // Не срабатывает на стрелки и т.д.
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-        const cursorPos = this.selectionStart;
-        const text = this.value;
-
-        const logoRegex = /\{([a-z0-9-]+)\}/gi;
-        let match;
-
-        while ((match = logoRegex.exec(text)) !== null) {
-            const start = match.index;
-            const end = match.index + match[0].length;
-
-            if (cursorPos > start && cursorPos < end) {
-                this.selectionStart = end;
-                this.selectionEnd = end;
-                break;
+    function extractNodes(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            const text = node.textContent;
+            if (text) {
+                // Убираем zero-width space
+                const cleaned = text.replace(/\u200B/g, '');
+                if (cleaned) {
+                    fragments.push({type: 'text', content: cleaned});
+                }
+            }
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            if (node.classList.contains('inline-logo')) {
+                const file = node.dataset.logoFile;
+                if (file) {
+                    fragments.push({type: 'logo', file: file});
+                }
+            } else if (node.tagName === 'BR') {
+                fragments.push({type: 'text', content: '\n'});
+            } else {
+                // Рекурсивно обходим дочерние узлы
+                node.childNodes.forEach(child => extractNodes(child));
             }
         }
     }
-});
 
+    container.childNodes.forEach(node => extractNodes(node));
+
+    return fragments;
+}
+
+// Backspace/Delete для удаления логотипов
 customText.addEventListener('keydown', function (e) {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+
     if (e.key === 'Backspace') {
-        const cursorPos = this.selectionStart;
-        const text = this.value;
-
-        // Проверяем, находится ли курсор сразу после закрывающей скобки
-        const logoRegex = /\{([a-z0-9-]+)\}(\s?)/gi;
-        let match;
-
-        while ((match = logoRegex.exec(text)) !== null) {
-            const end = match.index + match[0].length;
-
-            // Если курсор сразу после логотипа (или перед пробелом)
-            if (cursorPos === end || cursorPos === end - 1) {
+        if (range.collapsed && range.startOffset === 0) {
+            const node = range.startContainer;
+            if (node.previousSibling && node.previousSibling.classList &&
+                node.previousSibling.classList.contains('inline-logo')) {
                 e.preventDefault();
-
-                // Удаляем весь логотип
-                const beforeLogo = text.substring(0, match.index);
-                const afterLogo = text.substring(end);
-                this.value = beforeLogo + afterLogo;
-
-                // Ставим курсор на место удаленного логотипа
-                this.selectionStart = match.index;
-                this.selectionEnd = match.index;
-
+                node.previousSibling.remove();
                 drawPlate();
-                break;
             }
         }
     }
 
-    // Для Delete (если курсор перед логотипом)
     if (e.key === 'Delete') {
-        const cursorPos = this.selectionStart;
-        const text = this.value;
-
-        const logoRegex = /\{([a-z0-9-]+)\}(\s?)/gi;
-        let match;
-
-        while ((match = logoRegex.exec(text)) !== null) {
-            const start = match.index;
-            const end = match.index + match[0].length;
-
-            // Если курсор сразу перед логотипом
-            if (cursorPos === start) {
+        if (range.collapsed && range.startOffset === range.startContainer.length) {
+            const node = range.startContainer;
+            if (node.nextSibling && node.nextSibling.classList &&
+                node.nextSibling.classList.contains('inline-logo')) {
                 e.preventDefault();
-
-                const beforeLogo = text.substring(0, start);
-                const afterLogo = text.substring(end);
-                this.value = beforeLogo + afterLogo;
-
-                this.selectionStart = start;
-                this.selectionEnd = start;
-
+                node.nextSibling.remove();
                 drawPlate();
-                break;
             }
         }
+    }
+});
+
+// Защита логотипов от редактирования
+customText.addEventListener('mousedown', function (e) {
+    if (e.target.closest('.inline-logo')) {
+        e.preventDefault();
+        const logo = e.target.closest('.inline-logo');
+        const range = document.createRange();
+        range.setStartAfter(logo);
+        range.collapse(true);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
     }
 });
 
@@ -312,7 +294,7 @@ function drawPlate() {
     } else {
         const isBold = document.getElementById('textWeightBold').checked;
         drawBackSide(
-            customText.value,
+            getCustomTextFragments(),
             parseInt(textSize.value),
             isBold ? 'bold' : 'normal',
             textColor.value,
@@ -392,7 +374,6 @@ async function initializeWithFont() {
 
             if (!tabs.length || !gridContainer) return;
 
-            // Функция отрисовки сетки для категории
             function renderEmojiGrid(category) {
                 const emojis = EMOJI_CATEGORIES[category] || [];
                 gridContainer.innerHTML = `
@@ -403,38 +384,41 @@ async function initializeWithFont() {
             </div>
         `;
 
-                // Добавляем обработчики для новых кнопок
-                document.querySelectorAll('.emoji-btn').forEach(btn => {
+                // ✅ Вешаем обработчики на новые кнопки
+                gridContainer.querySelectorAll('.emoji-btn').forEach(btn => {
                     btn.addEventListener('click', function () {
                         const emoji = this.dataset.emoji;
-                        const cursorPos = customText.selectionStart;
-                        const textBefore = customText.value.substring(0, cursorPos);
-                        const textAfter = customText.value.substring(cursorPos);
+                        const customText = document.getElementById('customText');
+                        if (!customText) return;
 
-                        customText.value = textBefore + emoji + textAfter;
-                        customText.focus();
-                        customText.selectionStart = customText.selectionEnd = cursorPos + emoji.length;
+                        const selection = window.getSelection();
+
+                        if (selection.rangeCount === 0 || !customText.contains(selection.anchorNode)) {
+                            const textNode = document.createTextNode(emoji);
+                            customText.appendChild(textNode);
+                        } else {
+                            const range = selection.getRangeAt(0);
+                            const textNode = document.createTextNode(emoji);
+                            range.insertNode(textNode);
+                            range.setStartAfter(textNode);
+                            range.collapse(true);
+                            selection.removeAllRanges();
+                            selection.addRange(range);
+                        }
 
                         drawPlate();
                     });
                 });
             }
 
-            // Обработчики для табов
             tabs.forEach(tab => {
                 tab.addEventListener('click', () => {
-                    // Убираем active со всех табов
                     tabs.forEach(t => t.classList.remove('active'));
-                    // Добавляем active текущему
                     tab.classList.add('active');
-
-                    // Рендерим соответствующую категорию
-                    const category = tab.dataset.category;
-                    renderEmojiGrid(category);
+                    renderEmojiGrid(tab.dataset.category);
                 });
             });
 
-            // Активируем первый таб
             if (tabs[0]) {
                 tabs[0].classList.add('active');
                 renderEmojiGrid(tabs[0].dataset.category);
