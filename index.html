@@ -21,6 +21,13 @@
     <!-- Область предпросмотра - ПЕРВАЯ (всегда сверху) -->
     <div class="preview-area">
         <canvas id="previewCanvas" width="1224" height="252"></canvas>
+        <!-- Поле ввода для задней стороны (показывается только на back) -->
+        <div id="backTextInput" class="back-text-input" style="display: none;">
+            <div id="customText"
+                 class="custom-text-input"
+                 contenteditable="true"
+                 placeholder="Твой текст (например: ✨ BMW ✨)">🚗 МОЯ ТАЧКА 🚗</div>
+        </div>
     </div>
 
     <!-- Вкладки для сторон - ВТОРЫЕ -->
@@ -44,10 +51,6 @@
     <div class="side-content" id="side-back">
         <p class="subtitle">Напиши что хочешь на обратной стороне</p>
 
-        <!-- Поле для текста -->
-        <div class="input-group">
-            <input type="text" id="customText" placeholder="Твой текст (например: ✨ BMW ✨)" value="🚗 МОЯ ТАЧКА 🚗" autocomplete="off">
-        </div>
 
         <div class="mobile-keyboard-toolbar" style="display: none;">
             <button class="keyboard-done-btn">Готово</button>
