@@ -12,11 +12,26 @@ body {
     align-items: center;
     padding: 20px;
     position: relative;
+    /* Десктопный фон */
     background-image: url('../images/back.png');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     background-attachment: fixed;
+}
+
+/* Мобильный фон */
+@media (max-width: 768px) {
+    body {
+        background-image: url('../images/back-mobile.png');
+    }
+}
+
+/* Маленькие экраны */
+@media (max-width: 480px) {
+    body {
+        background-image: url('../images/back-mobile-small.png');
+    }
 }
 
 body::before {
