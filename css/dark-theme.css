@@ -284,4 +284,9 @@
     .back-text-input .custom-text-input:empty::before {
         color: #666;
     }
+
+    .inline-logo.logo-selected {
+        background: rgba(220, 38, 38, 0.25);
+        outline-color: #ef4444;
+    }
 }
