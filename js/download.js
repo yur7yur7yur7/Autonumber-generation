@@ -4,7 +4,6 @@
 
 import { showTemporaryMessage } from './validation.js';
 import { CONFIG } from './config.js';
-// import { setDrawingContext } from './drawing-utils.js';
 
 const { CANVAS_WIDTH, CANVAS_HEIGHT } = CONFIG;
 

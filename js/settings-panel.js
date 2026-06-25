@@ -147,6 +147,8 @@ export function updateSettingsVisibility(side) {
  * Создает панель настроек
  */
 export function createSettingsPanel() {
+    if (document.querySelector('.settings-panel')) return;
+
     const container = document.querySelector('.container');
     const actions = document.querySelector('.actions');
 
@@ -174,28 +176,6 @@ export function createSettingsPanel() {
         actions.appendChild(showBtn);
     }
 
-    // Обработчик для точек по бокам
-    // const showSideDots = document.getElementById('showSideDots');
-    // if (showSideDots) {
-    //     showSideDots.addEventListener('change', function() {
-    //         settings.showSideDots = this.checked;
-    //
-    //         // Показываем или скрываем настройки размера и отступа
-    //         const dotSizeContainer = document.getElementById('dotSizeContainer');
-    //         const dotOffsetContainer = document.getElementById('dotOffsetContainer');
-    //
-    //         if (dotSizeContainer) {
-    //             dotSizeContainer.style.display = this.checked ? 'flex' : 'none';
-    //         }
-    //         if (dotOffsetContainer) {
-    //             dotOffsetContainer.style.display = this.checked ? 'flex' : 'none';
-    //         }
-    //
-    //         if (drawCallback) drawCallback();
-    //         if (saveCallback) saveCallback();
-    //     });
-    // }
-
     actions.insertAdjacentElement('afterend', settingsDiv);
 
     const fontSelectorContainer = document.getElementById('fontSelectorContainer');
@@ -203,14 +183,6 @@ export function createSettingsPanel() {
         const fontSelector = createFontSelector(settings.backFontFamily || AVAILABLE_FONTS[0].value);
         fontSelectorContainer.appendChild(fontSelector);
     }
-
-    // Обработчик чекбокса флага
-    document.getElementById('showFlagCheckbox').addEventListener('change', function () {
-        settings.showFlag = this.checked;
-        updateFlagSettings(this.checked);
-        if (drawCallback) drawCallback();
-        if (saveCallback) saveCallback();
-    });
 
     // Обработчик для точек по бокам
     const showSideDots = document.getElementById('showSideDots');
@@ -280,9 +252,7 @@ export function createSettingsPanel() {
 
     // Начальное состояние
     const flagCheckbox = document.getElementById('showFlagCheckbox');
-    if (!flagCheckbox.checked) {
-        window.savedRusX = settings.rusX;
-        window.savedFlagX = settings.flagX;
+    if (flagCheckbox && !flagCheckbox.checked) {
         updateFlagSettings(false);
     }
 
@@ -331,20 +301,9 @@ export function createSettingsPanel() {
         settings.backTextAlign = backSettings.backTextAlign;
         settings.backFontFamily = backSettings.backFontFamily;
 
-        // // Обновляем слайдеры (только для передней стороны)
-        // document.querySelectorAll('[data-setting^="rus"], [data-setting^="flag"], [data-setting="numberY"], [data-setting="numberAreaWidth"], [data-setting="numberPadding"], [data-setting="regionY"], [data-setting="regionAreaWidth"], [data-setting="mainBorderRadius"], [data-setting="innerBorderRadius"], [data-setting="margin"]').forEach(slider => {
-        //     const setting = slider.dataset.setting;
-        //     slider.value = settings[setting];
-        //     slider.parentElement.querySelector('.value').textContent = settings[setting];
-        // });
-
         // Обновляем чекбокс флага
         const flagCheckbox = document.getElementById('showFlagCheckbox');
         flagCheckbox.checked = settings.showFlag;
-
-        // Обновляем saved значения
-        window.savedRusX = undefined;
-        window.savedFlagX = undefined;
 
         updateFlagSettings(settings.showFlag);
 
@@ -390,7 +349,6 @@ export function createSettingsPanel() {
         }
 
         // Возвращаем настройки номера
-        // Object.assign(settings, frontSettings);
 
         // Обновляем слайдеры (только для задней стороны)
         document.querySelectorAll('[data-setting="backTextY"], [data-setting="backTextPadding"], [data-setting="backTextLineSpacing"], [data-setting="backTextMaxWidth"]').forEach(slider => {

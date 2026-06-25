@@ -11,7 +11,6 @@ import {setBackContext, drawBackSide} from './drawing-back.js';
 import {setSettingsCallbacks, createSettingsPanel, updateSettingsVisibility} from './settings-panel.js';
 import {setupDownloadButton, setDownloadContext} from './download.js';
 import {setLogoContext, createLogoPanel} from './logos.js';
-// import { drawLogos } from './logos.js';
 import {drawSideDots} from './drawing-utils.js';
 import {EMOJI_CATEGORIES} from './emojis.js';
 
@@ -29,8 +28,7 @@ const regionInput = document.getElementById('plateRegion');
 const customText = document.getElementById('customText');
 const textSize = document.getElementById('textSize');
 const textSizeValue = document.getElementById('textSizeValue'); // ← ОДИН РАЗ
-const textColor = document.getElementById('textColor'); // ← textWeight удален
-const downloadBtn = document.getElementById('downloadBtn');
+const textColor = document.getElementById('textColor');
 
 
 // ============================================
@@ -38,9 +36,19 @@ const downloadBtn = document.getElementById('downloadBtn');
 // ============================================
 canvas.width = CANVAS_WIDTH;
 canvas.height = CANVAS_HEIGHT;
-canvas.style.width = '600px';
-canvas.style.height = 'auto';
-canvas.style.imageRendering = 'auto';
+
+function updateCanvasSize() {
+    const maxWidth = Math.min(600, canvas.parentElement.clientWidth - 40);
+    canvas.style.width = maxWidth + 'px';
+    canvas.style.height = 'auto';
+    canvas.style.imageRendering = 'auto';
+}
+
+updateCanvasSize();
+window.addEventListener('resize', () => {
+    clearTimeout(window._canvasResizeTimer);
+    window._canvasResizeTimer = setTimeout(updateCanvasSize, 150);
+});
 
 // Передаем контекст в модули рисования
 setDrawingContext(ctx);
@@ -91,7 +99,6 @@ function saveSettings() {
 // ============================================
 // ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
 // ============================================
-// import { updateSettingsVisibility } from './settings-panel.js';
 
 document.querySelectorAll('.side-btn').forEach(btn => {
     btn.addEventListener('click', function () {
@@ -245,11 +252,23 @@ customText.addEventListener('mousedown', function (e) {
     }
 });
 
+customText.addEventListener('touchstart', function (e) {
+    if (e.target.closest('.inline-logo')) {
+        const logo = e.target.closest('.inline-logo');
+        const range = document.createRange();
+        range.setStartAfter(logo);
+        range.collapse(true);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+}, {passive: true});
+
 
 // ============================================
 // ОСНОВНАЯ ФУНКЦИЯ ОТРИСОВКИ
 // ============================================
-function drawPlate() {
+async function drawPlateImmediate() {
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // Рисуем фоны
@@ -293,7 +312,7 @@ function drawPlate() {
         );
     } else {
         const isBold = document.getElementById('textWeightBold').checked;
-        drawBackSide(
+        await drawBackSide(
             getCustomTextFragments(),
             parseInt(textSize.value),
             isBold ? 'bold' : 'normal',
@@ -309,10 +328,22 @@ function drawPlate() {
     }
 }
 
+let drawPlateSeq = 0;
+async function drawPlate() {
+    const seq = ++drawPlateSeq;
+    await new Promise(r => requestAnimationFrame(r));
+    if (seq !== drawPlateSeq) return;
+    await drawPlateImmediate();
+}
+
 // ============================================
 // ЗАГРУЗКА ШРИФТА
 // ============================================
+let fontLoaded = false;
+
 function loadCustomFont() {
+    if (fontLoaded) return Promise.resolve();
+
     return new Promise((resolve) => {
         const style = document.createElement('style');
         style.textContent = `
@@ -321,27 +352,96 @@ function loadCustomFont() {
                 src: url('fonts/gibdd-font.ttf') format('truetype');
                 font-weight: bold;
                 font-style: normal;
-                font-display: block;
+                font-display: swap;
             }
         `;
         document.head.appendChild(style);
 
+        const timeout = setTimeout(() => {
+            fontLoaded = true;
+            resolve();
+        }, 800);
+
         if (document.fonts && document.fonts.load) {
             const testString = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             document.fonts.load(`bold 160px 'GibddFont', 'Arial Black'`, testString)
-                .then(() => resolve())
-                .catch(() => setTimeout(resolve, 300));
+                .then(() => {
+                    clearTimeout(timeout);
+                    fontLoaded = true;
+                    resolve();
+                })
+                .catch(() => {
+                    clearTimeout(timeout);
+                    fontLoaded = true;
+                    resolve();
+                });
         } else {
-            setTimeout(resolve, 300);
+            clearTimeout(timeout);
+            fontLoaded = true;
+            resolve();
         }
-
-        setTimeout(resolve, 1000);
     });
 }
 
 // ============================================
 // ИНИЦИАЛИЗАЦИЯ
 // ============================================
+function initEmojiTabs() {
+    const tabs = document.querySelectorAll('.emoji-tab');
+    const gridContainer = document.getElementById('emojiGridContainer');
+
+    if (!tabs.length || !gridContainer) return;
+
+    function renderEmojiGrid(category) {
+        const emojis = EMOJI_CATEGORIES[category] || [];
+        gridContainer.innerHTML = `
+            <div class="emoji-grid">
+                ${emojis.map(emoji => `
+                    <button class="emoji-btn" data-emoji="${emoji}">${emoji}</button>
+                `).join('')}
+            </div>
+        `;
+
+        gridContainer.querySelectorAll('.emoji-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const emoji = this.dataset.emoji;
+                const target = document.getElementById('customText');
+                if (!target) return;
+
+                const selection = window.getSelection();
+
+                if (selection.rangeCount === 0 || !target.contains(selection.anchorNode)) {
+                    const textNode = document.createTextNode(emoji);
+                    target.appendChild(textNode);
+                } else {
+                    const range = selection.getRangeAt(0);
+                    const textNode = document.createTextNode(emoji);
+                    range.insertNode(textNode);
+                    range.setStartAfter(textNode);
+                    range.collapse(true);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                }
+
+                drawPlate();
+            });
+        });
+    }
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            renderEmojiGrid(tab.dataset.category);
+        });
+    });
+
+    if (tabs[0]) {
+        tabs[0].classList.add('active');
+        renderEmojiGrid(tabs[0].dataset.category);
+    }
+}
+
 async function initializeWithFont() {
     console.log('Загружаем шрифт...');
 
@@ -360,85 +460,28 @@ async function initializeWithFont() {
         // Настраиваем контекст для логотипов
         setLogoContext(canvas, ctx, () => currentSide, drawPlate);
 
+        // Инициализируем табы для смайликов (независимо от логотипов)
+        initEmojiTabs();
+
         // Создаем и добавляем панель логотипов
         const emojiPanel = document.querySelector('.emoji-panel');
         if (emojiPanel) {
-            const logoPanel = await createLogoPanel();
-            emojiPanel.insertAdjacentElement('afterend', logoPanel);
-        }
-
-        // Инициализируем табы для смайликов
-        function initEmojiTabs() {
-            const tabs = document.querySelectorAll('.emoji-tab');
-            const gridContainer = document.getElementById('emojiGridContainer');
-
-            if (!tabs.length || !gridContainer) return;
-
-            function renderEmojiGrid(category) {
-                const emojis = EMOJI_CATEGORIES[category] || [];
-                gridContainer.innerHTML = `
-            <div class="emoji-grid">
-                ${emojis.map(emoji => `
-                    <button class="emoji-btn" data-emoji="${emoji}">${emoji}</button>
-                `).join('')}
-            </div>
-        `;
-
-                // ✅ Вешаем обработчики на новые кнопки
-                gridContainer.querySelectorAll('.emoji-btn').forEach(btn => {
-                    btn.addEventListener('click', function () {
-                        const emoji = this.dataset.emoji;
-                        const customText = document.getElementById('customText');
-                        if (!customText) return;
-
-                        const selection = window.getSelection();
-
-                        if (selection.rangeCount === 0 || !customText.contains(selection.anchorNode)) {
-                            const textNode = document.createTextNode(emoji);
-                            customText.appendChild(textNode);
-                        } else {
-                            const range = selection.getRangeAt(0);
-                            const textNode = document.createTextNode(emoji);
-                            range.insertNode(textNode);
-                            range.setStartAfter(textNode);
-                            range.collapse(true);
-                            selection.removeAllRanges();
-                            selection.addRange(range);
-                        }
-
-                        drawPlate();
-                    });
-                });
-            }
-
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    renderEmojiGrid(tab.dataset.category);
-                });
-            });
-
-            if (tabs[0]) {
-                tabs[0].classList.add('active');
-                renderEmojiGrid(tabs[0].dataset.category);
+            try {
+                const logoPanel = await createLogoPanel();
+                emojiPanel.insertAdjacentElement('afterend', logoPanel);
+            } catch (e) {
+                console.warn('Ошибка загрузки логотипов:', e);
             }
         }
-
-        // Вызвать после создания панели логотипов
-        initEmojiTabs();
 
         // Первая отрисовка
-        drawPlate();
-
-        // Повторные отрисовки для гарантии
-        setTimeout(drawPlate, 200);
-        setTimeout(drawPlate, 500);
+        drawPlateImmediate();
 
     } catch (e) {
         console.error('Ошибка загрузки шрифта:', e);
         setSettingsCallbacks(settings, saveSettings, drawPlate);
         createSettingsPanel();
+        initEmojiTabs();
         drawPlate();
     }
 }
@@ -448,117 +491,45 @@ async function initializeWithFont() {
 // ============================================
 
 let isKeyboardOpen = false;
-let originalViewportHeight = window.innerHeight;
 let keyboardScrollTimer = null;
 
-// Функция для определения открытия клавиатуры
-function detectKeyboard() {
-    const currentHeight = window.innerHeight;
-    const heightDiff = originalViewportHeight - currentHeight;
-
-    // Если высота уменьшилась более чем на 150px - скорее всего клавиатура
-    if (heightDiff > 150 && !isKeyboardOpen) {
-        isKeyboardOpen = true;
+function setKeyboardState(open) {
+    if (isKeyboardOpen === open) return;
+    isKeyboardOpen = open;
+    if (open) {
         document.body.classList.add('keyboard-open');
-
-        // Плавно скроллим к preview
         clearTimeout(keyboardScrollTimer);
         keyboardScrollTimer = setTimeout(() => {
-            document.querySelector('.preview-area').scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
+            const preview = document.querySelector('.preview-area');
+            if (preview) preview.scrollIntoView({behavior: 'smooth', block: 'start'});
         }, 100);
-    }
-
-    // Если высота вернулась - клавиатура закрылась
-    else if (heightDiff <= 150 && isKeyboardOpen) {
-        isKeyboardOpen = false;
+    } else {
         document.body.classList.remove('keyboard-open');
     }
 }
 
-// Слушаем resize с задержкой
-let resizeTimer;
-window.addEventListener('resize', () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(detectKeyboard, 100);
-});
-
-// Для полей ввода
-const inputs = [
-    document.getElementById('plateNumber'),
-    document.getElementById('plateRegion'),
-    document.getElementById('customText')
-];
-
-inputs.forEach(input => {
-    if (!input) return;
-
-    input.addEventListener('focus', () => {
-        // Если на мобилке - ждем появления клавиатуры
-        if (window.innerWidth <= 768) {
-            setTimeout(() => {
-                detectKeyboard();
-            }, 300);
-        }
+// Visual Viewport API (iOS Safari 13+)
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+        const ratio = window.visualViewport.height / window.screen.height;
+        setKeyboardState(ratio < 0.6);
     });
-
-    input.addEventListener('blur', () => {
-        // Даем время на закрытие клавиатуры
+} else {
+    // Fallback: resize event
+    let originalViewportHeight = window.innerHeight;
+    window.addEventListener('resize', () => {
+        const heightDiff = originalViewportHeight - window.innerHeight;
+        setKeyboardState(heightDiff > 150);
+    });
+    window.addEventListener('orientationchange', () => {
         setTimeout(() => {
-            detectKeyboard();
-        }, 300);
+            originalViewportHeight = window.innerHeight;
+            setKeyboardState(false);
+        }, 200);
     });
-});
-
-// Сохраняем оригинальную высоту при повороте экрана
-window.addEventListener('orientationchange', () => {
-    setTimeout(() => {
-        originalViewportHeight = window.innerHeight;
-        isKeyboardOpen = false;
-        document.body.classList.remove('keyboard-open');
-    }, 100);
-});
+}
 
 // Настраиваем кнопку скачивания
-// setupDownloadButton(
-//     downloadBtn,
-//     canvas,
-//     () => currentSide,
-//     () => numberInput.value,
-//     () => regionInput.value,
-//     (tempCtx) => { // Функция для рисования передней стороны
-//         const originalCtx = ctx;
-//         setDrawingContext(tempCtx);
-//         setFrontContext(tempCtx, settings);
-//         drawFrontSide(
-//             numberInput.value,
-//             regionInput.value,
-//             CANVAS_WIDTH,
-//             CANVAS_HEIGHT
-//         );
-//         setDrawingContext(originalCtx);
-//         setFrontContext(originalCtx, settings);
-//     },
-//     (tempCtx) => { // Функция для рисования задней стороны
-//         const originalCtx = ctx;
-//         setDrawingContext(tempCtx);
-//         setBackContext(tempCtx, settings);
-//         const isBold = document.getElementById('textWeightBold').checked;
-//         drawBackSide(
-//             customText.value,
-//             parseInt(textSize.value),
-//             isBold ? 'bold' : 'normal',
-//             textColor.value,
-//             CANVAS_WIDTH,
-//             CANVAS_HEIGHT
-//         );
-//         setDrawingContext(originalCtx);
-//         setBackContext(originalCtx, settings);
-//     }
-// );
-
 setupDownloadButton(canvas, () => numberInput.value, () => regionInput.value);
 
 
@@ -581,4 +552,4 @@ window.addEventListener('beforeunload', function () {
     }
 });
 
-window.addEventListener('load', drawPlate);
+window.addEventListener('load', drawPlateImmediate);
