@@ -192,19 +192,6 @@
         border-color: #a0b0ff;
     }
 
-    .checkbox-custom {
-        background: #3a3a4a;
-        border-color: #4a4a5a;
-    }
-
-    .checkbox-text {
-        color: #e0e0e0;
-    }
-
-    .checkbox-label:hover .checkbox-custom {
-        border-color: #a0b0ff;
-    }
-
     .logo-panel {
         background: #2a2a3a;
         border-color: #4a4a5a;

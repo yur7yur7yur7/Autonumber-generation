@@ -281,9 +281,6 @@ h1 {
 }
 
 
-.preview-area {
-    order: 1;
-}
 /* Поле ввода текста внутри preview (задняя сторона) */
 .back-text-input {
     margin-top: 12px;
@@ -319,27 +316,6 @@ h1 {
     color: #aaa;
 }
 
-.side-tabs {
-    order: 2;
-}
-
-.side-content.active {
-    order: 3;
-}
-
-.actions {
-    order: 4;
-}
-
-.settings-panel {
-    order: 5;
-}
-
-.instruction {
-    order: 6;
-}
-
-
 .show-settings-btn {
     width: 100%;
     padding: 15px 40px;
@@ -374,57 +350,6 @@ h1 {
     cursor: not-allowed;
     transform: none !important;
     animation: pulse 1.5s ease-in-out infinite;
-}
-
-/* Стили для чекбокса "Жирный текст" */
-.checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    user-select: none;
-    padding: 5px 0;
-}
-
-.checkbox-label input[type="checkbox"] {
-    display: none;
-}
-
-.checkbox-custom {
-    width: 24px;
-    height: 24px;
-    border: 2px solid #e0e0e0;
-    border-radius: 6px;
-    background: white;
-    position: relative;
-    transition: all 0.2s;
-}
-
-.checkbox-label input[type="checkbox"]:checked + .checkbox-custom {
-    background: #667eea;
-    border-color: #667eea;
-}
-
-.checkbox-label input[type="checkbox"]:checked + .checkbox-custom::after {
-    content: '✓';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: white;
-    font-size: 16px;
-    font-weight: bold;
-}
-
-.checkbox-label:hover .checkbox-custom {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.checkbox-text {
-    font-size: 16px;
-    color: #333;
-    font-weight: 500;
 }
 
 /* Кнопка скачивания обеих сторон */

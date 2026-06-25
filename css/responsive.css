@@ -352,9 +352,14 @@
         animation: slideDown 0.3s;
     }
 
+    .keyboard-open #previewCanvas {
+        max-width: 100%;
+        height: auto;
+    }
+
     /* Добавляем отступ для контента под фиксированным preview */
     .keyboard-open .container {
-        padding-top: calc(252px * 500 / 1224 + 50px);
+        padding-top: 160px;
     }
 
     @keyframes slideDown {
@@ -401,6 +406,13 @@
 
     h1 {
         font-size: 20px;
+    }
+
+    .back-text-input .custom-text-input {
+        font-size: 14px;
+        padding: 8px 10px;
+        min-height: 36px;
+        max-height: 80px;
     }
 
     .logo-grid {
@@ -546,6 +558,13 @@
 
     .flag-toggle input:checked + .toggle-slider:before {
         left: 23px;
+    }
+
+    /* Плавный скролл на iOS */
+    .emoji-grid,
+    .logo-grid,
+    .font-dropdown {
+        -webkit-overflow-scrolling: touch;
     }
 
 }

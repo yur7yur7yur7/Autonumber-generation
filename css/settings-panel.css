@@ -265,30 +265,6 @@
     box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
 }
 
-/* Управление порядком элементов */
-.container {
-    display: flex;
-    flex-direction: column;
-}
-
-.preview-area {
-    order: 1;  /* канва первая */
-}
-
-.actions {
-    order: 2;  /* кнопка скачивания и показа настроек */
-}
-
-.settings-panel {
-    order: 3;  /* панель настроек после кнопки */
-}
-
-.instruction {
-    order: 4;  /* инструкция в самом низу */
-}
-
-
-
 /* Кастомный селект шрифта */
 .custom-font-select {
     position: relative;
