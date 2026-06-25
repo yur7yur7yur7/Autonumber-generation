@@ -235,6 +235,19 @@ export function createSettingsPanel() {
             if (drawCallback) drawCallback();
             if (saveCallback) saveCallback();
         });
+
+        // Предотвращаем изменение значения слайдера при вертикальной прокрутке
+        let touchStartY = 0;
+        slider.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        slider.addEventListener('touchmove', (e) => {
+            const deltaY = Math.abs(e.touches[0].clientY - touchStartY);
+            if (deltaY > 5) {
+                slider.blur();
+            }
+        }, { passive: true });
     });
 
 
@@ -252,8 +265,16 @@ export function createSettingsPanel() {
 
     // Начальное состояние
     const flagCheckbox = document.getElementById('showFlagCheckbox');
-    if (flagCheckbox && !flagCheckbox.checked) {
-        updateFlagSettings(false);
+    if (flagCheckbox) {
+        flagCheckbox.addEventListener('change', function () {
+            settings.showFlag = this.checked;
+            updateFlagSettings(this.checked);
+            if (drawCallback) drawCallback();
+            if (saveCallback) saveCallback();
+        });
+        if (!flagCheckbox.checked) {
+            updateFlagSettings(false);
+        }
     }
 
     // Кнопка сброса настроек номера

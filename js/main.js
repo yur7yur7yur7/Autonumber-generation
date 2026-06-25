@@ -132,6 +132,19 @@ textSize.addEventListener('input', function () {
     drawPlate();
 });
 
+// Предотвращаем изменение textSize при вертикальной прокрутке
+{
+    let touchStartY = 0;
+    textSize.addEventListener('touchstart', (e) => {
+        touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    textSize.addEventListener('touchmove', (e) => {
+        if (Math.abs(e.touches[0].clientY - touchStartY) > 5) {
+            textSize.blur();
+        }
+    }, { passive: true });
+}
+
 // ============================================
 // СЛУШАТЕЛИ ИЗМЕНЕНИЙ
 // ============================================
@@ -491,20 +504,39 @@ async function initializeWithFont() {
 // ============================================
 
 let isKeyboardOpen = false;
-let keyboardScrollTimer = null;
 
 function setKeyboardState(open) {
     if (isKeyboardOpen === open) return;
     isKeyboardOpen = open;
+    const preview = document.querySelector('.preview-area');
     if (open) {
         document.body.classList.add('keyboard-open');
-        clearTimeout(keyboardScrollTimer);
-        keyboardScrollTimer = setTimeout(() => {
-            const preview = document.querySelector('.preview-area');
-            if (preview) preview.scrollIntoView({behavior: 'smooth', block: 'start'});
-        }, 100);
+        if (preview) {
+            preview.scrollIntoView({behavior: 'smooth', block: 'start'});
+        }
     } else {
         document.body.classList.remove('keyboard-open');
+        if (preview) {
+            preview.style.position = '';
+            preview.style.top = '';
+            preview.style.left = '';
+            preview.style.transform = '';
+            preview.style.width = '';
+        }
+    }
+}
+
+function updateKeyboardPreview() {
+    const preview = document.querySelector('.preview-area');
+    if (!preview || !isKeyboardOpen) return;
+
+    if (window.visualViewport) {
+        const top = Math.max(4, window.visualViewport.offsetTop);
+        preview.style.top = top + 'px';
+        preview.style.position = 'fixed';
+        preview.style.left = '50%';
+        preview.style.transform = 'translateX(-50%)';
+        preview.style.width = `min(calc(100% - 30px), 400px)`;
     }
 }
 
@@ -513,9 +545,10 @@ if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', () => {
         const ratio = window.visualViewport.height / window.screen.height;
         setKeyboardState(ratio < 0.6);
+        updateKeyboardPreview();
     });
+    window.visualViewport.addEventListener('scroll', updateKeyboardPreview);
 } else {
-    // Fallback: resize event
     let originalViewportHeight = window.innerHeight;
     window.addEventListener('resize', () => {
         const heightDiff = originalViewportHeight - window.innerHeight;
