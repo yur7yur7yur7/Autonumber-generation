@@ -132,17 +132,28 @@ textSize.addEventListener('input', function () {
     drawPlate();
 });
 
-// Предотвращаем изменение textSize при вертикальной прокрутке
+// Кастомная обработка касаний для textSize (только горизонтальный жест)
 {
-    let touchStartY = 0;
+    let startX = 0, startValue = 0, active = false;
     textSize.addEventListener('touchstart', (e) => {
-        touchStartY = e.touches[0].clientY;
+        active = true;
+        startX = e.touches[0].clientX;
+        startValue = parseFloat(textSize.value);
     }, { passive: true });
     textSize.addEventListener('touchmove', (e) => {
-        if (Math.abs(e.touches[0].clientY - touchStartY) > 5) {
-            textSize.blur();
-        }
+        if (!active) return;
+        const dx = e.touches[0].clientX - startX;
+        const rect = textSize.getBoundingClientRect();
+        const range = parseFloat(textSize.max) - parseFloat(textSize.min);
+        let newValue = startValue + (dx / rect.width) * range;
+        newValue = Math.round(newValue);
+        newValue = Math.max(parseFloat(textSize.min), Math.min(parseFloat(textSize.max), newValue));
+        textSize.value = newValue;
+        textSizeValue.textContent = newValue;
+        drawPlate();
     }, { passive: true });
+    textSize.addEventListener('touchend', () => { active = false; }, { passive: true });
+    textSize.addEventListener('touchcancel', () => { active = false; }, { passive: true });
 }
 
 // ============================================
@@ -275,6 +286,32 @@ customText.addEventListener('beforeinput', function (e) {
             drawPlate();
         }
     }
+});
+
+// Тап по логотипу в тексте — удаление (надёжный способ для мобильных)
+customText.addEventListener('click', function (e) {
+    const logo = e.target.closest('.inline-logo');
+    if (!logo) return;
+
+    e.preventDefault();
+
+    if (logo.classList.contains('logo-selected')) {
+        logo.remove();
+        drawPlate();
+        return;
+    }
+
+    customText.querySelectorAll('.inline-logo.logo-selected').forEach(l => {
+        l.classList.remove('logo-selected');
+    });
+    logo.classList.add('logo-selected');
+
+    setTimeout(() => {
+        if (logo.classList.contains('logo-selected')) {
+            logo.remove();
+            drawPlate();
+        }
+    }, 1500);
 });
 
 // Защита логотипов от редактирования

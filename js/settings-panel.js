@@ -4,6 +4,34 @@
 
 import { DEFAULT_SETTINGS, AVAILABLE_FONTS } from './config.js';
 
+function setupSliderTouch(slider) {
+    let startX = 0;
+    let startValue = 0;
+    let active = false;
+
+    slider.addEventListener('touchstart', (e) => {
+        active = true;
+        startX = e.touches[0].clientX;
+        startValue = parseFloat(slider.value);
+    }, { passive: true });
+
+    slider.addEventListener('touchmove', (e) => {
+        if (!active) return;
+        const dx = e.touches[0].clientX - startX;
+        const rect = slider.getBoundingClientRect();
+        const range = parseFloat(slider.max) - parseFloat(slider.min);
+        const step = parseFloat(slider.step) || 1;
+        let newValue = startValue + (dx / rect.width) * range;
+        newValue = Math.round(newValue / step) * step;
+        newValue = Math.max(parseFloat(slider.min), Math.min(parseFloat(slider.max), newValue));
+        slider.value = newValue;
+        slider.dispatchEvent(new Event('input'));
+    }, { passive: true });
+
+    slider.addEventListener('touchend', () => { active = false; }, { passive: true });
+    slider.addEventListener('touchcancel', () => { active = false; }, { passive: true });
+}
+
 function createFontSelector(selectedFont) {
     const container = document.createElement('div');
     container.className = 'custom-font-select';
@@ -236,18 +264,8 @@ export function createSettingsPanel() {
             if (saveCallback) saveCallback();
         });
 
-        // Предотвращаем изменение значения слайдера при вертикальной прокрутке
-        let touchStartY = 0;
-        slider.addEventListener('touchstart', (e) => {
-            touchStartY = e.touches[0].clientY;
-        }, { passive: true });
-
-        slider.addEventListener('touchmove', (e) => {
-            const deltaY = Math.abs(e.touches[0].clientY - touchStartY);
-            if (deltaY > 5) {
-                slider.blur();
-            }
-        }, { passive: true });
+        // Кастомная обработка касаний: только горизонтальный жест
+        setupSliderTouch(slider);
     });
 
 
