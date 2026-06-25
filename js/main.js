@@ -219,34 +219,60 @@ function getCustomTextFragments() {
     return fragments;
 }
 
-// Backspace/Delete для удаления логотипов
+// Удаление логотипов (keydown для десктопа + beforeinput для мобильных)
 customText.addEventListener('keydown', function (e) {
     const selection = window.getSelection();
     if (!selection.rangeCount) return;
 
     const range = selection.getRangeAt(0);
 
-    if (e.key === 'Backspace') {
-        if (range.collapsed && range.startOffset === 0) {
-            const node = range.startContainer;
-            if (node.previousSibling && node.previousSibling.classList &&
-                node.previousSibling.classList.contains('inline-logo')) {
-                e.preventDefault();
-                node.previousSibling.remove();
-                drawPlate();
-            }
+    if (e.key === 'Backspace' && range.collapsed && range.startOffset === 0) {
+        const node = range.startContainer;
+        if (node.previousSibling && node.previousSibling.classList &&
+            node.previousSibling.classList.contains('inline-logo')) {
+            e.preventDefault();
+            node.previousSibling.remove();
+            drawPlate();
         }
     }
 
-    if (e.key === 'Delete') {
-        if (range.collapsed && range.startOffset === range.startContainer.length) {
-            const node = range.startContainer;
-            if (node.nextSibling && node.nextSibling.classList &&
-                node.nextSibling.classList.contains('inline-logo')) {
-                e.preventDefault();
-                node.nextSibling.remove();
-                drawPlate();
-            }
+    if (e.key === 'Delete' && range.collapsed && range.startOffset === range.startContainer.length) {
+        const node = range.startContainer;
+        if (node.nextSibling && node.nextSibling.classList &&
+            node.nextSibling.classList.contains('inline-logo')) {
+            e.preventDefault();
+            node.nextSibling.remove();
+            drawPlate();
+        }
+    }
+});
+
+customText.addEventListener('beforeinput', function (e) {
+    if (e.inputType !== 'deleteContentBackward' && e.inputType !== 'deleteContentForward') return;
+
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    if (!range.collapsed) return;
+
+    if (e.inputType === 'deleteContentBackward' && range.startOffset === 0) {
+        const node = range.startContainer;
+        const prev = node.previousSibling;
+        if (prev && prev.classList && prev.classList.contains('inline-logo')) {
+            e.preventDefault();
+            prev.remove();
+            drawPlate();
+        }
+    }
+
+    if (e.inputType === 'deleteContentForward') {
+        const node = range.startContainer;
+        const next = node.nextSibling;
+        if (next && next.classList && next.classList.contains('inline-logo')) {
+            e.preventDefault();
+            next.remove();
+            drawPlate();
         }
     }
 });
