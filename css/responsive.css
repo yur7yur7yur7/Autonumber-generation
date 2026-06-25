@@ -343,11 +343,9 @@
     /* Когда клавиатура открыта - делаем preview фиксированным */
     .keyboard-open .preview-area {
         position: fixed;
-        top: 5px;
         left: 50%;
         transform: translateX(-50%);
-        width: calc(100% - 30px);
-        max-width: 400px;
+        width: min(calc(100% - 30px), 400px);
         box-shadow: 0 8px 20px rgba(0,0,0,0.2);
         animation: slideDown 0.3s;
     }
@@ -359,7 +357,7 @@
 
     /* Добавляем отступ для контента под фиксированным preview */
     .keyboard-open .container {
-        padding-top: 160px;
+        padding-top: 180px;
     }
 
     @keyframes slideDown {
