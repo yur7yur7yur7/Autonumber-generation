@@ -312,14 +312,10 @@
 .logo-search-container {
     margin-bottom: 12px;
     position: sticky;
-    top: -15px;
+    top: 0;
     z-index: 10;
     background: #f8f9fa;
     padding: 4px 0 8px 0;
-    margin-left: -15px;
-    margin-right: -15px;
-    padding-left: 15px;
-    padding-right: 15px;
 }
 
 .logo-search-container.pinned {
@@ -364,12 +360,8 @@
     padding: 4px;
     border-radius: 25px;
     position: sticky;
-    top: 36px;
+    top: 40px;
     z-index: 9;
-    margin-left: -15px;
-    margin-right: -15px;
-    padding-left: 19px;
-    padding-right: 19px;
 }
 
 .logo-filter-btn {
@@ -426,7 +418,7 @@
     margin-bottom: 8px;
     padding-left: 6px;
     position: sticky;
-    top: 76px;
+    top: 80px;
     background: #f8f9fa;
     z-index: 2;
     padding-top: 6px;
