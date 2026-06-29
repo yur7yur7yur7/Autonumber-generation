@@ -103,7 +103,6 @@
 
     /* Логотипы */
     .logo-grid {
-        max-height: 450px;
         gap: 6px;
     }
 
@@ -379,6 +378,22 @@
         display: flex;
     }
 
+    .keyboard-open .logo-panel {
+        max-height: 400px;
+    }
+
+    .keyboard-open .logo-search-container {
+        position: sticky;
+        top: -15px;
+        z-index: 10;
+    }
+
+    .keyboard-open .logo-filter-tabs {
+        position: sticky;
+        top: 36px;
+        z-index: 9;
+    }
+
     .back-text-input .custom-text-input {
         font-size: 14px;
         padding: 8px 10px;
@@ -428,8 +443,31 @@
         max-height: 80px;
     }
 
+    .logo-panel {
+        max-height: 500px;
+    }
+
+    .logo-search-container {
+        top: -15px;
+        margin-left: -15px;
+        margin-right: -15px;
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .logo-filter-tabs {
+        top: 36px;
+        margin-left: -15px;
+        margin-right: -15px;
+        padding-left: 19px;
+        padding-right: 19px;
+    }
+
+    .logo-brand-title {
+        top: 76px;
+    }
+
     .logo-grid {
-        max-height: 400px;
     }
 
     .logo-brand-grid {

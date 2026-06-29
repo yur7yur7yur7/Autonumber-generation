@@ -9,7 +9,16 @@
     top: 20px;
     z-index: 100;
     box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    transition: box-shadow 0.3s;
+    transition: box-shadow 0.3s, padding 0.2s;
+}
+
+.preview-area.back-side {
+    padding: 8px 12px;
+    margin-bottom: 12px;
+}
+
+.preview-area.back-side canvas {
+    border-radius: 6px;
 }
 
 .preview-area:hover {

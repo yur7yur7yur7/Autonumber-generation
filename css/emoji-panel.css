@@ -154,6 +154,8 @@
     padding: 15px;
     margin: 20px 0;
     border: 2px solid #e0e0e0;
+    max-height: 600px;
+    overflow-y: auto;
 }
 
 .panel-header {
@@ -309,6 +311,27 @@
 
 .logo-search-container {
     margin-bottom: 12px;
+    position: sticky;
+    top: -15px;
+    z-index: 10;
+    background: #f8f9fa;
+    padding: 4px 0 8px 0;
+    margin-left: -15px;
+    margin-right: -15px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.logo-search-container.pinned {
+    position: sticky;
+    left: 0;
+    transform: none;
+    width: 100%;
+    z-index: 10;
+    background: #f8f9fa;
+    padding: 4px 0 8px 0;
+    border-radius: 0;
+    box-shadow: none;
 }
 
 .logo-search-input {
@@ -340,6 +363,13 @@
     background: #f0f0f0;
     padding: 4px;
     border-radius: 25px;
+    position: sticky;
+    top: 36px;
+    z-index: 9;
+    margin-left: -15px;
+    margin-right: -15px;
+    padding-left: 19px;
+    padding-right: 19px;
 }
 
 .logo-filter-btn {
@@ -376,8 +406,6 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-height: 500px;
-    overflow-y: auto;
     padding: 8px 4px;
 }
 
@@ -398,7 +426,7 @@
     margin-bottom: 8px;
     padding-left: 6px;
     position: sticky;
-    top: 0;
+    top: 76px;
     background: #f8f9fa;
     z-index: 2;
     padding-top: 6px;
