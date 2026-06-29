@@ -118,6 +118,12 @@ document.querySelectorAll('.side-btn').forEach(btn => {
             backTextInput.style.display = (side === 'back') ? 'block' : 'none';
         }
 
+        // Уменьшаем preview на задней стороне
+        const previewArea = document.querySelector('.preview-area');
+        if (previewArea) {
+            previewArea.classList.toggle('back-side', side === 'back');
+        }
+
         drawPlate();
         updateSettingsVisibility(side);
     });

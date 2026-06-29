@@ -562,6 +562,7 @@ function getSettingsHTML() {
             </div>
         </div>
     
+        <!--
         <div class="settings-group front-side">
             <div class="settings-group-title">
                 <span>⚙️ Общие настройки</span>
@@ -582,6 +583,7 @@ function getSettingsHTML() {
                 </div>
             </div>
         </div>
+        -->
 
                      <!-- Настройки для задней стороны -->
                     <div class="settings-group back-side" style="display: none;">

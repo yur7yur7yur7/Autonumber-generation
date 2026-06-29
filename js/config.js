@@ -52,7 +52,7 @@ export const DEFAULT_SETTINGS = {
 
     // Скругление углов
     mainBorderRadius: 0,
-    innerBorderRadius: 10,
+    innerBorderRadius: 18,
 
     // Размеры белых прямоугольников
     numberAreaWidth: 522,
