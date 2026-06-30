@@ -339,7 +339,7 @@
         margin-bottom: 15px;
     }
 
-    /* Когда клавиатура открыта - делаем preview фиксированным */
+    /* Когда клавиатура открыта - делаем preview фиксированным миниатюрой */
     .keyboard-open .preview-area {
         position: fixed;
         left: 50%;
@@ -347,16 +347,21 @@
         width: min(calc(100% - 30px), 400px);
         box-shadow: 0 8px 20px rgba(0,0,0,0.2);
         animation: slideDown 0.3s;
+        padding: 8px 12px;
+        margin-bottom: 0;
+        border-radius: 10px;
     }
 
     .keyboard-open #previewCanvas {
         max-width: 100%;
         height: auto;
+        max-height: 45px;
+        border-radius: 6px;
     }
 
     /* Добавляем отступ для контента под фиксированным preview */
     .keyboard-open .container {
-        padding-top: 180px;
+        padding-top: 110px;
     }
 
     @keyframes slideDown {
@@ -379,8 +384,8 @@
     }
 
     .keyboard-open .logo-panel {
-        max-height: 400px;
-        padding-top: 80px;
+        max-height: 450px;
+        padding-top: 10px;
     }
 
     .keyboard-open .logo-search-container {
@@ -391,12 +396,12 @@
 
     .keyboard-open .logo-filter-tabs {
         position: sticky;
-        top: 40px;
+        top: 10px;
         z-index: 9;
     }
 
     .keyboard-open .logo-brand-title {
-        top: 80px;
+        top: 50px;
     }
 
     .back-text-input .custom-text-input {

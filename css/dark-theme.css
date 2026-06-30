@@ -197,6 +197,37 @@
         border-color: #4a4a5a;
     }
 
+    .logo-search-container {
+        background: #2a2a3a;
+    }
+
+    .logo-search-input {
+        background: #3a3a4a;
+        border-color: #4a4a5a;
+        color: #e0e0e0;
+    }
+
+    .logo-search-input::placeholder {
+        color: #888;
+    }
+
+    .logo-filter-tabs {
+        background: #3a3a4a;
+    }
+
+    .logo-filter-btn {
+        color: #b0b0b0;
+    }
+
+    .logo-filter-btn.active {
+        background: #4a4a5a;
+        color: #a0b0ff;
+    }
+
+    .logo-brand-title {
+        background: #2a2a3a;
+    }
+
     .panel-title {
         color: #e0e0e0;
     }
