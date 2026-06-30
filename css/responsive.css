@@ -340,7 +340,7 @@
     }
 
     /* Когда клавиатура открыта - скрываем canvas, поле ввода фиксировано сверху */
-    .keyboard-open .preview-area {
+    .keyboard-open-search .preview-area {
         position: fixed;
         left: 0;
         right: 0;
@@ -355,7 +355,7 @@
         animation: slideDown 0.3s;
     }
 
-    .keyboard-open #previewCanvas {
+    .keyboard-open-search #previewCanvas {
         display: none;
     }
 
@@ -374,7 +374,7 @@
     }
 
     /* Добавляем отступ для контента под фиксированным preview */
-    .keyboard-open .container {
+    .keyboard-open-search .container {
         padding-top: 80px;
     }
 
