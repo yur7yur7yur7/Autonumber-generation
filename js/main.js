@@ -431,7 +431,7 @@ function loadCustomFont() {
         style.textContent = `
             @font-face {
                 font-family: 'GibddFont';
-                src: url('fonts/gibdd-font.ttf') format('truetype');
+                src: url('fonts/frontpanel/gibdd-font.ttf') format('truetype');
                 font-weight: bold;
                 font-style: normal;
                 font-display: swap;
@@ -573,18 +573,28 @@ async function initializeWithFont() {
 // ============================================
 
 let isKeyboardOpen = false;
+let isSearchInputFocused = false;
+
+function isSearchInput(el) {
+    return el && el.classList && el.classList.contains('logo-search-input');
+}
 
 function setKeyboardState(open) {
     if (isKeyboardOpen === open) return;
     isKeyboardOpen = open;
     const preview = document.querySelector('.preview-area');
+    isSearchInputFocused = isSearchInput(document.activeElement);
     if (open) {
         document.body.classList.add('keyboard-open');
+        if (isSearchInputFocused) {
+            document.body.classList.add('keyboard-open-search');
+        }
         if (preview) {
             preview.scrollIntoView({behavior: 'smooth', block: 'start'});
         }
     } else {
         document.body.classList.remove('keyboard-open');
+        document.body.classList.remove('keyboard-open-search');
         if (preview) {
             preview.style.position = '';
             preview.style.top = '';
@@ -599,13 +609,21 @@ function updateKeyboardPreview() {
     const preview = document.querySelector('.preview-area');
     if (!preview || !isKeyboardOpen) return;
 
-    if (window.visualViewport) {
+    isSearchInputFocused = isSearchInput(document.activeElement);
+
+    if (isSearchInputFocused && window.visualViewport) {
         const top = Math.max(4, window.visualViewport.offsetTop);
         preview.style.top = top + 'px';
         preview.style.position = 'fixed';
         preview.style.left = '50%';
         preview.style.transform = 'translateX(-50%)';
         preview.style.width = `min(calc(100% - 30px), 400px)`;
+    } else {
+        preview.style.position = '';
+        preview.style.top = '';
+        preview.style.left = '';
+        preview.style.transform = '';
+        preview.style.width = '';
     }
 }
 

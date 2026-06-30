@@ -167,7 +167,7 @@ export async function createLogoPanel() {
     const grid = document.createElement('div');
     grid.className = 'logo-grid';
     grid.id = 'logoGrid';
-    grid.innerHTML = '<div class="loading-logos">Загрузка логотипов...</div>';
+    grid.innerHTML = `<div class="loading-logos"><div class="loading-spinner"></div><p>Загрузка логотипов, пожалуйста, подождите...</p></div>`;
 
     panel.appendChild(header);
     panel.appendChild(searchContainer);
@@ -189,6 +189,16 @@ export async function createLogoPanel() {
         renderLogoGrid(grid, currentFilter, searchQuery);
     });
 
+    searchInput.addEventListener('focus', () => {
+        if (isKeyboardOpen) {
+            document.body.classList.add('keyboard-open-search');
+        }
+    });
+
+    searchInput.addEventListener('blur', () => {
+        document.body.classList.remove('keyboard-open-search');
+    });
+
     filterBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             filterBtns.forEach(b => b.classList.remove('active'));
@@ -206,7 +216,7 @@ export async function createLogoPanel() {
  */
 async function loadManifestAndRender(grid) {
     try {
-        grid.innerHTML = '<div class="loading-logos">⏳ Загрузка логотипов...</div>';
+        grid.innerHTML = `<div class="loading-logos"><div class="loading-spinner"></div><p>⏳ Загрузка манифеста...</p></div>`;
 
         const response = await fetch('images/logos/manifest.json');
         if (!response.ok) throw new Error('Манифест не найден');

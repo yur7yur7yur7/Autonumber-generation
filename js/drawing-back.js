@@ -2,9 +2,10 @@
 // ОТРИСОВКА ЗАДНЕЙ СТОРОНЫ (ТЕКСТ + ЛОГОТИПЫ)
 // ============================================
 
-import { CONFIG } from './config.js';
+import { CONFIG, AVAILABLE_FONTS } from './config.js';
 import { drawRoundedRect } from './drawing-utils.js';
 import { parseTextWithLogos, getLogoByFile } from './logos.js';
+import { loadFont } from './font-loader.js';
 
 let ctx = null;
 let settings = {};
@@ -27,6 +28,13 @@ export function setBackContext(context, appSettings) {
 export async function drawBackSide(fragments, fontSize, fontWeight, color, plateWidth, plateHeight) {
     if (!ctx) return;
 
+    // Загружаем шрифт если нужно
+    const fontFamily = settings.backFontFamily || 'Arial, sans-serif';
+    const fontObj = AVAILABLE_FONTS.find(f => f.value === fontFamily);
+    if (fontObj && fontObj.file) {
+        await loadFont(fontObj.name, fontObj.file);
+    }
+
     // Обратная совместимость со строкой
     let parsedFragments = fragments;
     if (typeof fragments === 'string') {
@@ -37,11 +45,11 @@ export async function drawBackSide(fragments, fontSize, fontWeight, color, plate
     }
     const scaledMargin = settings.margin * SCALE_FACTOR;
     const scaledBackTextPadding = (settings.backTextPadding || 0) * SCALE_FACTOR;
+    const scaledBackTextX = (settings.backTextX || 0) * SCALE_FACTOR;
     const scaledBackTextY = (settings.backTextY || 11) * SCALE_FACTOR;
     const lineSpacing = settings.backTextLineSpacing || 1.2;
     const maxWidthPercent = settings.backTextMaxWidth || 1.0;
     const textAlign = settings.backTextAlign || 'center';
-    const fontFamily = settings.backFontFamily || 'Arial, sans-serif';
 
     // УБИРАЕМ dotOffset и contentOffset - они больше не нужны
 
@@ -72,7 +80,7 @@ export async function drawBackSide(fragments, fontSize, fontWeight, color, plate
     const maxLineWidth = availableWidth * maxWidthPercent;
 
     // Стартовая позиция для текста - БЕЗ сдвига
-    const contentStartX = innerX;
+    const contentStartX = innerX + scaledBackTextX;
     const contentWidth = innerWidth;
 
     // Разбиваем на строки с учетом логотипов
@@ -210,8 +218,8 @@ async function drawLine(fragments, innerX, innerWidth, padding, y, textAlign, fo
                 const logoWidth = logoHeight * (logo.width / logo.height);
 
                 ctx.save();
-                // Применяем смещение логотипа по Y
-                ctx.drawImage(logo, x, y - logoHeight/2 + (settings.backLogoY || 0) * SCALE_FACTOR, logoWidth, logoHeight);
+                // Применяем смещение логотипа по X и Y
+                ctx.drawImage(logo, x + (settings.backLogoX || 0) * SCALE_FACTOR, y - logoHeight/2 + (settings.backLogoY || 0) * SCALE_FACTOR, logoWidth, logoHeight);
                 ctx.restore();
 
                 x += logoWidth + 4;

@@ -3,6 +3,7 @@
 // ============================================
 
 import { DEFAULT_SETTINGS, AVAILABLE_FONTS } from './config.js';
+import { loadFont } from './font-loader.js';
 
 function setupSliderTouch(slider) {
     let startX = 0;
@@ -69,7 +70,12 @@ function createFontSelector(selectedFont) {
         option.style.fontFamily = font.value;
         option.textContent = font.name;
 
-        option.addEventListener('click', () => {
+        option.addEventListener('click', async () => {
+            // Загружаем шрифт если нужно
+            if (font.file) {
+                await loadFont(font.name, font.file);
+            }
+
             // Обновляем превью
             preview.style.fontFamily = font.value;
             preview.textContent = font.name;
@@ -299,12 +305,15 @@ export function createSettingsPanel() {
     document.getElementById('resetFrontSettingsBtn').addEventListener('click', function () {
         // Сохраняем текущие настройки текста
         const backSettings = {
+            backTextX: settings.backTextX,
             backTextY: settings.backTextY,
             backTextPadding: settings.backTextPadding,
             backTextLineSpacing: settings.backTextLineSpacing,
             backTextMaxWidth: settings.backTextMaxWidth,
             backTextAlign: settings.backTextAlign,
-            backFontFamily: settings.backFontFamily
+            backFontFamily: settings.backFontFamily,
+            backLogoX: settings.backLogoX,
+            backLogoY: settings.backLogoY
         };
 
         // Сбрасываем ВСЕ настройки к DEFAULT
@@ -333,12 +342,15 @@ export function createSettingsPanel() {
         }
 
         // Возвращаем настройки текста
+        settings.backTextX = backSettings.backTextX;
         settings.backTextY = backSettings.backTextY;
         settings.backTextPadding = backSettings.backTextPadding;
         settings.backTextLineSpacing = backSettings.backTextLineSpacing;
         settings.backTextMaxWidth = backSettings.backTextMaxWidth;
         settings.backTextAlign = backSettings.backTextAlign;
         settings.backFontFamily = backSettings.backFontFamily;
+        settings.backLogoX = backSettings.backLogoX;
+        settings.backLogoY = backSettings.backLogoY;
 
         // Обновляем чекбокс флага
         const flagCheckbox = document.getElementById('showFlagCheckbox');
@@ -371,12 +383,14 @@ export function createSettingsPanel() {
         };
 
         // Сбрасываем только настройки текста
+        settings.backTextX = 0;
         settings.backTextY = 11;
         settings.backTextPadding = 0;
         settings.backTextLineSpacing = 1.2;
         settings.backTextMaxWidth = 1.0;
         settings.backTextAlign = 'center';
         settings.backFontFamily = '"Comic Sans MS", cursive, sans-serif';
+        settings.backLogoX = 0;
         settings.backLogoY = 0;
 
         // Сбрасываем размер текста в интерфейсе
@@ -596,6 +610,10 @@ function getSettingsHTML() {
                                 <div id="fontSelectorContainer"></div>
                             </div>
                                             <div class="setting-item">
+                        <label>Смещение по X: <span class="value backTextX">${settings.backTextX || 0}</span></label>
+                        <input type="range" class="setting-slider" data-setting="backTextX" min="-100" max="100" value="${settings.backTextX || 0}">
+                    </div>
+                    <div class="setting-item">
                         <label>Смещение по Y: <span class="value backTextY">${settings.backTextY || 11}</span></label>
                         <input type="range" class="setting-slider" data-setting="backTextY" min="-100" max="100" value="${settings.backTextY || 11}">
                     </div>
@@ -615,8 +633,12 @@ function getSettingsHTML() {
                         <input type="range" class="setting-slider" data-setting="backTextMaxWidth" min="0.5" max="1" step="0.05" value="${settings.backTextMaxWidth || 1.0}">
                     </div>
                     <div class="setting-item">
+                        <label>Смещение логотипов по X: <span class="value backLogoX">${settings.backLogoX || 0}</span></label>
+                        <input type="range" class="setting-slider" data-setting="backLogoX" min="-400" max="400" value="${settings.backLogoX || 0}">
+                    </div>
+                    <div class="setting-item">
                         <label>Смещение логотипов по Y: <span class="value backLogoY">${settings.backLogoY || 0}</span></label>
-                        <input type="range" class="setting-slider" data-setting="backLogoY" min="-50" max="50" value="${settings.backLogoY || 0}">
+                        <input type="range" class="setting-slider" data-setting="backLogoY" min="-200" max="200" value="${settings.backLogoY || 0}">
                     </div>
                 <!-- В блоке настроек текста, вместо <select> для выравнивания: -->
                 <div class="setting-item">

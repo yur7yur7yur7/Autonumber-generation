@@ -30,7 +30,17 @@ export const AVAILABLE_FONTS = [
     { name: 'Georgia', value: 'Georgia, serif' },
     { name: 'Courier New', value: '"Courier New", monospace' },
     { name: 'Impact', value: 'Impact, Arial, sans-serif' },
-    { name: 'Comic Sans MS', value: '"Comic Sans MS", cursive, sans-serif' }
+    { name: 'Comic Sans MS', value: '"Comic Sans MS", cursive, sans-serif' },
+    { name: 'Noto Sans', value: '"Noto Sans", sans-serif', file: 'fonts/backpanel/NotoSans.woff2' },
+    { name: 'Noto Serif', value: '"Noto Serif", serif', file: 'fonts/backpanel/NotoSerif.woff2' },
+    { name: 'Inter', value: '"Inter", sans-serif', file: 'fonts/backpanel/Inter.woff2' },
+    { name: 'Roboto', value: '"Roboto", sans-serif', file: 'fonts/backpanel/Roboto.woff2' },
+    { name: 'Montserrat', value: '"Montserrat", sans-serif', file: 'fonts/backpanel/Montserrat.woff2' },
+    { name: 'Oswald', value: '"Oswald", sans-serif', file: 'fonts/backpanel/Oswald.woff2' },
+    { name: 'Raleway', value: '"Raleway", sans-serif', file: 'fonts/backpanel/Raleway.woff2' },
+    { name: 'Nunito', value: '"Nunito", sans-serif', file: 'fonts/backpanel/Nunito.woff2' },
+    { name: 'PT Sans', value: '"PT Sans", sans-serif', file: 'fonts/backpanel/PTSans.woff2' },
+    { name: 'Caveat', value: '"Caveat", cursive', file: 'fonts/backpanel/Caveat.woff2' }
 ];
 
 // Настройки по умолчанию
@@ -69,12 +79,14 @@ export const DEFAULT_SETTINGS = {
     margin: 7,
 
     // Настройки для обратной стороны
+    backTextX: 0,
     backTextY: 11,                    // было 0, стало 11
     backTextPadding: 0,                // было 20, стало 0
     backTextLineSpacing: 1.2,          // без изменений
     backTextMaxWidth: 1.0,              // было 0.9, стало 1.0
     backTextAlign: 'center',            // без изменений
     backFontFamily: '"Comic Sans MS", cursive, sans-serif',
+    backLogoX: 0,
     backLogoY: 0,
 
     // Точки по бокам
