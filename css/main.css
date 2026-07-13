@@ -1,0 +1,469 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    position: relative;
+    /* Десктопный фон */
+    background-image: url('../images/back.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+/* Мобильный фон */
+@media (max-width: 768px) {
+    body {
+        background-image: url('../images/back-mobile.png');
+    }
+}
+
+/* Маленькие экраны */
+@media (max-width: 480px) {
+    body {
+        background-image: url('../images/back-mobile-small.png');
+    }
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    z-index: 0;
+}
+
+.container {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    padding: 40px;
+    max-width: 600px;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+h1 {
+    color: #333;
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 28px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+/* Поля ввода */
+.input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+}
+
+.plate-inputs {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+    position: relative;
+}
+
+.plate-inputs input {
+    flex: 1;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 18px;
+    text-transform: uppercase;
+    transition: border-color 0.3s;
+}
+
+.plate-inputs input:first-child {
+    flex: 2;
+}
+
+.plate-inputs input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+#customText {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 18px;
+    transition: border-color 0.3s;
+}
+
+#customText:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+/* Contenteditable поле для текста с логотипами */
+.custom-text-input {
+    width: 100%;
+    min-height: 50px;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 18px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: white;
+    transition: border-color 0.3s;
+    cursor: text;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.8;
+    outline: none;
+}
+
+.custom-text-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.custom-text-input:empty::before {
+    content: attr(placeholder);
+    color: #aaa;
+    pointer-events: none;
+}
+
+.custom-text-input:focus:empty::before {
+    content: attr(placeholder);
+    color: #ccc;
+}
+
+/* Логотип внутри текстового поля */
+.inline-logo {
+    display: inline-block;
+    vertical-align: middle;
+    user-select: none;
+    margin: 0 2px;
+    cursor: default;
+    border-radius: 4px;
+    padding: 2px;
+    transition: background 0.2s;
+}
+
+.inline-logo:hover {
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.inline-logo.logo-selected {
+    background: rgba(220, 38, 38, 0.15);
+    outline: 2px solid #dc2626;
+    outline-offset: 1px;
+    border-radius: 4px;
+}
+
+.inline-logo-canvas {
+    vertical-align: middle;
+    width: 24px;
+    height: 24px;
+    display: inline-block;
+    pointer-events: none;
+}
+
+/* Кнопки */
+.download-btn {
+    background: #48bb78;
+    padding: 15px 40px;
+    font-size: 18px;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.download-btn:hover {
+    background: #38a169;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(72, 187, 120, 0.4);
+}
+
+.download-btn:active {
+    transform: translateY(0);
+}
+
+.download-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none !important;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Инструкция */
+.instruction {
+    background: #f0f9ff;
+    border-left: 4px solid #667eea;
+    padding: 15px;
+    border-radius: 8px;
+    color: #2c3e50;
+    font-size: 14px;
+    margin-top: 20px;
+}
+
+/* Кнопка-ссылка на Telegram в блоке инструкции */
+.telegram-contact {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.telegram-contact:hover,
+.telegram-contact:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.45);
+    filter: brightness(1.05);
+}
+
+.telegram-contact:focus-visible {
+    outline: 3px solid #a0b0ff;
+    outline-offset: 3px;
+}
+
+.telegram-contact:active {
+    transform: scale(0.97);
+}
+
+.telegram-contact__icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.telegram-contact__label {
+    white-space: nowrap;
+}
+
+/* Валидация */
+.validation-message {
+    position: absolute;
+    background: #333;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+    transition: all 0.3s;
+    pointer-events: none;
+    z-index: 1000;
+    white-space: nowrap;
+    bottom: -45px;
+    left: 50%;
+    border: 1px solid rgba(255,255,255,0.1);
+    backdrop-filter: blur(5px);
+}
+
+.validation-message:before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid #333;
+}
+
+.validation-message.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.validation-message.error {
+    background: #dc2626;
+    box-shadow: 0 10px 25px rgba(220, 38, 38, 0.3);
+}
+
+.validation-message.error:before {
+    border-bottom-color: #dc2626;
+}
+
+.validation-message.success {
+    background: #10b981;
+    box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+}
+
+.validation-message.success:before {
+    border-bottom-color: #10b981;
+}
+
+
+/* Поле ввода текста внутри preview (задняя сторона) */
+.back-text-input {
+    margin-top: 12px;
+}
+
+.back-text-input .custom-text-input {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 16px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #fafafa;
+    transition: border-color 0.3s;
+    cursor: text;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.6;
+    outline: none;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.back-text-input .custom-text-input:focus {
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.back-text-input .custom-text-input:empty::before {
+    content: attr(placeholder);
+    color: #aaa;
+}
+
+.logo-hint {
+    font-size: 12px;
+    color: #999;
+    margin-top: 6px;
+    text-align: center;
+}
+
+.show-settings-btn {
+    width: 100%;
+    padding: 15px 40px;
+    font-size: 18px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;  /* или block, но flex для центрирования иконки */
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.show-settings-btn:hover {
+    background: #5a67d8;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.show-settings-btn:active {
+    transform: translateY(0);
+}
+
+.show-settings-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none !important;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Кнопка скачивания обеих сторон */
+.download-both-btn {
+    background: #9f7aea !important;
+    margin-top: 10px;
+}
+
+.download-both-btn:hover {
+    background: #805ad5 !important;
+}
+
+.mobile-keyboard-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 8px;
+    background: #f0f0f0;
+    border-radius: 10px;
+    margin-top: 5px;
+}
+
+.keyboard-done-btn {
+    padding: 8px 16px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+/* Для темной темы */
+@media (prefers-color-scheme: dark) {
+    .show-settings-btn {
+        background: #5a67d8;
+        box-shadow: 0 4px 12px rgba(90, 103, 216, 0.3);
+    }
+
+    .show-settings-btn:hover {
+        background: #4c51bf;
+    }
+
+    .checkbox-custom {
+        background: #3a3a4a;
+        border-color: #4a4a5a;
+    }
+
+    .checkbox-text {
+        color: #e0e0e0;
+    }
+
+    .download-both-btn {
+        background: #805ad5 !important;
+    }
+
+    .download-both-btn:hover {
+        background: #6b46c1 !important;
+    }
+}

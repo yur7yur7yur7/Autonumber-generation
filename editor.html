@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор макета брелка</title>
+
+    <!-- CSS файлы -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/tabs.css">
+    <link rel="stylesheet" href="css/preview.css">
+    <link rel="stylesheet" href="css/preview-overlay.css">
+    <link rel="stylesheet" href="css/emoji-panel.css">
+    <link rel="stylesheet" href="css/settings-panel.css">
+    <link rel="stylesheet" href="css/dark-theme.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+<div class="container">
+    <h1>✨ Создай макет своего брелка ✨</h1>
+
+    <!-- Область предпросмотра - ПЕРВАЯ (всегда сверху) -->
+    <div class="preview-area">
+        <canvas id="previewCanvas" width="1224" height="252"></canvas>
+        <div id="previewOverlay" class="preview-overlay" aria-label="Область перетаскивания элементов"></div>
+        <!-- Поле ввода для задней стороны (показывается только на back) -->
+        <div id="backTextInput" class="back-text-input" style="display: none;">
+            <div id="customText"
+                 class="custom-text-input"
+                 contenteditable="true"
+                 placeholder="Твой текст (например: ✨ BMW ✨)">🚗 МОЯ ТАЧКА 🚗</div>
+            <div class="logo-hint">💡 Нажми на логотип дважды, чтобы удалить его</div>
+        </div>
+    </div>
+
+    <!-- Вкладки для сторон - ВТОРЫЕ -->
+    <div class="side-tabs">
+        <button class="side-btn active" data-side="front">🚗 Передняя сторона (номер)</button>
+        <button class="side-btn" data-side="back">🎨 Задняя сторона (текст)</button>
+    </div>
+
+    <!-- Контент для передней стороны - ТРЕТИЙ -->
+    <div class="side-content active" id="side-front">
+        <p class="subtitle">Введи номер как на машине</p>
+        <div class="input-group">
+            <div class="plate-inputs">
+                <input type="text" id="plateNumber" placeholder="Номер (пример: М123ММ)" value="М123ММ" maxlength="6" autocomplete="off">
+                <input type="text" id="plateRegion" placeholder="Код региона" value="777" maxlength="3" autocomplete="off">
+            </div>
+        </div>
+    </div>
+
+    <!-- Контент для задней стороны - ТРЕТИЙ -->
+    <div class="side-content" id="side-back">
+        <p class="subtitle">Напиши что хочешь на обратной стороне</p>
+
+
+        <div class="mobile-keyboard-toolbar" style="display: none;">
+            <button class="keyboard-done-btn">Готово</button>
+        </div>
+
+        <!-- Быстрые смайлики с табами -->
+        <div class="emoji-panel">
+            <div class="emoji-tabs">
+                <button class="emoji-tab active" data-category="cars">🚗 Машины</button>
+                <button class="emoji-tab" data-category="faces">😀 Смайлы</button>
+                <button class="emoji-tab" data-category="symbols">✨ Символы</button>
+                <button class="emoji-tab" data-category="nature">🌳 Природа</button>
+                <button class="emoji-tab" data-category="food">🍔 Еда</button>
+                <button class="emoji-tab" data-category="flags">🏁 Флаги</button>
+            </div>
+
+            <div class="emoji-content">
+                <!-- Контент будет загружаться через JS -->
+                <div id="emojiGridContainer"></div>
+            </div>
+        </div>
+
+        <!-- Настройки текста -->
+        <div class="text-settings">
+            <div class="setting-item">
+                <label>Размер текста: <span class="value" id="textSizeValue">63</span></label>
+                <input type="range" id="textSize" min="40" max="180" value="63">
+            </div>
+            <div class="setting-item">
+                <label class="flag-toggle" style="justify-content: flex-start; padding: 0;">
+                    <input type="checkbox" id="textWeightBold" checked>
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-label bold">Жирный текст</span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <label>Цвет:</label>
+                <input type="color" id="textColor" value="#000000">
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Кнопки (скачать + показать настройки) -->
+    <div class="actions">
+<!--        <button id="downloadBtn" class="download-btn">⬇ Скачать макет</button>-->
+        <!-- сюда JS добавит кнопку "Показать настройки" -->
+    </div>
+
+    <!-- 5. Панель настроек (появляется после кнопок) -->
+    <!-- сюда JS добавит settings-panel -->
+
+    <!-- 6. Инструкция в самом низу -->
+    <div class="instruction">
+        <p>📌 Как сделать заказ: скачай макет и пришли его мне</p>
+        <a class="telegram-contact"
+           href="https://t.me/dukas666"
+           target="_blank"
+           rel="noopener noreferrer"
+           aria-label="Открыть Telegram @dukas666 в новой вкладке">
+            <svg class="telegram-contact__icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="currentColor" d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.24 3.64 11.95c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/>
+            </svg>
+            <span class="telegram-contact__label">@dukas666 в Telegram</span>
+        </a>
+    </div>
+</div>
+
+<!-- JavaScript файлы (как модули) -->
+<script type="module" src="js/config.js"></script>
+<script type="module" src="js/transliteration.js"></script>
+<script type="module" src="js/validation.js"></script>
+<script type="module" src="js/drawing-utils.js"></script>
+<script type="module" src="js/drawing-front.js"></script>
+<script type="module" src="js/drawing-back.js"></script>
+<script type="module" src="js/settings-panel.js"></script>
+<script type="module" src="js/download.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

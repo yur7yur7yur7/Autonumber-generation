@@ -1,0 +1,902 @@
+{
+  "generated": "2026-05-01T16:36:22.130367",
+  "count": 128,
+  "logos": [
+    {
+      "brand": "audi",
+      "type": "text",
+      "category": "text",
+      "file": "audi_text.png",
+      "label": "Audi (значок + надпись)"
+    },
+    {
+      "brand": "belgee",
+      "type": "badge",
+      "category": "badge",
+      "file": "belgee_badge.png",
+      "label": "Belgee (значок)"
+    },
+    {
+      "brand": "belgee",
+      "type": "text",
+      "category": "text",
+      "file": "belgee_text.png",
+      "label": "Belgee (значок + надпись)"
+    },
+    {
+      "brand": "bentley",
+      "type": "badge",
+      "category": "badge",
+      "file": "bentley_badge.png",
+      "label": "Bentley (значок)"
+    },
+    {
+      "brand": "bmw",
+      "type": "badge",
+      "category": "badge",
+      "file": "bmw_badge.png",
+      "label": "BMW (значок)"
+    },
+    {
+      "brand": "bugatti",
+      "type": "badge",
+      "category": "badge",
+      "file": "bugatti_badge.png",
+      "label": "Bugatti (значок)"
+    },
+    {
+      "brand": "byd",
+      "type": "badge",
+      "category": "badge",
+      "file": "byd_badge.jpg",
+      "label": "BYD (значок)"
+    },
+    {
+      "brand": "byd",
+      "type": "badge",
+      "category": "badge",
+      "file": "byd_badge_2.svg",
+      "label": "BYD (2)"
+    },
+    {
+      "brand": "byd",
+      "type": "badge",
+      "category": "badge",
+      "file": "byd_badge_3.webp",
+      "label": "BYD (3)"
+    },
+    {
+      "brand": "cadillac",
+      "type": "text",
+      "category": "text",
+      "file": "cadillac_text.png",
+      "label": "Cadillac (значок + надпись)"
+    },
+    {
+      "brand": "changan",
+      "type": "text",
+      "category": "text",
+      "file": "changan_text.jpg",
+      "label": "Changan (значок + надпись)"
+    },
+    {
+      "brand": "changan",
+      "type": "text",
+      "category": "text",
+      "file": "changan_text_2.png",
+      "label": "Changan 2"
+    },
+    {
+      "brand": "changan",
+      "type": "text",
+      "category": "text",
+      "file": "changan_text_3.png",
+      "label": "Changan 3"
+    },
+    {
+      "brand": "chery",
+      "type": "text",
+      "category": "text",
+      "file": "chery_text.png",
+      "label": "Chery (значок + надпись)"
+    },
+    {
+      "brand": "chevrolet",
+      "type": "text",
+      "category": "text",
+      "file": "chevrolet_niva_text.png",
+      "label": "Chevrolet niva"
+    },
+    {
+      "brand": "chevrolet",
+      "type": "text",
+      "category": "text",
+      "file": "chevrolet_text.png",
+      "label": "Chevrolet (значок + надпись)"
+    },
+    {
+      "brand": "chrysler",
+      "type": "badge",
+      "category": "badge",
+      "file": "chrysler_badge.png",
+      "label": "Chrysler (значок)"
+    },
+    {
+      "brand": "citroen",
+      "type": "badge",
+      "category": "badge",
+      "file": "citroen_badge.png",
+      "label": "Citroen (значок)"
+    },
+    {
+      "brand": "citroen",
+      "type": "text",
+      "category": "text",
+      "file": "citroen_text.png",
+      "label": "Citroen (значок + надпись)"
+    },
+    {
+      "brand": "dacia",
+      "type": "badge",
+      "category": "badge",
+      "file": "dacia_badge.jpg",
+      "label": "Dacia (значок)"
+    },
+    {
+      "brand": "daewoo",
+      "type": "text",
+      "category": "text",
+      "file": "daewoo_text.png",
+      "label": "Daewoo (значок + надпись)"
+    },
+    {
+      "brand": "daf",
+      "type": "badge",
+      "category": "badge",
+      "file": "daf_badge.png",
+      "label": "Daf (значок)"
+    },
+    {
+      "brand": "datsun",
+      "type": "badge",
+      "category": "badge",
+      "file": "datsun_badge.png",
+      "label": "Datsun (значок)"
+    },
+    {
+      "brand": "dodge",
+      "type": "badge",
+      "category": "badge",
+      "file": "dodge_badge_2.png",
+      "label": "Dodge (2)"
+    },
+    {
+      "brand": "dodge",
+      "type": "text",
+      "category": "text",
+      "file": "dodge_text.png",
+      "label": "Dodge (значок + надпись)"
+    },
+    {
+      "brand": "dongfeng",
+      "type": "badge",
+      "category": "badge",
+      "file": "dongfeng_badge_black.png",
+      "label": "Dongfeng (black)"
+    },
+    {
+      "brand": "dongfeng",
+      "type": "badge",
+      "category": "badge",
+      "file": "dongfeng_badge_red.png",
+      "label": "Dongfeng (red)"
+    },
+    {
+      "brand": "dongfeng",
+      "type": "text",
+      "category": "text",
+      "file": "dongfeng_text.jpg",
+      "label": "Dongfeng (значок + надпись)"
+    },
+    {
+      "brand": "dongfeng",
+      "type": "text",
+      "category": "text",
+      "file": "dongfeng_text_2.png",
+      "label": "Dongfeng 2"
+    },
+    {
+      "brand": "exeed",
+      "type": "badge",
+      "category": "badge",
+      "file": "exeed_badge.jpg",
+      "label": "Exeed (значок)"
+    },
+    {
+      "brand": "faw",
+      "type": "text",
+      "category": "text",
+      "file": "faw_text.png",
+      "label": "FAW (значок + надпись)"
+    },
+    {
+      "brand": "ferrari",
+      "type": "badge",
+      "category": "badge",
+      "file": "ferrari_badge.png",
+      "label": "Ferrari (значок)"
+    },
+    {
+      "brand": "fiat",
+      "type": "badge",
+      "category": "badge",
+      "file": "fiat_badge.png",
+      "label": "Fiat (значок)"
+    },
+    {
+      "brand": "ford",
+      "type": "badge",
+      "category": "badge",
+      "file": "ford_badge.png",
+      "label": "Ford (значок)"
+    },
+    {
+      "brand": "gac",
+      "type": "text",
+      "category": "text",
+      "file": "gac_text.png",
+      "label": "GAC (значок + надпись)"
+    },
+    {
+      "brand": "gaz",
+      "type": "badge",
+      "category": "badge",
+      "file": "gaz_badge_blue.png",
+      "label": "GAZ (blue)"
+    },
+    {
+      "brand": "gaz",
+      "type": "badge",
+      "category": "badge",
+      "file": "gaz_badge_red.png",
+      "label": "GAZ (red)"
+    },
+    {
+      "brand": "gazel",
+      "type": "text",
+      "category": "text",
+      "file": "gazel_next_text.png",
+      "label": "Gazel next"
+    },
+    {
+      "brand": "geely",
+      "type": "badge",
+      "category": "badge",
+      "file": "geely_badge.png",
+      "label": "Geely (значок)"
+    },
+    {
+      "brand": "geely",
+      "type": "badge",
+      "category": "badge",
+      "file": "geely_badge_2.png",
+      "label": "Geely (2)"
+    },
+    {
+      "brand": "geely",
+      "type": "text",
+      "category": "text",
+      "file": "geely_text.png",
+      "label": "Geely (значок + надпись)"
+    },
+    {
+      "brand": "genesis",
+      "type": "badge",
+      "category": "badge",
+      "file": "genesis_badge.png",
+      "label": "Genesis (значок)"
+    },
+    {
+      "brand": "gmc",
+      "type": "badge",
+      "category": "badge",
+      "file": "gmc_badge.png",
+      "label": "GMC (значок)"
+    },
+    {
+      "brand": "great_wall",
+      "type": "badge",
+      "category": "badge",
+      "file": "great_wall_badge.png",
+      "label": "Great wall (значок)"
+    },
+    {
+      "brand": "great_wall",
+      "type": "text",
+      "category": "text",
+      "file": "great_wall_text.png",
+      "label": "Great wall (значок + надпись)"
+    },
+    {
+      "brand": "haval",
+      "type": "badge",
+      "category": "badge",
+      "file": "haval_badge.jpg",
+      "label": "Haval (значок)"
+    },
+    {
+      "brand": "haval",
+      "type": "badge",
+      "category": "badge",
+      "file": "haval_badge.png",
+      "label": "Haval (значок)"
+    },
+    {
+      "brand": "haval",
+      "type": "badge",
+      "category": "badge",
+      "file": "haval_badge_2.png",
+      "label": "Haval (2)"
+    },
+    {
+      "brand": "honda",
+      "type": "text",
+      "category": "text",
+      "file": "honda_text.png",
+      "label": "Honda (значок + надпись)"
+    },
+    {
+      "brand": "hyundai",
+      "type": "badge",
+      "category": "badge",
+      "file": "hyundai_badge_2.jpg",
+      "label": "Hyundai (2)"
+    },
+    {
+      "brand": "hyundai",
+      "type": "badge",
+      "category": "badge",
+      "file": "hyundai_badge_3.png",
+      "label": "Hyundai (3)"
+    },
+    {
+      "brand": "hyundai",
+      "type": "text",
+      "category": "text",
+      "file": "hyundai_text.png",
+      "label": "Hyundai (значок + надпись)"
+    },
+    {
+      "brand": "hyundai",
+      "type": "text",
+      "category": "text",
+      "file": "hyundai_text_2.png",
+      "label": "Hyundai 2"
+    },
+    {
+      "brand": "infiniti",
+      "type": "text",
+      "category": "text",
+      "file": "infiniti_text.png",
+      "label": "Infiniti (значок + надпись)"
+    },
+    {
+      "brand": "jac",
+      "type": "badge",
+      "category": "badge",
+      "file": "jac_badge.png",
+      "label": "JAC (значок)"
+    },
+    {
+      "brand": "jaguar",
+      "type": "badge",
+      "category": "badge",
+      "file": "jaguar_badge.png",
+      "label": "Jaguar (значок)"
+    },
+    {
+      "brand": "jaguar",
+      "type": "badge",
+      "category": "badge",
+      "file": "jaguar_badge_2.png",
+      "label": "Jaguar (2)"
+    },
+    {
+      "brand": "jaguar",
+      "type": "text",
+      "category": "text",
+      "file": "jaguar_text.png",
+      "label": "Jaguar (значок + надпись)"
+    },
+    {
+      "brand": "jeep",
+      "type": "badge",
+      "category": "badge",
+      "file": "jeep_badge.png",
+      "label": "Jeep (значок)"
+    },
+    {
+      "brand": "jetour",
+      "type": "badge",
+      "category": "badge",
+      "file": "jetour_badge.svg",
+      "label": "Jetour (значок)"
+    },
+    {
+      "brand": "kia",
+      "type": "badge",
+      "category": "badge",
+      "file": "kia_badge.jpg",
+      "label": "Kia (значок)"
+    },
+    {
+      "brand": "kia",
+      "type": "badge",
+      "category": "badge",
+      "file": "kia_badge_2.png",
+      "label": "Kia (2)"
+    },
+    {
+      "brand": "kia",
+      "type": "badge",
+      "category": "badge",
+      "file": "kia_badge_3.svg",
+      "label": "Kia (3)"
+    },
+    {
+      "brand": "lada",
+      "type": "badge",
+      "category": "badge",
+      "file": "lada_badge.png",
+      "label": "Lada (значок)"
+    },
+    {
+      "brand": "lada",
+      "type": "badge",
+      "category": "badge",
+      "file": "lada_badge_black.png",
+      "label": "Lada (black)"
+    },
+    {
+      "brand": "lada",
+      "type": "badge",
+      "category": "badge",
+      "file": "lada_badge_gray.png",
+      "label": "Lada (gray)"
+    },
+    {
+      "brand": "lada",
+      "type": "badge",
+      "category": "badge",
+      "file": "lada_badge_red.jpg",
+      "label": "Lada (red)"
+    },
+    {
+      "brand": "lada",
+      "type": "text",
+      "category": "text",
+      "file": "lada_granta_text.png",
+      "label": "Lada granta"
+    },
+    {
+      "brand": "lada",
+      "type": "text",
+      "category": "text",
+      "file": "lada_kalina_text.png",
+      "label": "Lada kalina"
+    },
+    {
+      "brand": "lada",
+      "type": "text",
+      "category": "text",
+      "file": "lada_priora_text.png",
+      "label": "Lada priora"
+    },
+    {
+      "brand": "lada",
+      "type": "text",
+      "category": "text",
+      "file": "lada_priora_text_2.png",
+      "label": "Lada priora 2"
+    },
+    {
+      "brand": "lada",
+      "type": "text",
+      "category": "text",
+      "file": "lada_text.png",
+      "label": "Lada (значок + надпись)"
+    },
+    {
+      "brand": "lada",
+      "type": "text",
+      "category": "text",
+      "file": "lada_vesta_text.png",
+      "label": "Lada vesta"
+    },
+    {
+      "brand": "lamborghini",
+      "type": "badge",
+      "category": "badge",
+      "file": "lamborghini_badge.png",
+      "label": "Lamborghini (значок)"
+    },
+    {
+      "brand": "land_rover",
+      "type": "badge",
+      "category": "badge",
+      "file": "land_rover_badge.png",
+      "label": "Land rover (значок)"
+    },
+    {
+      "brand": "land_rover",
+      "type": "badge",
+      "category": "badge",
+      "file": "land_rover_badge_2.png",
+      "label": "Land rover (2)"
+    },
+    {
+      "brand": "lexus",
+      "type": "badge",
+      "category": "badge",
+      "file": "lexus_badge.png",
+      "label": "Lexus (значок)"
+    },
+    {
+      "brand": "lexus",
+      "type": "text",
+      "category": "text",
+      "file": "lexus_text.png",
+      "label": "Lexus (значок + надпись)"
+    },
+    {
+      "brand": "lifan",
+      "type": "badge",
+      "category": "badge",
+      "file": "lifan_badge_2.jpg",
+      "label": "Lifan (2)"
+    },
+    {
+      "brand": "lifan",
+      "type": "badge",
+      "category": "badge",
+      "file": "lifan_badge_3.png",
+      "label": "Lifan (3)"
+    },
+    {
+      "brand": "lifan",
+      "type": "text",
+      "category": "text",
+      "file": "lifan_text.png",
+      "label": "Lifan (значок + надпись)"
+    },
+    {
+      "brand": "lifan",
+      "type": "text",
+      "category": "text",
+      "file": "lifan_text_2.png",
+      "label": "Lifan 2"
+    },
+    {
+      "brand": "lincoln",
+      "type": "badge",
+      "category": "badge",
+      "file": "lincoln_badge.jpg",
+      "label": "Lincoln (значок)"
+    },
+    {
+      "brand": "man",
+      "type": "badge",
+      "category": "badge",
+      "file": "man_badge.png",
+      "label": "Man (значок)"
+    },
+    {
+      "brand": "mazda",
+      "type": "text",
+      "category": "text",
+      "file": "mazda_text.png",
+      "label": "Mazda (значок + надпись)"
+    },
+    {
+      "brand": "mazda",
+      "type": "text",
+      "category": "text",
+      "file": "mazda_text_2.png",
+      "label": "Mazda 2"
+    },
+    {
+      "brand": "mercedes",
+      "type": "badge",
+      "category": "badge",
+      "file": "mercedes_badge_2.png",
+      "label": "Mercedes (2)"
+    },
+    {
+      "brand": "mercedes",
+      "type": "text",
+      "category": "text",
+      "file": "mercedes_text.png",
+      "label": "Mercedes (значок + надпись)"
+    },
+    {
+      "brand": "mini",
+      "type": "badge",
+      "category": "badge",
+      "file": "mini_badge.jpg",
+      "label": "Mini (значок)"
+    },
+    {
+      "brand": "mini",
+      "type": "badge",
+      "category": "badge",
+      "file": "mini_badge_2.png",
+      "label": "Mini (2)"
+    },
+    {
+      "brand": "mitsubishi",
+      "type": "badge",
+      "category": "badge",
+      "file": "mitsubishi_badge.jpg",
+      "label": "Mitsubishi (значок)"
+    },
+    {
+      "brand": "mitsubishi",
+      "type": "badge",
+      "category": "badge",
+      "file": "mitsubishi_badge_2.png",
+      "label": "Mitsubishi (2)"
+    },
+    {
+      "brand": "mitsubishi",
+      "type": "badge",
+      "category": "badge",
+      "file": "mitsubishi_badge_3.png",
+      "label": "Mitsubishi (3)"
+    },
+    {
+      "brand": "mitsubishi",
+      "type": "text",
+      "category": "text",
+      "file": "mitsubishi_text.png",
+      "label": "Mitsubishi (значок + надпись)"
+    },
+    {
+      "brand": "mitsubishi",
+      "type": "text",
+      "category": "text",
+      "file": "mitsubishi_text_2.png",
+      "label": "Mitsubishi 2"
+    },
+    {
+      "brand": "moskvich",
+      "type": "badge",
+      "category": "badge",
+      "file": "moskvich_badge_black.png",
+      "label": "Moskvich (black)"
+    },
+    {
+      "brand": "moskvich",
+      "type": "badge",
+      "category": "badge",
+      "file": "moskvich_badge_red.svg",
+      "label": "Moskvich (red)"
+    },
+    {
+      "brand": "nissan",
+      "type": "badge",
+      "category": "badge",
+      "file": "nissan_badge.png",
+      "label": "Nissan (значок)"
+    },
+    {
+      "brand": "nissan",
+      "type": "text",
+      "category": "text",
+      "file": "nissan_text.png",
+      "label": "Nissan (значок + надпись)"
+    },
+    {
+      "brand": "omoda",
+      "type": "badge",
+      "category": "badge",
+      "file": "omoda_badge.png",
+      "label": "Omoda (значок)"
+    },
+    {
+      "brand": "opel",
+      "type": "badge",
+      "category": "badge",
+      "file": "opel_badge.png",
+      "label": "Opel (значок)"
+    },
+    {
+      "brand": "opel",
+      "type": "badge",
+      "category": "badge",
+      "file": "opel_badge_2.png",
+      "label": "Opel (2)"
+    },
+    {
+      "brand": "peugeot",
+      "type": "badge",
+      "category": "badge",
+      "file": "peugeot_badge.png",
+      "label": "Peugeot (значок)"
+    },
+    {
+      "brand": "porsche",
+      "type": "badge",
+      "category": "badge",
+      "file": "porsche_badge.png",
+      "label": "Porsche (значок)"
+    },
+    {
+      "brand": "porsche",
+      "type": "text",
+      "category": "text",
+      "file": "porsche_text.png",
+      "label": "Porsche (значок + надпись)"
+    },
+    {
+      "brand": "porsche",
+      "type": "text",
+      "category": "text",
+      "file": "porsche_text_2.png",
+      "label": "Porsche 2"
+    },
+    {
+      "brand": "renault",
+      "type": "badge",
+      "category": "badge",
+      "file": "renault_badge.png",
+      "label": "Renault (значок)"
+    },
+    {
+      "brand": "renault",
+      "type": "text",
+      "category": "text",
+      "file": "renault_text.png",
+      "label": "Renault (значок + надпись)"
+    },
+    {
+      "brand": "rolls_royce",
+      "type": "badge",
+      "category": "badge",
+      "file": "rolls_royce_badge.png",
+      "label": "Rolls royce (значок)"
+    },
+    {
+      "brand": "scania",
+      "type": "badge",
+      "category": "badge",
+      "file": "scania_badge.png",
+      "label": "Scania (значок)"
+    },
+    {
+      "brand": "scania",
+      "type": "text",
+      "category": "text",
+      "file": "scania_text.png",
+      "label": "Scania (значок + надпись)"
+    },
+    {
+      "brand": "skoda",
+      "type": "badge",
+      "category": "badge",
+      "file": "skoda_badge_2.jpg",
+      "label": "Skoda (2)"
+    },
+    {
+      "brand": "skoda",
+      "type": "text",
+      "category": "text",
+      "file": "skoda_text.png",
+      "label": "Skoda (значок + надпись)"
+    },
+    {
+      "brand": "ssangyong",
+      "type": "badge",
+      "category": "badge",
+      "file": "ssangyong_badge.png",
+      "label": "Ssangyong (значок)"
+    },
+    {
+      "brand": "ssangyong",
+      "type": "text",
+      "category": "text",
+      "file": "ssangyong_text.png",
+      "label": "Ssangyong (значок + надпись)"
+    },
+    {
+      "brand": "subaru",
+      "type": "text",
+      "category": "text",
+      "file": "subaru_text.png",
+      "label": "Subaru (значок + надпись)"
+    },
+    {
+      "brand": "suzuki",
+      "type": "badge",
+      "category": "badge",
+      "file": "suzuki_badge.png",
+      "label": "Suzuki (значок)"
+    },
+    {
+      "brand": "suzuki",
+      "type": "text",
+      "category": "text",
+      "file": "suzuki_text.png",
+      "label": "Suzuki (значок + надпись)"
+    },
+    {
+      "brand": "tank",
+      "type": "badge",
+      "category": "badge",
+      "file": "tank_badge.jpeg",
+      "label": "Tank (значок)"
+    },
+    {
+      "brand": "tenet",
+      "type": "badge",
+      "category": "badge",
+      "file": "tenet_badge.png",
+      "label": "Tenet (значок)"
+    },
+    {
+      "brand": "tesla",
+      "type": "text",
+      "category": "text",
+      "file": "tesla_text.png",
+      "label": "Tesla (значок + надпись)"
+    },
+    {
+      "brand": "toyota",
+      "type": "badge",
+      "category": "badge",
+      "file": "toyota_badge_2.jpg",
+      "label": "Toyota (2)"
+    },
+    {
+      "brand": "toyota",
+      "type": "text",
+      "category": "text",
+      "file": "toyota_text.png",
+      "label": "Toyota (значок + надпись)"
+    },
+    {
+      "brand": "uaz",
+      "type": "badge",
+      "category": "badge",
+      "file": "uaz_badge.png",
+      "label": "UAZ (значок)"
+    },
+    {
+      "brand": "volkswagen",
+      "type": "badge",
+      "category": "badge",
+      "file": "volkswagen_badge_2.png",
+      "label": "Volkswagen (2)"
+    },
+    {
+      "brand": "volkswagen",
+      "type": "text",
+      "category": "text",
+      "file": "volkswagen_polo_text.jpg",
+      "label": "Volkswagen polo"
+    },
+    {
+      "brand": "volkswagen",
+      "type": "text",
+      "category": "text",
+      "file": "volkswagen_text.png",
+      "label": "Volkswagen (значок + надпись)"
+    },
+    {
+      "brand": "volvo",
+      "type": "text",
+      "category": "text",
+      "file": "volvo_text.png",
+      "label": "Volvo (значок + надпись)"
+    }
+  ]
+}

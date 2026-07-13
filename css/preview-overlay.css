@@ -1,0 +1,84 @@
+/* === PREVIEW OVERLAY — drag/resize hits ===
+   IMPORTANT: do NOT add `position: relative` here — .preview-area already
+   has `position: sticky` in css/preview.css and css/responsive.css.
+   Adding relative would override sticky and break the sticky behavior. */
+
+.preview-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.preview-overlay__hit {
+    position: absolute;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    cursor: grab;
+    pointer-events: auto;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none;
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
+}
+
+.preview-overlay__hit:hover,
+.preview-overlay__hit:focus-visible {
+    background-color: rgba(102, 126, 234, 0.12);
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+.preview-overlay__hit:active {
+    cursor: grabbing;
+}
+
+.preview-overlay__hit.is-selected {
+    background-color: rgba(102, 126, 234, 0.18);
+}
+
+.preview-overlay__handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #667eea;
+    border: 2px solid #fff;
+    border-radius: 2px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    pointer-events: auto;
+    display: none;
+    touch-action: none;
+}
+
+.preview-overlay__hit.is-selected .preview-overlay__handle {
+    display: block;
+}
+
+.preview-overlay__handle--nw { top: -5px; left: -5px; cursor: nwse-resize; }
+.preview-overlay__handle--ne { top: -5px; right: -5px; cursor: nesw-resize; }
+.preview-overlay__handle--sw { bottom: -5px; left: -5px; cursor: nesw-resize; }
+.preview-overlay__handle--se { bottom: -5px; right: -5px; cursor: nwse-resize; }
+
+/* На тач-устройствах ручки не нужны (используется pinch) */
+@media (hover: none) {
+    .preview-overlay__handle {
+        display: none !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .preview-overlay__handle {
+        width: 14px;
+        height: 14px;
+        top: -7px;
+        left: -7px;
+    }
+    .preview-overlay__handle--ne { top: -7px; right: -7px; }
+    .preview-overlay__handle--sw { bottom: -7px; left: -7px; }
+    .preview-overlay__handle--se { bottom: -7px; right: -7px; }
+}

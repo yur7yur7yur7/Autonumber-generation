@@ -1,0 +1,10 @@
+name = "brelok-telegram-relay"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+
+# Secrets (set with `wrangler secret put NAME` or in the Cloudflare dashboard):
+#   TG_BOT_TOKEN   — your bot token from @BotFather
+#   TG_CHAT_ID     — destination chat id (numeric, as string)
+
+[observability]
+enabled = true

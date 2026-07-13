@@ -1,0 +1,27 @@
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Local secrets (do NOT commit any of these)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Local Worker artifacts (deploy via `wrangler deploy`, not via git)
+.wrangler/
+.dev.vars
+node_modules/
+
+# Project scratch (not part of the deployed site)
+docs/
+.mimocode/
+
+# Build artifacts (none today; keep this section for future)
+dist/
+build/

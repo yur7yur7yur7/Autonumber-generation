@@ -1,0 +1,2058 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Fabric Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+    <script src="back.js?v=2"></script>
+    <style>
+        @font-face { font-family: 'Panel Inter'; src: url('fonts/backpanel/Inter.woff2') format('woff2'); }
+        @font-face { font-family: 'Panel Montserrat'; src: url('fonts/backpanel/Montserrat.woff2') format('woff2'); }
+        @font-face { font-family: 'Panel Raleway'; src: url('fonts/backpanel/Raleway.woff2') format('woff2'); }
+        @font-face { font-family: 'Panel Roboto'; src: url('fonts/backpanel/Roboto.woff2') format('woff2'); }
+        @font-face { font-family: 'Panel Noto Serif'; src: url('fonts/backpanel/NotoSerif.woff2') format('woff2'); }
+        @font-face { font-family: 'Panel Caveat'; src: url('fonts/backpanel/Caveat.woff2') format('woff2'); }
+        @font-face { font-family: 'Panel Bad Script'; src: url('fonts/backpanel/Bad Script.ttf') format('truetype'); }
+        @font-face { font-family: 'Panel Gogol'; src: url('fonts/backpanel/Gogol/gogol_regular.otf') format('opentype'); }
+        @font-face { font-family: 'Panel Brusnika'; src: url('fonts/backpanel/Brusnika/Brusnika-normal_version_02.otf') format('opentype'); }
+        @font-face { font-family: 'Panel LeoHand'; src: url('fonts/backpanel/LeoHand/LeoHand.ttf') format('truetype'); }
+        @font-face { font-family: 'Panel Everlasting'; src: url('fonts/backpanel/Everlasting/Everlasting.ttf') format('truetype'); }
+        @font-face { font-family: 'Panel Resphekt'; src: url('fonts/backpanel/Resphekt.ttf') format('truetype'); }
+        @font-face { font-family: 'Panel Margot'; src: url('fonts/backpanel/Margot Xtrafette.ttf') format('truetype'); }
+        @font-face { font-family: 'Panel Fowviel'; src: url('fonts/backpanel/Fowviel/Fowviel.ttf') format('truetype'); }
+        @font-face { font-family: 'Panel Bravo'; src: url('fonts/backpanel/Bravo/BravoRG.otf') format('opentype'); }
+        @font-face { font-family: 'Panel Marta'; src: url('fonts/backpanel/Marta/Marta_Regular.otf') format('opentype'); }
+        @font-face { font-family: 'Panel Troika'; src: url('fonts/backpanel/Troika/troika.otf') format('opentype'); }
+        @font-face { font-family: 'Panel Sprite Graffiti'; src: url('fonts/backpanel/spritegraffiti/fonts/spritegraffiti.woff2') format('woff2'); }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f0f0f0;
+            font-family: sans-serif;
+        }
+        canvas {
+            border: 1px solid #ccc;
+        }
+
+        /* Панель логотипов — общие стили (положение — в десктоп-ветке ниже, мобильный переопределит) */
+        #logo-panel {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            z-index: 9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        #logo-panel .lp-header {
+            padding: 12px 14px;
+            background: #1f2937;
+            color: #fff;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        #logo-panel .lp-search,
+        #logo-panel .lp-filters {
+            padding: 8px 12px;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        #logo-panel .lp-search input {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 12px;
+            box-sizing: border-box;
+            outline: none;
+        }
+        #logo-panel .lp-search input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+        }
+        #logo-panel .lp-filters {
+            display: flex;
+            gap: 6px;
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+        #logo-panel .lp-filter-btn {
+            flex: 1;
+            padding: 5px 8px;
+            background: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #4b5563;
+            cursor: pointer;
+            transition: 0.12s;
+        }
+        #logo-panel .lp-filter-btn.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: #fff;
+        }
+        #logo-panel .lp-grid {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            background: #ffffff;
+        }
+        #logo-panel .lp-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+        #logo-panel .lp-grid::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        #logo-panel .lp-empty {
+            padding: 24px 12px;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 12px;
+        }
+        #logo-panel .lp-loading {
+            padding: 24px 12px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 12px;
+        }
+        #logo-panel .lp-brand-title {
+            font-size: 10px;
+            font-weight: 700;
+            color: #6b7280;
+            letter-spacing: 0.5px;
+            margin: 8px 4px 4px;
+        }
+        #logo-panel .lp-brand-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+        #logo-panel .lp-logo-btn {
+            position: relative;
+            aspect-ratio: 1;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            padding: 4px;
+            box-sizing: border-box;
+            transition: 0.12s;
+            overflow: hidden;
+        }
+        #logo-panel .lp-logo-btn:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            transform: translateY(-1px);
+        }
+        #logo-panel .lp-logo-btn canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Панель текста и шрифтов — визуально и по поведению как панель логотипов */
+        #font-panel {
+            position: fixed;
+            left: 12px;
+            right: 12px;
+            bottom: 12px;
+            max-height: 65vh;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            box-shadow: 0 -8px 32px rgba(0,0,0,0.25);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            transform: translateY(calc(100% + 24px));
+            transition: transform 0.25s ease;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        #font-panel.fp-open { transform: translateY(0); }
+        #font-panel .fp-header {
+            padding: 12px 14px;
+            background: #1f2937;
+            color: #fff;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        #font-panel .fp-list {
+            overflow-y: auto;
+            padding: 10px;
+            background: #fff;
+        }
+        #font-panel .fp-font-btn {
+            width: 100%;
+            min-height: 64px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 3px;
+            padding: 8px 12px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            color: #111827;
+            cursor: pointer;
+            text-align: left;
+        }
+        #font-panel .fp-font-btn + .fp-font-btn { margin-top: 7px; }
+        #font-panel .fp-font-btn:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        #font-panel .fp-font-btn:focus-visible {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+        #font-panel .fp-preview {
+            display: block;
+            width: 100%;
+            overflow: hidden;
+            font-size: 22px;
+            line-height: 1.2;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        #font-panel .fp-name {
+            color: #6b7280;
+            font: 600 10px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            letter-spacing: 0.3px;
+        }
+
+        /* Подсказка о повороте экрана — только для мобильной портретной ориентации */
+        #rotate-hint {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(15, 23, 42, 0.72);
+            color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            box-sizing: border-box;
+        }
+        #rotate-hint.rh-show {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            text-align: center;
+        }
+        #rotate-hint .rh-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            background: rgba(31, 41, 55, 0.96);
+            border-radius: 18px;
+            padding: 22px 24px;
+            max-width: 280px;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+        }
+        #rotate-hint .rh-icon {
+            width: 56px;
+            height: 56px;
+            display: block;
+        }
+        #rotate-hint .rh-title {
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+        #rotate-hint .rh-sub {
+            font-size: 13px;
+            line-height: 1.4;
+            color: #cbd5e1;
+        }
+        #rotate-hint .rh-dismiss {
+            background: #3b82f6;
+            color: #fff;
+            border: none;
+            border-radius: 999px;
+            padding: 10px 20px;
+            font: 600 14px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        #rotate-hint .rh-dismiss:active { transform: scale(0.96); }
+        #rotate-hint .rh-dismiss:focus-visible {
+            outline: 2px solid #93c5fd;
+            outline-offset: 2px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #rotate-hint .rh-dismiss:active { transform: none; }
+        }
+
+        /* Контекстное меню долгого нажатия (мобильные) */
+        #ctx-menu {
+            display: none;
+            position: fixed;
+            z-index: 50;
+            min-width: 200px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+            padding: 6px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            user-select: none;
+        }
+        #ctx-menu.cm-show { display: block; }
+        #ctx-menu .cm-action {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            min-height: 44px;
+            padding: 8px 12px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: #111827;
+            font: 600 14px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            text-align: left;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        #ctx-menu .cm-action:active { background: #f3f4f6; }
+        #ctx-menu .cm-action:disabled { opacity: 0.45; cursor: not-allowed; }
+        #ctx-menu .cm-color {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            min-height: 44px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        #ctx-menu .cm-color:hover { background: #f9fafb; }
+        #ctx-menu .cm-color-swatch {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            background: #111827;
+        }
+        #ctx-menu .cm-color input[type="color"] {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+        #ctx-menu .cm-divider {
+            height: 1px;
+            background: #e5e7eb;
+            margin: 4px 6px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #ctx-menu .cm-action:active { background: #f3f4f6; }
+        }
+
+        /* Панель настроек (тогглы) — структура и вид как у панели логотипов */
+        #snap-panel {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            min-width: 220px;
+            user-select: none;
+        }
+        #snap-panel .sp-header {
+            padding: 12px 14px;
+            background: #1f2937;
+            color: #fff;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        #snap-panel .sp-body {
+            padding: 10px 12px;
+            background: #ffffff;
+        }
+        #snap-panel .sp-delete {
+            margin-top: 10px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 40px;
+            padding: 8px 12px;
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            font: 600 13px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: 0.12s;
+        }
+        #snap-panel .sp-delete:hover {
+            background: #fee2e2;
+            border-color: #fca5a5;
+        }
+        #snap-panel .sp-delete:active { transform: scale(0.97); }
+        #snap-panel .sp-delete:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #f3f4f6;
+            color: #9ca3af;
+            border-color: #e5e7eb;
+        }
+        #snap-panel .sp-delete:focus-visible {
+            outline: 2px solid #f87171;
+            outline-offset: 2px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #snap-panel .sp-delete:active { transform: none; }
+        }
+        #snap-panel .sp-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            transition: background 0.12s;
+        }
+        #snap-panel .sp-row + .sp-row {
+            margin-top: 4px;
+        }
+        #snap-panel .sp-row:hover {
+            background: #f3f4f6;
+        }
+        #snap-panel .sp-label {
+            display: flex;
+            flex-direction: column;
+        }
+        #snap-panel .sp-label b {
+            color: #111827;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        #snap-panel .sp-label small {
+            color: #6b7280;
+            font-size: 11px;
+            margin-top: 1px;
+        }
+        #snap-panel .sp-toggle {
+            position: relative;
+            display: inline-block;
+            width: 36px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+        #snap-panel .sp-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        #snap-panel .sp-toggle .sp-bg {
+            position: absolute;
+            inset: 0;
+            background: #d1d5db;
+            border-radius: 20px;
+            transition: 0.18s;
+        }
+        #snap-panel .sp-toggle .sp-knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            border-radius: 50%;
+            transition: 0.18s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+        }
+        #snap-panel .sp-toggle input:checked + .sp-bg {
+            background: #3b82f6;
+        }
+        #snap-panel .sp-toggle input:checked + .sp-bg + .sp-knob {
+            left: 18px;
+        }
+        /* Сдвигаем основной канвас между боковыми колонками ТОЛЬКО НА ДЕСТКОПЕ */
+        @media (min-width: 769px) and (min-height: 601px) {
+            body {
+                padding-left: 300px;
+                padding-right: 320px;
+            }
+            #logo-panel {
+                /* На десктопе панель логотипов — слева, не bottom sheet */
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                width: 260px;
+                max-height: calc(100vh - 40px);
+                border-radius: 10px;
+                transform: none !important;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            }
+            #logo-toggle { display: none !important; }
+
+            /* Шрифты — компактная постоянная панель справа сверху. */
+            #font-panel {
+                top: 20px;
+                left: auto;
+                right: 20px;
+                bottom: auto;
+                width: 300px;
+                max-height: calc(100vh - 40px);
+                border-radius: 10px;
+                transform: none !important;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            }
+            #font-toggle { display: none !important; }
+
+            /* Панель привязок — компактная, снизу по центру, чтобы рядом добавлять
+               настройки. Привязана к фиксированной ширине для устойчивости. */
+            #snap-panel {
+                position: fixed;
+                bottom: 12px;
+                left: 50%;
+                right: auto;
+                transform: translateX(-50%);
+                width: min(320px, calc(100vw - 40px));
+                max-width: none;
+                min-width: 0;
+            }
+        }
+        #canvas-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+            padding-top: 12px;
+            overflow: hidden;
+        }
+        #canvas-wrap .canvas-container,
+        #canvas-wrap canvas {
+            display: block;
+            border-radius: 31px;
+        }
+        #canvas-wrap .canvas-container {
+            overflow: hidden;
+        }
+
+        /* Кнопка-гамбургер для панели логотипов — НЕВИДИМАЯ по умолчанию,
+           показывается только через media (max-width: 768px) ниже */
+        #logo-toggle {
+            display: none;
+            position: fixed;
+            bottom: 12px;
+            left: 12px;
+            z-index: 11;
+            background: #1f2937;
+            color: #fff;
+            border: none;
+            border-radius: 22px;
+            padding: 12px 18px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+            cursor: pointer;
+            align-items: center;
+            gap: 6px;
+            touch-action: manipulation;
+        }
+        #logo-toggle:active { transform: scale(0.96); }
+        @media (max-width: 768px), (orientation: landscape) and (max-height: 600px) {
+            #logo-toggle { display: inline-flex; }
+        }
+
+        /* Гамбургер-кнопка для snap-панели — НЕВИДИМАЯ по умолчанию,
+           показывается только на узких экранах (как у #logo-toggle) */
+        #snap-toggle {
+            display: none;
+            position: fixed;
+            bottom: 12px;
+            right: 12px;
+            z-index: 11;
+            background: #1f2937;
+            color: #fff;
+            border: none;
+            border-radius: 22px;
+            padding: 12px 18px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+            cursor: pointer;
+            align-items: center;
+            gap: 6px;
+            touch-action: manipulation;
+        }
+        #snap-toggle:active { transform: scale(0.96); }
+
+        #font-toggle {
+            display: inline-flex;
+            position: fixed;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 11;
+            background: #1f2937;
+            color: #fff;
+            border: none;
+            border-radius: 22px;
+            padding: 12px 18px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+            cursor: pointer;
+            align-items: center;
+            gap: 6px;
+            touch-action: manipulation;
+        }
+        #font-toggle:active { transform: translateX(-50%) scale(0.96); }
+
+        /* Snap-hint: на случай если JS не успел скрыть — авто-исчезает через 1.5s.
+           pointer-events: none чтобы не перехватывал клики. */
+        #snap-hint {
+            pointer-events: none;
+            z-index: 8;
+            max-width: 220px;
+        }
+
+        /* ============================================================
+           МОБИЛЬНАЯ ВЁРСТКА (≤ 768px)
+           ============================================================ */
+        @media (max-width: 768px), (orientation: landscape) and (max-height: 600px) {
+            /* body — на всю ширину, без отступа под боковую панель */
+            body {
+                padding-left: 0;
+                padding-top: 12px;
+                padding-right: 12px;
+                background-attachment: scroll; /* fixed плохо на iOS Safari */
+            }
+            /* Fabric сам задаёт одинаковый адаптивный размер обоим слоям канвы. */
+            #canvas-wrap {
+                display: block;
+                width: 100%;
+                overflow: hidden;
+            }
+            #canvas-wrap .canvas-container {
+                max-width: 100%;
+            }
+            #canvas-wrap canvas {
+                max-width: none;
+            }
+            /* Панель логотипов — bottom sheet, занимает 60vh, можно закрыть тапом вне */
+            #logo-panel {
+                position: fixed;
+                top: auto;
+                left: 12px;
+                right: 12px;
+                bottom: 12px;
+                width: auto;
+                max-height: 60vh;
+                border-radius: 16px;
+                transform: translateY(calc(100% + 24px));
+                transition: transform 0.25s ease;
+                box-shadow: 0 -8px 32px rgba(0,0,0,0.25);
+            }
+            #logo-panel.lp-open {
+                transform: translateY(0);
+            }
+            /* Хват сверху, чтобы было видно что это раскрывающаяся шторка */
+            #logo-panel.lp-open .lp-header::before {
+                content: "";
+                display: block;
+                width: 36px;
+                height: 4px;
+                background: rgba(255,255,255,0.4);
+                border-radius: 2px;
+                margin: -4px auto 8px;
+            }
+            /* Сетка логотипов: 4 → 5 колонок на нормальных телефонах */
+            #logo-panel .lp-brand-grid {
+                grid-template-columns: repeat(5, 1fr);
+                gap: 8px;
+            }
+            /* Кнопки покрупнее для тапов (минимум 44×44) */
+            #logo-panel .lp-logo-btn {
+                min-height: 44px;
+            }
+            #logo-panel .lp-filter-btn {
+                min-height: 44px;
+                font-size: 12px;
+            }
+            /* Панель настроек на мобильном — bottom sheet, свёрнута по умолчанию,
+               выезжает по тапу на гамбургер-кнопку. Не перекрывает канву в свёрнутом виде. */
+            #snap-panel {
+                position: fixed;
+                top: auto;
+                left: 12px;
+                right: 12px;
+                bottom: 12px;
+                max-width: none;
+                min-width: 0;
+                font-size: 11px;
+                box-shadow: 0 -8px 32px rgba(0,0,0,0.25);
+                transform: translateY(calc(100% + 24px));
+                transition: transform 0.25s ease;
+            }
+            #snap-panel.sp-open {
+                bottom: 68px;
+                transform: translateY(0);
+            }
+            #snap-panel.sp-open .sp-header::before {
+                content: "";
+                display: block;
+                width: 36px;
+                height: 4px;
+                background: rgba(255,255,255,0.4);
+                border-radius: 2px;
+                margin: -4px auto 8px;
+            }
+            #snap-panel .sp-header { padding: 9px 12px; font-size: 12px; }
+            #snap-panel .sp-body { padding: 8px 10px; }
+            #snap-panel .sp-row { padding: 8px 10px; }
+
+            /* Гамбургер-кнопка snap-панели (базовый display:none в общем CSS).
+               На мобильном показывается; на десктопе скрыта. */
+            #snap-toggle,
+            #font-toggle { display: inline-flex; }
+
+            /* Тач-френдли: канва и панели */
+            canvas {
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
+            #logo-panel, #snap-panel {
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        /* Альбомный телефон: те же всплывающие панели, но компактнее по высоте. */
+        @media (orientation: landscape) and (max-height: 600px) {
+            body {
+                padding: 8px;
+            }
+            #logo-panel,
+            #snap-panel,
+            #font-panel {
+                left: 8px;
+                right: 8px;
+                bottom: 8px;
+                max-height: calc(100vh - 16px);
+            }
+            #logo-panel .lp-header,
+            #snap-panel .sp-header,
+            #font-panel .fp-header {
+                padding: 8px 12px;
+            }
+            #logo-panel .lp-search,
+            #logo-panel .lp-filters {
+                padding-top: 6px;
+                padding-bottom: 6px;
+            }
+            #logo-panel .lp-brand-grid {
+                grid-template-columns: repeat(8, 1fr);
+                gap: 6px;
+            }
+            #logo-toggle,
+            #snap-toggle,
+            #font-toggle {
+                bottom: 8px;
+                padding: 9px 14px;
+                font-size: 13px;
+            }
+            #logo-toggle { left: 8px; }
+            #snap-toggle { right: 8px; }
+        }
+
+        /* ============================================================
+           ОЧЕНЬ МАЛЕНЬКИЕ ЭКРАНЫ (≤ 480px)
+           ============================================================ */
+        @media (max-width: 480px) {
+            body {
+                padding: 8px;
+            }
+            /* Сетка логотипов: 4 → 4 колонки, чуть больше кнопки */
+            #logo-panel .lp-brand-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 6px;
+            }
+            #logo-panel {
+                max-height: 65vh;
+            }
+            /* Snap-toggle и logo-toggle разведены по углам */
+            #logo-toggle {
+                left: 8px;
+                bottom: 8px;
+                padding: 10px 14px;
+                font-size: 13px;
+            }
+            #snap-toggle {
+                right: 8px;
+                bottom: 8px;
+                padding: 10px 14px;
+                font-size: 13px;
+            }
+            #font-toggle {
+                bottom: 8px;
+                padding: 10px 14px;
+                font-size: 13px;
+            }
+            #snap-panel {
+                left: 8px;
+                right: 8px;
+                bottom: 8px;
+            }
+        }
+
+        /* ============================================================
+           СОВСЕМ КРОХОТНЫЕ (≤ 360px)
+           ============================================================ */
+        @media (max-width: 360px) {
+            #logo-panel .lp-brand-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 5px;
+            }
+            #logo-panel .lp-logo-btn {
+                min-height: 40px;
+            }
+            #logo-panel .lp-filter-btn {
+                font-size: 11px;
+                padding: 8px 6px;
+            }
+            #snap-toggle, #logo-toggle {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+            #snap-panel .sp-header { font-size: 11px; padding: 7px 10px; }
+            #font-panel .fp-preview { font-size: 17px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-wrap">
+        <canvas id="c" width="1224" height="252"></canvas>
+    </div>
+    <div id="rotate-hint" role="alertdialog" aria-modal="true" aria-labelledby="rotate-hint-title" aria-describedby="rotate-hint-desc">
+        <div class="rh-card">
+            <svg class="rh-icon" viewBox="0 0 64 64" aria-hidden="true">
+                <rect x="14" y="6" width="36" height="52" rx="6" fill="none" stroke="#f8fafc" stroke-width="3"/>
+                <rect x="20" y="14" width="24" height="36" rx="2" fill="none" stroke="#f8fafc" stroke-width="2"/>
+                <circle cx="32" cy="52" r="2" fill="#f8fafc"/>
+                <path d="M48 18 a14 14 0 0 1 0 28" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+                <path d="M48 12 L48 18 L42 18" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div class="rh-title" id="rotate-hint-title">Поверните устройство</div>
+            <div class="rh-sub" id="rotate-hint-desc">Для лучшего впечатления откройте приложение в альбомной ориентации</div>
+            <button class="rh-dismiss" type="button">Понятно</button>
+        </div>
+    </div>
+    <div id="ctx-menu" role="menu" aria-hidden="true">
+        <button class="cm-action" type="button" data-action="delete" role="menuitem">🗑 Удалить</button>
+        <div class="cm-divider" role="separator"></div>
+        <label class="cm-color" data-action="color">
+            <span class="cm-color-swatch" id="ctx-color-swatch" aria-hidden="true"></span>
+            <span>Цвет текста</span>
+            <input type="color" id="ctx-color-input" value="#111111" aria-label="Выбрать цвет текста">
+        </label>
+    </div>
+    <script>
+        // Размеры передней стороны — как в js/drawing-front.js + js/config.js
+        const SCALE_FACTOR = 1224 / 720;                    // ≈ 1.7
+        const PLATE_WIDTH = 1224;
+        const PLATE_HEIGHT = 252;
+        const SETTINGS_MARGIN = 7;
+        const SETTINGS_NUMBER_AREA_WIDTH = 522;
+        const SETTINGS_REGION_AREA_WIDTH = 178;
+        const SETTINGS_INNER_RADIUS = 18;
+
+        const scaledMargin = SETTINGS_MARGIN * SCALE_FACTOR;             // ≈ 11.9
+        const scaledNumberAreaWidth = SETTINGS_NUMBER_AREA_WIDTH * SCALE_FACTOR;  // ≈ 887.4
+        const scaledRegionAreaWidth = SETTINGS_REGION_AREA_WIDTH * SCALE_FACTOR;  // ≈ 302.6
+        const scaledInnerRadius = SETTINGS_INNER_RADIUS * SCALE_FACTOR;  // ≈ 30.6
+        const innerHeight = PLATE_HEIGHT - (scaledMargin * 2);           // ≈ 228.2
+
+        // ============================================================
+        // Подсказка «Поверните экран»: показывается в мобильной портретной
+        // ориентации, если пользователь ещё не закрыл её.
+        // ============================================================
+        const rotateHint = document.getElementById('rotate-hint');
+        const ROTATE_HINT_DISMISS_KEY = 'rotate-hint-dismissed';
+        const isMobilePortrait = () =>
+            window.matchMedia('(max-width: 768px) and (orientation: portrait)').matches;
+
+        function syncRotateHint() {
+            if (!rotateHint) return;
+            const dismissed = localStorage.getItem(ROTATE_HINT_DISMISS_KEY) === '1';
+            rotateHint.classList.toggle('rh-show', isMobilePortrait() && !dismissed);
+        }
+
+        rotateHint?.querySelector('.rh-dismiss')?.addEventListener('click', () => {
+            try { localStorage.setItem(ROTATE_HINT_DISMISS_KEY, '1'); } catch (_) { /* приватный режим */ }
+            rotateHint.classList.remove('rh-show');
+        });
+
+        syncRotateHint();
+        window.addEventListener('resize', syncRotateHint);
+        window.addEventListener('orientationchange', syncRotateHint);
+
+        const canvas = new fabric.Canvas('c', {
+            backgroundColor: 'transparent',
+            preserveObjectStacking: true
+        });
+
+        // ============================================================
+        // Контекстное меню долгого нажатия (только мобильные).
+        // Активация: ~600мс удержания пальца на канве.
+        // Действия: удалить объект, изменить цвет (только для текста).
+        // ============================================================
+        const ctxMenu = document.getElementById('ctx-menu');
+        const ctxDeleteBtn = ctxMenu?.querySelector('[data-action="delete"]');
+        const ctxColorLabel = ctxMenu?.querySelector('[data-action="color"]');
+        const ctxColorInput = document.getElementById('ctx-color-input');
+        const ctxColorSwatch = document.getElementById('ctx-color-swatch');
+        const LONG_PRESS_MS = 600;
+        const LONG_PRESS_MOVE_TOLERANCE = 12;
+        const isMobile = () => window.matchMedia('(max-width: 768px), (orientation: landscape) and (max-height: 600px)').matches;
+        let longPressTimer = null;
+        let longPressStart = null;
+
+        function hideContextMenu() {
+            if (!ctxMenu) return;
+            // Перед скрытием снимаем фокус с активной кнопки/чипа, иначе
+            // aria-hidden=true на предке, содержащем сфокусированный элемент,
+            // вызывает предупреждение в консоли.
+            if (ctxMenu.contains(document.activeElement)) {
+                document.activeElement.blur();
+            }
+            ctxMenu.classList.remove('cm-show');
+            ctxMenu.setAttribute('aria-hidden', 'true');
+        }
+
+        function showContextMenu(x, y) {
+            if (!ctxMenu) return;
+            const active = canvas.getActiveObject();
+            if (!active) {
+                hideContextMenu();
+                return;
+            }
+            const isText = active.type === 'textbox';
+            ctxDeleteBtn.disabled = false;
+            if (ctxColorLabel) {
+                ctxColorLabel.style.display = isText ? 'flex' : 'none';
+            }
+            if (isText) {
+                const color = (active.fill && typeof active.fill === 'string') ? active.fill : '#111111';
+                if (ctxColorSwatch) ctxColorSwatch.style.background = color;
+                if (ctxColorInput) ctxColorInput.value = color;
+            }
+            ctxMenu.classList.add('cm-show');
+            ctxMenu.setAttribute('aria-hidden', 'false');
+            // Позиционируем и зажимаем в пределах viewport.
+            const w = ctxMenu.offsetWidth;
+            const h = ctxMenu.offsetHeight;
+            const left = Math.max(8, Math.min(x, window.innerWidth - w - 8));
+            const top = Math.max(8, Math.min(y, window.innerHeight - h - 8));
+            ctxMenu.style.left = `${left}px`;
+            ctxMenu.style.top = `${top}px`;
+        }
+
+        function clearLongPress() {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+            longPressStart = null;
+        }
+
+        function startLongPress(event) {
+            if (!isMobile()) return;
+            // Только для касания, не для пера/мыши.
+            if (event.pointerType && event.pointerType !== 'touch') return;
+            const target = canvas.findTarget(event);
+            if (!target || target.__guide) return;
+            longPressStart = { x: event.clientX, y: event.clientY };
+            longPressTimer = setTimeout(() => {
+                longPressTimer = null;
+                const active = canvas.getActiveObject() || target;
+                canvas.setActiveObject(active);
+                canvas.requestRenderAll();
+                showContextMenu(event.clientX, event.clientY);
+            }, LONG_PRESS_MS);
+        }
+
+        function trackLongPress(event) {
+            if (!longPressStart) return;
+            const dx = event.clientX - longPressStart.x;
+            const dy = event.clientY - longPressStart.y;
+            if (dx * dx + dy * dy > LONG_PRESS_MOVE_TOLERANCE * LONG_PRESS_MOVE_TOLERANCE) {
+                clearLongPress();
+            }
+        }
+
+        function endLongPress() {
+            clearLongPress();
+        }
+
+        // Fabric 5.3: canvas.getElement() — это контейнер; верхний слой — это <canvas class="upper-canvas">.
+        const canvasEl = canvas.upperCanvasEl || document.querySelector('canvas.upper-canvas') || canvas.getElement();
+        canvasEl.addEventListener('pointerdown', startLongPress);
+        canvasEl.addEventListener('pointermove', trackLongPress);
+        canvasEl.addEventListener('pointerup', endLongPress);
+        canvasEl.addEventListener('pointercancel', endLongPress);
+        canvasEl.addEventListener('pointerleave', endLongPress);
+
+        ctxDeleteBtn?.addEventListener('click', () => {
+            const active = canvas.getActiveObject();
+            if (active) {
+                canvas.remove(active);
+                canvas.requestRenderAll();
+            }
+            hideContextMenu();
+        });
+        ctxColorInput?.addEventListener('input', () => {
+            const active = canvas.getActiveObject();
+            if (!active || active.type !== 'textbox') return;
+            active.set({ fill: ctxColorInput.value });
+            active.dirty = true;
+            canvas.requestRenderAll();
+            if (ctxColorSwatch) ctxColorSwatch.style.background = ctxColorInput.value;
+        });
+        ctxColorLabel?.addEventListener('click', () => ctxColorInput?.click());
+
+        // Закрываем меню при тапе вне его и при прокрутке/ресайзе.
+        document.addEventListener('pointerdown', (e) => {
+            if (!ctxMenu || !ctxMenu.classList.contains('cm-show')) return;
+            if (ctxMenu.contains(e.target)) return;
+            hideContextMenu();
+        });
+        window.addEventListener('resize', hideContextMenu);
+        window.addEventListener('orientationchange', hideContextMenu);
+        window.addEventListener('scroll', hideContextMenu, true);
+        canvas.on('selection:cleared', hideContextMenu);
+        canvas.on('object:removed', hideContextMenu);
+
+        // ============================================================
+        // АДАПТИВНЫЙ КАНВАС: всегда вписываем в viewport с сохранением пропорций.
+        // Меняем РЕАЛЬНЫЙ размер Fabric.Canvas (а не CSS-стилизацию), чтобы
+        // координаты касаний/мыши и bounding box'ы объектов оставались корректными.
+        // ============================================================
+        const PLATE_W = 1224;
+        const PLATE_H = 252;
+        function fitCanvasToViewport() {
+            const wrap = document.getElementById('canvas-wrap');
+            if (!wrap) return;
+            const isNarrow = window.matchMedia('(max-width: 768px), (orientation: landscape) and (max-height: 600px)').matches;
+            // На мобильном оставляем воздух для нижних гамбургер-кнопок (~70px),
+            // иначе они перекрывают канву.
+            const reservedBottom = isNarrow ? 80 : 0;
+            const reservedTop = isNarrow ? 24 : 0;
+            // Ширину и высоту берём из самого #canvas-wrap — он уже ограничен
+            // боковыми панелями и отступами body на десктопе и мобильном.
+            const availW = Math.max(160, wrap.clientWidth);
+            const availH = Math.max(120, window.innerHeight - reservedTop - reservedBottom);
+            const scale = Math.min(
+                availW / PLATE_W,
+                availH / PLATE_H,
+                isNarrow ? 1 : 1.5
+            );
+            const displayW = Math.max(160, Math.floor(PLATE_W * scale));
+            const displayH = Math.max(40, Math.floor(PLATE_H * scale));
+            canvas.setDimensions({ width: displayW, height: displayH }, { cssOnly: false });
+            canvas.setZoom(displayW / PLATE_W);
+            canvas.requestRenderAll();
+        }
+
+        window.addEventListener('resize', fitCanvasToViewport);
+        // resize-canvas адаптируется после построения сцены (объекты ниже)
+        setTimeout(fitCanvasToViewport, 0);
+
+        applyBackBackground(canvas)
+            .catch((err) => console.error(err));
+
+        // Один цельный белый прямоугольник под номер + регион.
+        // Общие габариты как в drawing-front.js (numberAreaWidth + regionAreaWidth + 1*scaledMargin):
+        // занимает от scaledMargin до (PLATE_WIDTH - scaledMargin), зазор между ними = scaledMargin.
+        const combinedGap = scaledMargin;
+        const combinedWidth = scaledNumberAreaWidth + combinedGap + scaledRegionAreaWidth;
+
+        const frontRect = new fabric.Rect({
+            left: scaledMargin,
+            top: scaledMargin,
+            width: combinedWidth,
+            height: innerHeight,
+            fill: '#ffffff',
+            stroke: '#111111',
+            strokeWidth: 4,
+            rx: scaledInnerRadius,
+            ry: scaledInnerRadius,
+            selectable: false,
+            evented: false
+        });
+        canvas.add(frontRect);
+
+        // Текстбоксы внутри левого белого прямоугольника (под номер)
+        const text = new fabric.Textbox('ТЕСТ TEST ТЕСТ', {
+            left: scaledMargin + 20,
+            top: 60,
+            width: scaledNumberAreaWidth - 40,
+            fontSize: 40,
+            fill: '#000000',
+            fontFamily: 'Arial',
+            textAlign: 'center'
+        });
+
+        const text2 = new fabric.Textbox('Тест serif красный', {
+            left: scaledMargin + 20,
+            top: 150,
+            width: scaledNumberAreaWidth - 40,
+            fontSize: 36,
+            fill: '#d62828',
+            fontFamily: 'Georgia',
+            fontStyle: 'italic',
+            textAlign: 'center'
+        });
+
+        canvas.add(text);
+        canvas.add(text2);
+
+        // Голубая рамка выделения ровно по ширине текста — для всех текстбоксов на канвасе
+        const SELECTION_BLUE = '#3b82f6';
+        const HORIZONTAL_PADDING = 12; // px вокруг текста внутри рамки выделения
+
+        let lastPointer = { x: 0, y: 0 };
+        canvas.on('mouse:move', (e) => {
+            const p = canvas.getPointer(e.e);
+            lastPointer.x = p.x;
+            lastPointer.y = p.y;
+        });
+
+        function measureTextWidth(tb, text) {
+            const probe = document.createElement('canvas').getContext('2d');
+            const weight = tb.fontWeight || 'normal';
+            const style = tb.fontStyle || 'normal';
+            probe.font = `${style} ${weight} ${tb.fontSize}px "${tb.fontFamily || 'Arial'}"`;
+            return probe.measureText(text).width;
+        }
+
+        function fitTextboxWidthToContent(tb) {
+            const lines = (tb.text || '').split('\n');
+            let maxLineWidth = 0;
+            for (const line of lines) {
+                const w = measureTextWidth(tb, line);
+                if (w > maxLineWidth) maxLineWidth = w;
+            }
+            const newWidth = Math.ceil(maxLineWidth + HORIZONTAL_PADDING * 2);
+            if (Math.abs(tb.width - newWidth) > 0.5) {
+                tb.set({ width: newWidth });
+            }
+        }
+
+        function applySelectionStyle(tb) {
+            tb.set({
+                borderColor: SELECTION_BLUE,
+                cornerColor: SELECTION_BLUE,
+                cornerStrokeColor: SELECTION_BLUE,
+                transparentCorners: false,
+                cornerSize: 8,
+                padding: 0,
+                borderScaleFactor: 2
+            });
+        }
+
+        // ============================================================
+        // Кастомная иконка поворота + tooltip с текущим углом
+        // ============================================================
+
+        const ROTATE_ICON_SIZE = 20;
+        let rotateTooltip = null;
+        let rotateTooltipTb = null;
+
+        function ensureRotateTooltip() {
+            if (rotateTooltip) return rotateTooltip;
+            const el = document.createElement('div');
+            el.id = 'rotate-tooltip';
+            el.style.cssText = `
+                position: absolute;
+                pointer-events: none;
+                background: #1f2937;
+                color: #ffffff;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                font-size: 12px;
+                font-weight: 600;
+                padding: 5px 9px;
+                border-radius: 6px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+                transform: translate(14px, -50%);
+                white-space: nowrap;
+                z-index: 10;
+                display: none;
+            `;
+            document.body.appendChild(el);
+            rotateTooltip = el;
+            return el;
+        }
+
+        function showRotateTooltip(tb, degrees) {
+            const tip = ensureRotateTooltip();
+            const normalized = ((Math.round(degrees) % 360) + 360) % 360;
+            tip.textContent = `${normalized}°`;
+            tip.style.display = 'block';
+            positionRotateTooltipAtPointer();
+            rotateTooltipTb = tb;
+        }
+
+        function hideRotateTooltip() {
+            if (rotateTooltip) rotateTooltip.style.display = 'none';
+            rotateTooltipTb = null;
+        }
+
+        // Tooltip следует за указателем мыши — не зависит от повёрнутого bounding box
+        function positionRotateTooltipAtPointer() {
+            if (!rotateTooltip) return;
+            const canvasEl = canvas.getElement();
+            const rect = canvasEl.getBoundingClientRect();
+            const screenX = rect.left + window.scrollX + lastPointer.x;
+            const screenY = rect.top + window.scrollY + lastPointer.y;
+            rotateTooltip.style.left = `${screenX}px`;
+            rotateTooltip.style.top = `${screenY}px`;
+        }
+
+        // SVG-иконка поворота как Data URL
+        const ROTATE_ICON_URL = 'data:image/svg+xml;utf8,' + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
+                <defs>
+                    <linearGradient id="rg" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#60a5fa"/>
+                        <stop offset="100%" stop-color="#2563eb"/>
+                    </linearGradient>
+                </defs>
+                <circle cx="10" cy="10" r="9" fill="url(#rg)" stroke="#1e3a8a" stroke-width="1"/>
+                <path d="M14.5 10 a4.5 4.5 0 1 1 -1.6 -3.4"
+                      fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round"/>
+                <path d="M12.9 4.6 L14.7 6.4 L12.7 8.0"
+                      fill="none" stroke="#ffffff" stroke-width="1.6"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        `);
+
+        // Состояние тогглов должно быть объявлено ДО replaceRotateControl,
+        // потому что контрол читает snapState.angle при создании
+        const snapState = {
+            position: true,   // привязка к краям/центрам объектов и холста
+            angle: true       // поворот с шагом 15° (0, 15, 30, ...)
+        };
+
+        function applyAngleSnapToAll() {
+            // Включаем/выключаем snap угла на каждом объекте через snapAngle/snapThreshold.
+            // snapAngle=15 + snapThreshold=15 → snap на ЛЮБОЙ угол (не только с Shift).
+            // snapAngle=0 + snapThreshold=Infinity → snap отключён.
+            canvas.getObjects().forEach((o) => {
+                if (o.controls && o.controls.mtr) {
+                    o.controls.mtr.snapAngle = snapState.angle ? 15 : 0;
+                    o.controls.mtr.snapThreshold = snapState.angle ? 15 : Infinity;
+                }
+            });
+        }
+
+        // Переопределяем контрол поворота: иконка вместо квадратика
+        function replaceRotateControl(tb) {
+            tb.setControlsVisibility && tb.setControlsVisibility({
+                tl: true, tr: true, bl: true, br: true,
+                ml: true, mr: true, mt: true, mb: true,
+                mtr: true
+            });
+
+            tb.controls.mtr = new fabric.Control({
+                x: 0,
+                y: -0.5,
+                offsetY: -28,
+                cursorStyle: 'grab',
+                actionHandler: fabric.controlsUtils.rotationWithSnapping,
+                snapAngle: snapState.angle ? 15 : 0,        // шаг угла (градусы)
+                snapThreshold: 15,    // порог snap = сам шаг → snap работает ВСЕГДА, не только с Shift
+                mouseUpHandler: function (eventData, transformData, x, y) {
+                    return true;
+                },
+                render: function (ctx, left, top, styleOverride, fabricObject) {
+                    const size = ROTATE_ICON_SIZE;
+                    ctx.save();
+                    ctx.translate(left, top);
+                    // Halo
+                    ctx.beginPath();
+                    ctx.arc(0, 0, size / 2 + 3, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+                    ctx.shadowColor = 'rgba(0,0,0,0.35)';
+                    ctx.shadowBlur = 4;
+                    ctx.shadowOffsetY = 1;
+                    ctx.fill();
+                    ctx.shadowColor = 'transparent';
+                    ctx.strokeStyle = SELECTION_BLUE;
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                    // Собственно иконка (рисуем вручную, чтобы canvas не пачкался с cross-origin)
+                    ctx.beginPath();
+                    ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
+                    const grad = ctx.createRadialGradient(-size/6, -size/6, size/8, 0, 0, size/2);
+                    grad.addColorStop(0, '#93c5fd');
+                    grad.addColorStop(1, '#2563eb');
+                    ctx.fillStyle = grad;
+                    ctx.fill();
+                    ctx.strokeStyle = '#1e3a8a';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    // Стрелка поворота
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1.8;
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, size * 0.28, Math.PI * 0.25, Math.PI * 1.5, false);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(size * 0.28 * Math.cos(Math.PI * 0.25), size * 0.28 * Math.sin(Math.PI * 0.25));
+                    ctx.lineTo(size * 0.28 * Math.cos(Math.PI * 0.25) + 3, size * 0.28 * Math.sin(Math.PI * 0.25) - 1);
+                    ctx.lineTo(size * 0.28 * Math.cos(Math.PI * 0.25) + 2, size * 0.28 * Math.sin(Math.PI * 0.25) + 3);
+                    ctx.closePath();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fill();
+                    ctx.restore();
+                }
+            });
+        }
+
+        // Меняем origin на центр без визуального смещения (поворот вокруг центра bounding box)
+        function applyCenterOrigin(tb) {
+            if (tb.originX === 'center' && tb.originY === 'center') return;
+            const w = tb.width;
+            const h = tb.height;
+            const centerX = tb.left + w / 2;
+            const centerY = tb.top + h / 2;
+            tb.set({ originX: 'center', originY: 'center', left: centerX, top: centerY });
+            tb.setCoords();
+        }
+
+        function styleBaseObject(obj) {
+            if (!obj) return;
+            applySelectionStyle(obj);
+            replaceRotateControl(obj);
+            applyCenterOrigin(obj);
+
+            obj.on('rotating', () => {
+                showRotateTooltip(obj, obj.angle || 0);
+                positionRotateTooltipAtPointer();
+            });
+            obj.on('mouseup', () => hideRotateTooltip());
+            obj.on('mouseleave', () => hideRotateTooltip());
+            obj.on('mouseout', () => hideRotateTooltip());
+            obj.on('changed', () => {
+                if (obj.originX !== 'center' || obj.originY !== 'center') {
+                    applyCenterOrigin(obj);
+                }
+            });
+        }
+
+        function styleTextbox(tb) {
+            if (!tb || tb.type !== 'textbox') return;
+            styleBaseObject(tb);
+            fitTextboxWidthToContent(tb);
+            // После fitTextboxWidthToContent размеры/center могли измениться
+            applyCenterOrigin(tb);
+            tb.on('changed', () => {
+                fitTextboxWidthToContent(tb);
+                if (tb.originX !== 'center' || tb.originY !== 'center') {
+                    applyCenterOrigin(tb);
+                }
+            });
+        }
+
+        // Следим за selection, чтобы прятать tooltip когда текстбокс не активен
+        canvas.on('selection:cleared', () => hideRotateTooltip());
+        canvas.on('before:selection:cleared', () => hideRotateTooltip());
+        canvas.on('selection:updated', (e) => {
+            hideRotateTooltip();
+            if (e.newSelection && e.newSelection.type === 'textbox') {
+                replaceRotateControl(e.newSelection);
+            }
+        });
+
+        // Применяем к обоим уже созданным текстбоксам
+        styleTextbox(text);
+        styleTextbox(text2);
+
+        // И на любые будущие текстбоксы, добавляемые на канвас
+        canvas.on('text:editing-exited', (e) => {
+            if (e.target) fitTextboxWidthToContent(e.target);
+        });
+        canvas.on('object:added', (e) => {
+            const obj = e.target;
+            if (!obj) return;
+            if (obj.__guide) return;
+            if (obj.type === 'textbox') {
+                styleTextbox(obj);
+            } else if (obj.type === 'image') {
+                // Логотипы, добавленные через панель, — базовый стиль + центр-оригин
+                styleBaseObject(obj);
+            }
+        });
+
+        // Перетаскивание объекта — обновляем позицию tooltip по курсору
+        canvas.on('object:moving', () => {
+            if (rotateTooltipTb) positionRotateTooltipAtPointer();
+        });
+
+        // ============================================================
+        // SMART GUIDES: привязка к краям/центрам других объектов
+        // ============================================================
+        const SNAP_THRESHOLD = 6;       // px в координатах canvas
+        const GUIDE_COLOR = '#ff3b6b';  // розовый для контраста с голубым
+        let snapHint = null;            // подсказка внизу
+
+        function ensureSnapHint() {
+            if (snapHint) return snapHint;
+            const el = document.createElement('div');
+            el.id = 'snap-hint';
+            el.style.cssText = `
+                position: absolute;
+                pointer-events: none;
+                background: rgba(31,41,55,0.92);
+                color: #ffffff;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                font-size: 11px;
+                font-weight: 600;
+                padding: 4px 8px;
+                border-radius: 4px;
+                white-space: nowrap;
+                z-index: 10;
+                display: none;
+                letter-spacing: 0.2px;
+            `;
+            document.body.appendChild(el);
+            snapHint = el;
+            return el;
+        }
+
+        function showSnapHint(text, tb) {
+            const h = ensureSnapHint();
+            h.textContent = text;
+            h.style.display = 'block';
+            positionSnapHint(tb);
+        }
+        function positionSnapHint(tb) {
+            if (!snapHint || !tb) return;
+            const rect = canvas.getElement().getBoundingClientRect();
+            const b = tb.getBoundingRect(true, true);
+            const sx = rect.left + window.scrollX + b.left + b.width / 2;
+            const sy = rect.top + window.scrollY + b.top - 10;
+            snapHint.style.left = `${sx}px`;
+            snapHint.style.top = `${sy}px`;
+            snapHint.style.transform = 'translate(-50%, -100%)';
+        }
+        function hideSnapHint() {
+            if (snapHint) snapHint.style.display = 'none';
+        }
+
+        let activeGuides = { x: null, y: null };
+
+        function clearGuides() {
+            // Безусловная очистка всех направляющих линий на канвасе.
+            const guideObjs = canvas.getObjects().filter(o => o.__guide);
+            if (guideObjs.length) {
+                canvas.remove(...guideObjs);
+            }
+            activeGuides.x = null;
+            activeGuides.y = null;
+        }
+
+        function drawGuideLine(orientation, value) {
+            const opts = {
+                stroke: GUIDE_COLOR,
+                strokeWidth: 1,
+                selectable: false,
+                evented: false,
+                excludeFromExport: true,
+                originX: 'center',
+                originY: 'center'
+            };
+            let line;
+            if (orientation === 'v') {
+                line = new fabric.Line([value, 0, value, canvas.getHeight()], opts);
+            } else {
+                line = new fabric.Line([0, value, canvas.getWidth(), value], opts);
+            }
+            line.__guide = true;
+            canvas.add(line);
+        }
+
+        function getObjectEdges(obj) {
+            const b = obj.getBoundingRect(true, true);
+            return {
+                left: b.left,
+                centerX: b.left + b.width / 2,
+                right: b.left + b.width,
+                top: b.top,
+                centerY: b.top + b.height / 2,
+                bottom: b.top + b.height
+            };
+        }
+
+        function applySnap(target) {
+            if (target.__guide) return false;
+            if (target.lockMovementX && target.lockMovementY) return false;
+
+            const t = getObjectEdges(target);
+            const candidates = { x: [], y: [] };
+
+            // Кандидаты — все объекты на сцене (включая белый прямоугольник, у которого selectable=false).
+            // Исключаем только сам target и направляющие (__guide).
+            const others = canvas.getObjects().filter(o => o !== target && !o.__guide);
+
+            // Также добавляем границы самого холста — для привязки к «нулю» по краям плашки.
+            const W = canvas.getWidth();
+            const H = canvas.getHeight();
+            candidates.x.push({ v: 0, label: 'левый край холста' });
+            candidates.x.push({ v: W / 2, label: 'центр холста' });
+            candidates.x.push({ v: W, label: 'правый край холста' });
+            candidates.y.push({ v: 0, label: 'верх холста' });
+            candidates.y.push({ v: H / 2, label: 'центр холста' });
+            candidates.y.push({ v: H, label: 'низ холста' });
+
+            for (const o of others) {
+                const e = getObjectEdges(o);
+                candidates.x.push({ v: e.left, label: 'левый край' });
+                candidates.x.push({ v: e.centerX, label: 'центр X' });
+                candidates.x.push({ v: e.right, label: 'правый край' });
+                candidates.y.push({ v: e.top, label: 'верх' });
+                candidates.y.push({ v: e.centerY, label: 'центр Y' });
+                candidates.y.push({ v: e.bottom, label: 'низ' });
+            }
+
+            let newLeft = target.left;
+            let newTop = target.top;
+            let appliedX = null, appliedY = null;
+
+            const targetXs = [
+                { v: t.left, kind: 'left' },
+                { v: t.centerX, kind: 'centerX' },
+                { v: t.right, kind: 'right' }
+            ];
+            for (const tx1 of targetXs) {
+                let best = null;
+                for (const c of candidates.x) {
+                    const diff = Math.abs(tx1.v - c.v);
+                    if (diff <= SNAP_THRESHOLD && (!best || diff < best.diff)) {
+                        best = { v: c.v, diff, label: c.label };
+                    }
+                }
+                if (best) {
+                    if (tx1.kind === 'left') newLeft = target.left + (best.v - t.left);
+                    else if (tx1.kind === 'centerX') newLeft = target.left + (best.v - t.centerX);
+                    else if (tx1.kind === 'right') newLeft = target.left + (best.v - t.right);
+                    appliedX = { value: best.v, targetKind: tx1.kind, candLabel: best.label };
+                    break;
+                }
+            }
+
+            const targetYs = [
+                { v: t.top, kind: 'top' },
+                { v: t.centerY, kind: 'centerY' },
+                { v: t.bottom, kind: 'bottom' }
+            ];
+            for (const ty1 of targetYs) {
+                let best = null;
+                for (const c of candidates.y) {
+                    const diff = Math.abs(ty1.v - c.v);
+                    if (diff <= SNAP_THRESHOLD && (!best || diff < best.diff)) {
+                        best = { v: c.v, diff, label: c.label };
+                    }
+                }
+                if (best) {
+                    if (ty1.kind === 'top') newTop = target.top + (best.v - t.top);
+                    else if (ty1.kind === 'centerY') newTop = target.top + (best.v - t.centerY);
+                    else if (ty1.kind === 'bottom') newTop = target.top + (best.v - t.bottom);
+                    appliedY = { value: best.v, targetKind: ty1.kind, candLabel: best.label };
+                    break;
+                }
+            }
+
+            if (appliedX || appliedY) {
+                target.set({ left: newLeft, top: newTop });
+                target.setCoords();
+
+                clearGuides();
+                if (appliedX) drawGuideLine('v', appliedX.value);
+                if (appliedY) drawGuideLine('h', appliedY.value);
+
+                const tk = { left: 'левый край', centerX: 'центр X', right: 'правый край',
+                             top: 'верх', centerY: 'центр Y', bottom: 'низ' };
+                const parts = [];
+                if (appliedX) parts.push('↔ ' + tk[appliedX.targetKind] + ' → ' + appliedX.candLabel);
+                if (appliedY) parts.push('↕ ' + tk[appliedY.targetKind] + ' → ' + appliedY.candLabel);
+                showSnapHint('SNAP: ' + parts.join(' · '), target);
+                return true;
+            }
+            return false;
+        }
+
+        // ============================================================
+        // ПАНЕЛЬ ТОГГЛОВ: snap-положение + snap-угол (постоянные)
+        // ============================================================
+
+        const panel = document.createElement('div');
+        panel.id = 'snap-panel';
+
+        function rowTemplate(label, key, hint) {
+            const id = `snap-${key}`;
+            const on = snapState[key];
+            return `
+                <label class="sp-row" for="${id}">
+                    <span class="sp-label">
+                        <b>${label}</b>
+                        <small>${hint}</small>
+                    </span>
+                    <span class="sp-toggle">
+                        <input type="checkbox" id="${id}" ${on ? 'checked' : ''}/>
+                        <span class="sp-bg"></span>
+                        <span class="sp-knob"></span>
+                    </span>
+                </label>
+            `;
+        }
+
+        panel.innerHTML = `
+            <div class="sp-header">⚙ Привязки</div>
+            <div class="sp-body">
+                ${rowTemplate('Положение', 'position', 'края / центры рамки и других элементов')}
+                ${rowTemplate('Угол', 'angle', 'шаг 15° при повороте')}
+                <button class="sp-delete" type="button" disabled>🗑 Удалить выделенное</button>
+            </div>
+        `;
+        document.body.appendChild(panel);
+
+        const deleteBtn = panel.querySelector('.sp-delete');
+        const refreshDeleteState = () => {
+            if (!deleteBtn) return;
+            const active = canvas.getActiveObject();
+            deleteBtn.disabled = !active;
+        };
+        deleteBtn.addEventListener('click', () => {
+            const active = canvas.getActiveObject();
+            if (!active) return;
+            canvas.remove(active);
+            canvas.requestRenderAll();
+            clearGuides();
+            hideSnapHint();
+            refreshDeleteState();
+        });
+        canvas.on('selection:created', refreshDeleteState);
+        canvas.on('selection:updated', refreshDeleteState);
+        canvas.on('selection:cleared', refreshDeleteState);
+        canvas.on('object:removed', refreshDeleteState);
+
+        // Мобильный toggle: показываем/прячем snap-панель как bottom sheet.
+        // CSS сам отвечает за display кнопки через @media (max-width: 768px), (orientation: landscape) and (max-height: 600px).
+        const snapIsNarrow = () => window.matchMedia('(max-width: 768px), (orientation: landscape) and (max-height: 600px)').matches;
+        const snapToggleBtn = document.createElement('button');
+        snapToggleBtn.id = 'snap-toggle';
+        snapToggleBtn.innerHTML = '⚙ Привязки';
+        document.body.appendChild(snapToggleBtn);
+        snapToggleBtn.addEventListener('click', () => {
+            panel.classList.toggle('sp-open');
+            snapToggleBtn.textContent = panel.classList.contains('sp-open') ? '✕ Закрыть' : '⚙ Привязки';
+        });
+        // Клик вне панели на мобильных — закрыть sheet
+        document.addEventListener('click', (e) => {
+            if (!snapIsNarrow()) return;
+            if (!panel.classList.contains('sp-open')) return;
+            if (panel.contains(e.target)) return;
+            if (snapToggleBtn.contains(e.target)) return;
+            panel.classList.remove('sp-open');
+            snapToggleBtn.textContent = '⚙ Привязки';
+        });
+
+        // Конструкция через :checked + .sp-bg / + .sp-knob управляется CSS,
+        // но первое состояние чекбокса уже задано через атрибут checked.
+        // Этот обработчик оставлен на случай ручного sync (например, после смены snapState из JS).
+        function refreshPanelToggleUI(key) {
+            const cb = document.getElementById(`snap-${key}`);
+            if (cb) cb.checked = snapState[key];
+        }
+
+        document.getElementById('snap-position').addEventListener('change', (e) => {
+            snapState.position = e.target.checked;
+            refreshPanelToggleUI('position');
+            if (!snapState.position) {
+                clearGuides();
+                hideSnapHint();
+            }
+        });
+        document.getElementById('snap-angle').addEventListener('change', (e) => {
+            snapState.angle = e.target.checked;
+            refreshPanelToggleUI('angle');
+            applyAngleSnapToAll();
+        });
+
+        // Применяем начальный snap угла к уже существующим текстбоксам
+        applyAngleSnapToAll();
+
+        // ESC — мгновенно убирает направляющие и подсказку.
+        // Delete / Backspace — удаляет активный текстбокс, кроме режима редактирования.
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                clearGuides();
+                hideSnapHint();
+                return;
+            }
+            if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+            // Не вмешиваемся в системные комбинации и редактирование текста.
+            if (e.ctrlKey || e.metaKey || e.altKey) return;
+            const active = canvas.getActiveObject();
+            if (!active) return;
+            if (active.isEditing) return;
+            e.preventDefault();
+            canvas.remove(active);
+            canvas.requestRenderAll();
+        });
+
+        // На каждом перемещении объекта применяем snap (или очищаем, если выключен)
+        canvas.on('object:moving', (e) => {
+            const obj = e.target;
+            if (!obj || obj.__guide) return;
+            if (snapState.position) {
+                applySnap(obj);
+            } else {
+                clearGuides();
+                hideSnapHint();
+            }
+        });
+
+        // Снимаем панель привязки при НАЧАЛЕ новой транзакции (клик/тап),
+        // чтобы хинт от предыдущего перетаскивания не залипал на экране.
+        canvas.on('mouse:down', () => {
+            hideSnapHint();
+            clearGuides();
+        });
+        canvas.on('mouse:up', () => {
+            clearGuides();
+            hideSnapHint();
+        });
+        canvas.on('selection:cleared', () => {
+            clearGuides();
+            hideSnapHint();
+        });
+
+        // ============================================================
+        // ПАНЕЛЬ ЛОГОТИПОВ (загрузка из images/logos/manifest.json)
+        // ============================================================
+        let logoManifest = [];
+
+        function addLogoFromManifest(logo) {
+            fabric.Image.fromURL(`images/logos/${logo.file}`, (img) => {
+                if (!img) {
+                    console.warn('Не удалось загрузить логотип:', logo.file);
+                    return;
+                }
+                // Цель — ~ 80 px по большей стороне (логотипы добавляются в свободное место тестового холста)
+                const target = 80;
+                const aspect = img.width / img.height;
+                let w, h;
+                if (aspect >= 1) { w = target; h = target / aspect; }
+                else { h = target; w = target * aspect; }
+                const scale = w / img.width;
+
+                img.set({
+                    left: canvas.getWidth() / 2,
+                    top: canvas.getHeight() / 2,
+                    originX: 'center',
+                    originY: 'center',
+                    scaleX: scale,
+                    scaleY: scale
+                });
+                canvas.add(img);
+                canvas.setActiveObject(img);
+                canvas.requestRenderAll();
+            }, { crossOrigin: 'anonymous' });
+        }
+
+        async function initLogoPanel() {
+            const panel = document.createElement('div');
+            panel.id = 'logo-panel';
+            panel.innerHTML = `
+                <div class="lp-header">🏭 Логотипы</div>
+                <div class="lp-search">
+                    <input type="text" placeholder="🔍 Поиск по бренду..." autocomplete="off">
+                </div>
+                <div class="lp-filters">
+                    <button class="lp-filter-btn active" data-filter="all">Все</button>
+                    <button class="lp-filter-btn" data-filter="badge">Значки</button>
+                    <button class="lp-filter-btn" data-filter="text">С надп.</button>
+                </div>
+                <div class="lp-grid">
+                    <div class="lp-loading">⏳ Загрузка манифеста…</div>
+                </div>
+            `;
+            document.body.appendChild(panel);
+
+            // Мобильный toggle: показываем/прячем панель-нижний sheet.
+            // CSS сам отвечает за display кнопки через @media (max-width: 768px), (orientation: landscape) and (max-height: 600px).
+            const isNarrow = () => window.matchMedia('(max-width: 768px), (orientation: landscape) and (max-height: 600px)').matches;
+            const toggleBtn = document.createElement('button');
+            toggleBtn.id = 'logo-toggle';
+            toggleBtn.innerHTML = '☰ Логотипы';
+            document.body.appendChild(toggleBtn);
+            toggleBtn.addEventListener('click', () => {
+                panel.classList.toggle('lp-open');
+                toggleBtn.textContent = panel.classList.contains('lp-open') ? '✕ Закрыть' : '☰ Логотипы';
+            });
+            // Клик вне панели на мобильных — закрыть sheet
+            document.addEventListener('click', (e) => {
+                if (!isNarrow()) return;
+                if (!panel.classList.contains('lp-open')) return;
+                if (panel.contains(e.target)) return;
+                if (toggleBtn.contains(e.target)) return;
+                panel.classList.remove('lp-open');
+                toggleBtn.textContent = '☰ Логотипы';
+            });
+
+            const grid = panel.querySelector('.lp-grid');
+            const searchInput = panel.querySelector('.lp-search input');
+            const filterBtns = panel.querySelectorAll('.lp-filter-btn');
+
+            let currentFilter = 'all';
+            let searchQuery = '';
+
+            const renderGrid = () => {
+                let items = [...logoManifest];
+                if (currentFilter !== 'all') {
+                    items = items.filter(l => l.type === currentFilter);
+                }
+                const q = searchQuery.toLowerCase();
+                if (q) {
+                    items = items.filter(l =>
+                        (l.brand || '').toLowerCase().includes(q) ||
+                        (l.label || '').toLowerCase().includes(q)
+                    );
+                }
+
+                if (items.length === 0) {
+                    grid.innerHTML = '<div class="lp-empty">Ничего не найдено</div>';
+                    return;
+                }
+
+                // Группируем по бренду
+                const grouped = {};
+                items.forEach(l => {
+                    if (!grouped[l.brand]) grouped[l.brand] = [];
+                    grouped[l.brand].push(l);
+                });
+                const brands = Object.keys(grouped).sort();
+
+                grid.innerHTML = '';
+                brands.forEach(brand => {
+                    const groupTitle = document.createElement('div');
+                    groupTitle.className = 'lp-brand-title';
+                    groupTitle.textContent = brand.toUpperCase();
+                    grid.appendChild(groupTitle);
+
+                    const brandGrid = document.createElement('div');
+                    brandGrid.className = 'lp-brand-grid';
+
+                    grouped[brand].forEach(logo => {
+                        const btn = document.createElement('button');
+                        btn.className = 'lp-logo-btn';
+                        btn.title = logo.label;
+                        btn.dataset.file = logo.file;
+
+                        // Подгружаем превью
+                        const img = new Image();
+                        img.crossOrigin = 'anonymous';
+                        img.src = `images/logos/${logo.file}`;
+                        img.onload = () => {
+                            const c = document.createElement('canvas');
+                            c.width = 64;
+                            c.height = 64;
+                            const cx = c.getContext('2d');
+                            const aspect = img.width / img.height;
+                            let dw = 56, dh = 56;
+                            if (aspect > 1) dh = 56 / aspect;
+                            else dw = 56 * aspect;
+                            cx.clearRect(0, 0, 64, 64);
+                            cx.drawImage(img, (64 - dw) / 2, (64 - dh) / 2, dw, dh);
+                            btn.appendChild(c);
+                        };
+                        img.onerror = () => {
+                            btn.textContent = '—';
+                        };
+
+                        btn.addEventListener('click', () => {
+                            addLogoFromManifest(logo);
+                            // На мобильных закрываем sheet после добавления логотипа
+                            const wasOpen = panel.classList.contains('lp-open');
+                            if (wasOpen) {
+                                panel.classList.remove('lp-open');
+                                toggleBtn.textContent = '☰ Логотипы';
+                            }
+                        });
+                        brandGrid.appendChild(btn);
+                    });
+
+                    grid.appendChild(brandGrid);
+                });
+            };
+
+            // Загружаем манифест
+            try {
+                const resp = await fetch('images/logos/manifest.json');
+                if (!resp.ok) throw new Error('Манифест не найден');
+                const data = await resp.json();
+                logoManifest = data.logos || [];
+                if (logoManifest.length === 0) {
+                    grid.innerHTML = '<div class="lp-empty">Логотипы не найдены</div>';
+                    return;
+                }
+                renderGrid();
+            } catch (e) {
+                console.error('Ошибка загрузки манифеста логотипов:', e);
+                grid.innerHTML = '<div class="lp-empty">❌ Ошибка загрузки манифеста</div>';
+                return;
+            }
+
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value.trim();
+                renderGrid();
+            });
+
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilter = btn.dataset.filter;
+                    renderGrid();
+                });
+            });
+        }
+
+        initLogoPanel();
+
+        // ============================================================
+        // ПАНЕЛЬ ТЕКСТА И ШРИФТОВ (только fonts/backpanel)
+        // ============================================================
+        const FONT_OPTIONS = [
+            { name: 'Inter', family: 'Panel Inter' },
+            { name: 'Montserrat', family: 'Panel Montserrat' },
+            { name: 'Raleway', family: 'Panel Raleway' },
+            { name: 'Roboto', family: 'Panel Roboto' },
+            { name: 'Noto Serif', family: 'Panel Noto Serif' },
+            { name: 'Caveat', family: 'Panel Caveat' },
+            { name: 'Bad Script', family: 'Panel Bad Script' },
+            { name: 'Gogol', family: 'Panel Gogol' },
+            { name: 'Brusnika', family: 'Panel Brusnika' },
+            { name: 'LeoHand', family: 'Panel LeoHand' },
+            { name: 'Everlasting', family: 'Panel Everlasting' },
+            { name: 'Resphekt', family: 'Panel Resphekt' },
+            { name: 'Margot Xtrafette', family: 'Panel Margot' },
+            { name: 'Fowviel', family: 'Panel Fowviel' },
+            { name: 'Bravo', family: 'Panel Bravo' },
+            { name: 'Marta', family: 'Panel Marta' },
+            { name: 'Troika', family: 'Panel Troika' },
+            { name: 'Sprite Graffiti', family: 'Panel Sprite Graffiti' }
+        ];
+        const SIGNATURE_TEXT = 'Ваша красивая подпись';
+
+        async function addTextWithFont(font) {
+            await document.fonts.load(`40px "${font.family}"`, SIGNATURE_TEXT);
+            const textbox = new fabric.Textbox(SIGNATURE_TEXT, {
+                left: PLATE_WIDTH / 2,
+                top: PLATE_HEIGHT / 2,
+                originX: 'center',
+                originY: 'center',
+                width: 520,
+                fontSize: 40,
+                fontFamily: font.family,
+                fill: '#111111',
+                textAlign: 'center'
+            });
+            canvas.add(textbox);
+            canvas.setActiveObject(textbox);
+            canvas.requestRenderAll();
+        }
+
+        async function initFontPanel() {
+            await Promise.all(FONT_OPTIONS.map((font) =>
+                document.fonts.load(`22px "${font.family}"`, SIGNATURE_TEXT)
+            ));
+
+            const fontPanel = document.createElement('div');
+            fontPanel.id = 'font-panel';
+            fontPanel.innerHTML = `
+                <div class="fp-header">Текст и шрифты</div>
+                <div class="fp-list"></div>
+            `;
+            document.body.appendChild(fontPanel);
+
+            const fontToggleBtn = document.createElement('button');
+            fontToggleBtn.id = 'font-toggle';
+            fontToggleBtn.textContent = '✎ Текст';
+            document.body.appendChild(fontToggleBtn);
+
+            const list = fontPanel.querySelector('.fp-list');
+            FONT_OPTIONS.forEach((font) => {
+                const button = document.createElement('button');
+                button.className = 'fp-font-btn';
+                button.type = 'button';
+                button.setAttribute('aria-label', `${font.name}: ${SIGNATURE_TEXT}`);
+                button.innerHTML = `
+                    <span class="fp-preview" style="font-family: '${font.family}', cursive">${SIGNATURE_TEXT}</span>
+                    <span class="fp-name">${font.name}</span>
+                `;
+                button.addEventListener('click', async () => {
+                    await addTextWithFont(font);
+                    fontPanel.classList.remove('fp-open');
+                    fontToggleBtn.textContent = '✎ Текст';
+                });
+                list.appendChild(button);
+            });
+
+            fontToggleBtn.addEventListener('click', () => {
+                fontPanel.classList.toggle('fp-open');
+                fontToggleBtn.textContent = fontPanel.classList.contains('fp-open') ? '✕ Закрыть' : '✎ Текст';
+            });
+
+            document.addEventListener('click', (event) => {
+                if (!fontPanel.classList.contains('fp-open')) return;
+                if (fontPanel.contains(event.target) || fontToggleBtn.contains(event.target)) return;
+                fontPanel.classList.remove('fp-open');
+                fontToggleBtn.textContent = '✎ Текст';
+            });
+        }
+
+        initFontPanel();
+
+        // Финальный пересчёт размеров канвы — после применения фона и лого-панели
+        // (могут измениться layout / отступы).
+        requestAnimationFrame(fitCanvasToViewport);
+        window.addEventListener('load', fitCanvasToViewport);
+
+        canvas.requestRenderAll();
+    </script>
+</body>
+</html>

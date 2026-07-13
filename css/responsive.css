@@ -1,0 +1,637 @@
+/* ============================================
+   МОБИЛЬНАЯ ВЕРСИЯ (до 768px)
+   ============================================ */
+
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+    }
+
+    h1 {
+        font-size: 24px;
+    }
+
+    .subtitle {
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+
+    /* Вкладки */
+    .side-tabs {
+        flex-direction: column;
+        gap: 5px;
+        border-radius: 25px;
+    }
+
+    .side-btn {
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    /* Поля ввода */
+    .plate-inputs {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .plate-inputs input,
+    #customText {
+        padding: 12px;
+        font-size: 16px;
+    }
+
+    /* Панель эмодзи */
+    .emoji-panel {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        max-height: 450px;
+        padding: 12px;
+    }
+
+    .emoji-tabs {
+        flex: 0 0 auto;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-bottom: 10px;
+    }
+
+    .emoji-tab {
+        flex: 0 1 auto;
+        min-width: 70px;
+        padding: 8px 12px;
+        font-size: 13px;
+        white-space: nowrap;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .emoji-content {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+    }
+
+    #emojiGridContainer {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        display: flex;  /* добавить */
+        flex-direction: column;  /* добавить */
+        height: 100%;
+    }
+
+    .emoji-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+        height: 100%;
+        flex: 1;
+        overflow-y: auto;
+        max-height: 100%;
+        padding: 5px;
+    }
+
+    .emoji-btn {
+        aspect-ratio: 1;
+        font-size: 22px;
+        padding: 6px;
+    }
+
+    /* Логотипы */
+    .logo-grid {
+        gap: 6px;
+    }
+
+    .logo-brand-grid {
+        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+        gap: 8px;
+    }
+
+    .logo-btn {
+        min-height: 80px;
+        padding: 8px 4px 6px;
+    }
+
+    .logo-btn canvas,
+    .logo-btn img {
+        width: 40px;
+        height: 40px;
+    }
+
+    .logo-btn-label {
+        font-size: 9px;
+    }
+
+
+    /* Заголовки панелей */
+    .panel-header {
+        margin-bottom: 8px;
+    }
+
+    .panel-title {
+        font-size: 14px; /* меньше текст */
+    }
+
+    .clear-logos-btn {
+        padding: 4px 8px; /* меньше кнопка */
+        font-size: 11px;
+    }
+
+    /* Настройки текста */
+    .text-settings {
+        padding: 12px;
+        gap: 10px;
+    }
+
+    .setting-item {
+        gap: 3px;
+    }
+
+    .setting-item label {
+        font-size: 13px;
+    }
+
+    /* Тумблеры (флаг, точки, жирный текст) */
+    .flag-toggle-container {
+        padding: 10px 15px;
+        margin-bottom: 15px;
+    }
+
+    .flag-toggle {
+        gap: 10px;
+    }
+
+    .toggle-slider {
+        width: 50px;
+        height: 26px;
+    }
+
+    .toggle-slider:before {
+        width: 22px;
+        height: 22px;
+    }
+
+    .flag-toggle input:checked + .toggle-slider:before {
+        left: 26px;
+    }
+
+    .toggle-label {
+        font-size: 14px;
+    }
+
+    .toggle-label:before,
+    .toggle-label.dots:before,
+    .toggle-label.bold:before {
+        font-size: 18px;
+    }
+
+    /* Панель настроек */
+    .settings-panel {
+        padding: 15px;
+        margin: 15px 0 30px;
+    }
+
+    .settings-panel h3 {
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+
+    .settings-group {
+        padding: 12px;
+        margin-bottom: 15px;
+    }
+
+    .settings-group-title span {
+        font-size: 12px;
+        padding: 4px 12px;
+    }
+
+    .settings-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .setting-slider {
+        height: 5px;
+    }
+
+    .setting-slider::-webkit-slider-thumb {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* Радио-кнопки выравнивания */
+    .align-radio-group {
+        gap: 5px;
+    }
+
+    .radio-label {
+        padding: 6px 8px;
+    }
+
+    .radio-text {
+        font-size: 12px;
+    }
+
+    .radio-custom {
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Кастомный селект шрифта */
+    .font-select-trigger {
+        padding: 8px 12px;
+    }
+
+    .selected-font-preview {
+        font-size: 14px;
+    }
+
+    .font-option {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+
+    /* Кнопки */
+    .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .download-btn,
+    .reset-group {
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .reset-btn {
+        width: 100%;
+        padding: 12px 15px; /* одинаковые отступы для всех */
+        font-size: 14px;
+        justify-content: center;
+        border-radius: 10px;
+        min-height: 48px; /* минимальная высота для удобного нажатия */
+    }
+
+    .hide-settings-btn {
+        width: 100%;
+        padding: 12px 15px; /* ТОЧНО ТАКИЕ ЖЕ отступы */
+        font-size: 14px; /* ТОТ ЖЕ размер шрифта */
+        justify-content: center;
+        border-radius: 10px;
+        min-height: 48px;
+        margin-top: 0; /* убираем лишние отступы */
+    }
+
+    /* Специально для "Скрыть настройки" текст по центру */
+    .hide-settings-btn {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    /* Кнопка показа настроек */
+    .show-settings-btn {
+        width: 100%;
+        padding: 12px 20px;
+        font-size: 14px;
+        min-height: 48px;
+    }
+
+    /* Инструкция */
+    .instruction {
+        padding: 12px;
+        font-size: 13px;
+        margin-top: 15px;
+    }
+
+    /* Валидация */
+    .validation-message {
+        font-size: 12px;
+        padding: 8px 15px;
+        white-space: normal;
+        max-width: 250px;
+        text-align: center;
+        bottom: -50px;
+    }
+
+    /* Кнопки панели настроек */
+    .settings-actions {
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 15px;
+        padding-top: 12px;
+    }
+
+    .preview-area {
+        position: sticky;
+        top: 10px;
+        z-index: 100;
+        background: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transition: all 0.3s;
+        margin-bottom: 15px;
+    }
+
+    /* Когда клавиатура открыта - скрываем canvas, поле ввода фиксировано сверху */
+    .keyboard-open-search .preview-area {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0;
+        transform: none;
+        width: 100%;
+        border-radius: 0;
+        padding: 8px 12px;
+        margin-bottom: 0;
+        z-index: 200;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideDown 0.3s;
+    }
+
+    .keyboard-open-search #previewCanvas {
+        display: none;
+    }
+
+    .keyboard-open .back-text-input {
+        margin-top: 0;
+    }
+
+    .keyboard-open .back-text-input .custom-text-input {
+        min-height: 36px;
+        max-height: 60px;
+        font-size: 14px;
+    }
+
+    .keyboard-open .logo-hint {
+        display: none;
+    }
+
+    /* Добавляем отступ для контента под фиксированным preview */
+    .keyboard-open-search .container {
+        padding-top: 80px;
+    }
+
+    @keyframes slideDown {
+        from {
+            transform: translate(-50%, -100%);
+            opacity: 0;
+        }
+        to {
+            transform: translate(-50%, 0);
+            opacity: 1;
+        }
+    }
+
+    .mobile-keyboard-toolbar {
+        display: none;
+    }
+
+    .keyboard-open .mobile-keyboard-toolbar {
+        display: flex;
+    }
+
+    .keyboard-open .logo-panel {
+        max-height: 500px;
+        padding-top: 0;
+    }
+
+    .keyboard-open .logo-search-container {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .keyboard-open .logo-filter-tabs {
+        position: sticky;
+        top: 0;
+        z-index: 9;
+    }
+
+    .keyboard-open .logo-brand-title {
+        top: 40px;
+    }
+
+    .back-text-input .custom-text-input {
+        font-size: 14px;
+        padding: 8px 10px;
+        min-height: 40px;
+        max-height: 100px;
+    }
+
+    .inline-logo-canvas {
+        width: 20px;
+        height: 20px;
+    }
+
+    /* Слайдеры: отключаем нативную обработку касаний */
+    input[type="range"] {
+        touch-action: none;
+    }
+
+    /* Устраняем выезд слайдеров за пределы */
+    .setting-item {
+        min-width: 0;
+    }
+
+    .setting-slider {
+        width: 100%;
+        min-width: 0;
+    }
+
+}
+
+/* ============================================
+   ОЧЕНЬ МАЛЕНЬКИЕ ЭКРАНЫ (до 480px)
+   ============================================ */
+
+@media (max-width: 480px) {
+    .container {
+        padding: 15px;
+    }
+
+    h1 {
+        font-size: 20px;
+    }
+
+    .back-text-input .custom-text-input {
+        font-size: 14px;
+        padding: 8px 10px;
+        min-height: 36px;
+        max-height: 80px;
+    }
+
+    .logo-panel {
+        max-height: 500px;
+    }
+
+    .logo-search-container {
+        top: 0;
+    }
+
+    .logo-filter-tabs {
+        top: 40px;
+    }
+
+    .logo-brand-title {
+        top: 80px;
+    }
+
+    .logo-grid {
+    }
+
+    .logo-brand-grid {
+        grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+        gap: 6px;
+    }
+
+    .logo-btn {
+        min-height: 75px;
+        padding: 6px 3px 5px;
+    }
+
+    .logo-btn canvas,
+    .logo-btn img {
+        width: 36px;
+        height: 36px;
+    }
+
+    .emoji-btn {
+        font-size: 16px;
+    }
+
+
+    .settings-group-title span {
+        font-size: 11px;
+        padding: 3px 10px;
+    }
+
+    .setting-item label {
+        font-size: 12px;
+    }
+
+    .value {
+        font-size: 11px;
+        padding: 1px 6px;
+    }
+
+    .toggle-label {
+        font-size: 13px;
+    }
+
+    .toggle-label:before,
+    .toggle-label.dots:before,
+    .toggle-label.bold:before {
+        font-size: 16px;
+    }
+
+    .reset-btn,
+    .hide-settings-btn {
+        padding: 10px 12px; /* чуть меньше на совсем маленьких */
+        font-size: 13px;
+        min-height: 44px;
+    }
+
+    .show-settings-btn {
+        padding: 10px 16px;
+        font-size: 13px;
+        min-height: 44px;
+    }
+
+    .emoji-tabs {
+        flex-wrap: wrap;
+        border-radius: 15px;
+    }
+
+    .emoji-tab {
+        min-width: 60px;
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .emoji-content {
+        min-height: 300px;
+        height: 300px;
+    }
+
+    .emoji-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .emoji-btn {
+        font-size: 20px;
+    }
+
+    #emojiGridContainer {
+        min-height: 180px;
+    }
+}
+
+/* ============================================
+   СОВСЕМ КРОХОТНЫЕ (до 360px)
+   ============================================ */
+
+@media (max-width: 360px) {
+    .emoji-content {
+        min-height: 280px;
+        height: 280px;
+    }
+
+    .emoji-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .emoji-tab {
+        min-width: 55px;
+        padding: 5px 8px;
+        font-size: 11px;
+    }
+
+    .logo-brand-grid {
+        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+        gap: 5px;
+    }
+
+    .logo-btn canvas,
+    .logo-btn img {
+        width: 32px;
+        height: 32px;
+    }
+
+    .panel-title {
+        font-size: 13px;
+    }
+
+    .side-btn {
+        font-size: 13px;
+        padding: 8px;
+    }
+
+    .toggle-slider {
+        width: 45px;
+        height: 24px;
+    }
+
+    .toggle-slider:before {
+        width: 20px;
+        height: 20px;
+    }
+
+    .flag-toggle input:checked + .toggle-slider:before {
+        left: 23px;
+    }
+
+    /* Плавный скролл на iOS */
+    .emoji-grid,
+    .logo-grid,
+    .font-dropdown {
+        -webkit-overflow-scrolling: touch;
+    }
+
+}
