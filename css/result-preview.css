@@ -1,9 +1,10 @@
 /* Превью макета на шаблоне брелка */
 
 :root {
-    /* Размеры модалки на экране: сохраняем пропорции шаблона 765:456 ≈ 1.678 */
-    --rp-width: 765px;
-    --rp-height: 456px;
+    /* Размеры модалки на экране: сохраняем пропорции шаблона 765:456 ≈ 1.678.
+       Модалка стала больше (980×584 max) — для воздуха и читаемости подписей. */
+    --rp-width: 980px;
+    --rp-height: 584px;
 
     /* Координаты плашек в карманах template.png (765×456) — в процентах от родителя
        (.rp-modal с aspect-ratio 765/456), чтобы плашка сидела в кармане независимо
@@ -24,26 +25,35 @@
 .rp-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.78);
+    /* Лёгкий «стеклянный» фон: радиальный винет по краям + полупрозрачный чёрный. */
+    background:
+        radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.85) 100%),
+        rgba(8, 10, 14, 0.75);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
-    padding: 16px;
+    padding: 24px;
     box-sizing: border-box;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
 .rp-modal {
     position: relative;
-    /* Ширина ограничена тремя условиями: 95% viewport, max 765px, и так, чтобы при
-       aspect-ratio 765/456 высота не превышала 95vh (calc: w <= 95vh * 765/456). */
+    /* Ширина ограничена тремя условиями: 95% viewport, max --rp-width, и так, чтобы при
+       aspect-ratio 765/456 высота не превышала 95vh. */
     width: min(95vw, var(--rp-width), calc(95vh * 765 / 456));
-    /* height вычисляем из aspect-ratio; дополнительных max-height не нужно,
-       иначе aspect-ratio нарушается и шаблон визуально сплющивается. */
     aspect-ratio: 765 / 456;
-    background: #000;
-    border-radius: 12px;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+    max-height: 95vh;
+    background:
+        linear-gradient(180deg, #1a1d24 0%, #0c0e12 100%);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+        0 32px 80px rgba(0, 0, 0, 0.75),
+        0 0 0 1px rgba(255, 255, 255, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
     overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -94,76 +104,130 @@
 
 .rp-close {
     position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 36px;
-    height: 36px;
-    border-radius: 18px;
-    border: none;
-    background: rgba(0, 0, 0, 0.55);
+    top: 12px;
+    right: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.45);
     color: #fff;
-    font-size: 20px;
+    font-size: 18px;
     line-height: 1;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2;
+    z-index: 3;
+    transition: background-color 0.15s ease, transform 0.15s ease;
 }
-.rp-close:hover { background: rgba(0, 0, 0, 0.75); }
+.rp-close:hover {
+    background: rgba(0, 0, 0, 0.7);
+    transform: scale(1.05);
+}
 
 .rp-actions {
     position: absolute;
     /* Кнопки прижаты к самому низу модалки, чтобы не перекрывали нижнюю
        (заднюю) плашку в кармане шаблона. */
-    bottom: 4px;
+    bottom: 8px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 10px;
-    z-index: 2;
+    gap: 12px;
+    z-index: 3;
 }
 
 .rp-btn {
     font: inherit;
-    border: 2px solid #ffffff;
-    border-radius: 14px;
-    padding: 10px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 12px;
+    padding: 11px 22px;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
+    letter-spacing: 0.2px;
     cursor: pointer;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
-    transition: background-color 0.15s ease, opacity 0.15s ease;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    transition: background-color 0.18s ease, transform 0.12s ease, opacity 0.15s ease, box-shadow 0.18s ease;
 }
+.rp-btn:active:not(:disabled) { transform: translateY(1px); }
 
 .rp-btn--primary {
-    background: #f97316;
+    background: linear-gradient(180deg, #fb923c 0%, #f97316 100%);
     color: #ffffff;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
 }
-.rp-btn--primary:hover:not(:disabled) { background: #ea580c; }
+.rp-btn--primary:hover:not(:disabled) {
+    background: linear-gradient(180deg, #f97316 0%, #ea580c 100%);
+    box-shadow: 0 10px 28px rgba(249, 115, 22, 0.45), 0 8px 24px rgba(0, 0, 0, 0.45);
+}
 .rp-btn--primary:disabled {
-    background: #555;
-    color: #bbb;
-    border-color: #888;
+    background: linear-gradient(180deg, #4b5563 0%, #374151 100%);
+    color: #cbd5e1;
+    border-color: rgba(255, 255, 255, 0.08);
     cursor: not-allowed;
-    opacity: 0.7;
+    opacity: 0.65;
 }
 
 .rp-btn--secondary {
-    background: #1f2937;
+    background: rgba(31, 41, 55, 0.85);
     color: #ffffff;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
 }
-.rp-btn--secondary:hover { background: #111827; }
+.rp-btn--secondary:hover {
+    background: rgba(17, 24, 39, 0.95);
+}
 
 .rp-hint {
     position: absolute;
-    top: 12px;
-    left: 12px;
-    background: rgba(0, 0, 0, 0.6);
-    color: #fff;
+    top: 14px;
+    left: 14px;
+    background: rgba(0, 0, 0, 0.55);
+    color: rgba(255, 255, 255, 0.92);
     font-size: 12px;
-    padding: 6px 10px;
-    border-radius: 8px;
+    letter-spacing: 0.2px;
+    padding: 7px 12px;
+    border-radius: 999px;
     max-width: 60%;
+    z-index: 3;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.rp-center-label {
+    position: absolute;
+    /* По центру модалки между верхним и нижним карманами шаблона.
+       В шаблонных координатах середина между карманами ≈ y=238 (на 765×456);
+       238/456 ≈ 52.19% — ставим по центру модалки с лёгким подъёмом вверх,
+       чтобы не конфликтовать с цепочкой шаблона. */
+    top: 47%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: rgba(255, 255, 255, 0.88);
+    text-align: center;
+    pointer-events: none;
     z-index: 2;
+}
+
+.rp-center-label__title {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.rp-center-label__sub {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.55);
+    letter-spacing: 0.4px;
 }

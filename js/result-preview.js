@@ -38,6 +38,19 @@ function buildModalMarkup() {
     close.textContent = '✕';
     modal.appendChild(close);
 
+    // Лейбл по центру модалки — между передней и задней плашкой.
+    const centerLabel = document.createElement('div');
+    centerLabel.className = 'rp-center-label';
+    const centerTitle = document.createElement('div');
+    centerTitle.className = 'rp-center-label__title';
+    centerTitle.textContent = 'Готово к печати';
+    const centerSub = document.createElement('div');
+    centerSub.className = 'rp-center-label__sub';
+    centerSub.textContent = 'две стороны';
+    centerLabel.appendChild(centerTitle);
+    centerLabel.appendChild(centerSub);
+    modal.appendChild(centerLabel);
+
     const actions = document.createElement('div');
     actions.className = 'rp-actions';
 
