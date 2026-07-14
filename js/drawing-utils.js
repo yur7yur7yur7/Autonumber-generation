@@ -55,8 +55,9 @@ export function drawRoundedRect(x, y, width, height, radius, fillStyle, strokeSt
  * @param {number} width - Ширина
  * @param {number} height - Высота
  * @param {number} scaleFactor - Коэффициент масштабирования
+ * @param {number} borderRadius - Радиус скругления (в дизайн-пикселях, до умножения на scaleFactor)
  */
-export function drawBackground(width, height, scaleFactor) {
+export function drawBackground(width, height, scaleFactor, borderRadius) {
     if (!ctx) return;
 
     ctx.save();
@@ -64,9 +65,12 @@ export function drawBackground(width, height, scaleFactor) {
     ctx.shadowColor = 'rgba(0,0,0,0.2)';
     ctx.shadowBlur = 15 * scaleFactor;
     ctx.shadowOffsetY = 5 * scaleFactor;
-    ctx.beginPath();
-    ctx.rect(0, 0, width, height);
-    ctx.fill();
+    drawRoundedRect(
+        0, 0,
+        width, height,
+        (borderRadius || 0) * scaleFactor,
+        '#ffffff'
+    );
     ctx.restore();
 
     ctx.shadowBlur = 0;

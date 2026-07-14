@@ -77,15 +77,26 @@ export async function downloadBothSides(canvas, getNumber, getRegion, getRearDat
         const interval = 20;
         const totalWidth = CANVAS_WIDTH * 2 + interval;
 
+        // Радиус скругления в пикселях канвы (как в main.js#drawPlateImmediate).
+        const borderRadius = (mainSettings?.mainBorderRadius || 0) * (CONFIG.SCALE_FACTOR || 1);
+
         const svgString = `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${(5.18 * 2 + 0.2)}cm" height="1.07cm" viewBox="0 0 ${totalWidth} ${CANVAS_HEIGHT}"
      preserveAspectRatio="none"
      xmlns="http://www.w3.org/2000/svg"
      xmlns:xlink="http://www.w3.org/1999/xlink">
-    <rect x="0" y="0" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" fill="#000000"/>
-    <image width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" xlink:href="${frontData}" />
-    <rect x="${CANVAS_WIDTH + interval}" y="0" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" fill="#000000"/>
-    <image x="${CANVAS_WIDTH + interval}" y="0" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" xlink:href="${backData}" />
+    <defs>
+        <clipPath id="rp-front"><rect x="0" y="0" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" rx="${borderRadius}" ry="${borderRadius}"/></clipPath>
+        <clipPath id="rp-back"><rect x="${CANVAS_WIDTH + interval}" y="0" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" rx="${borderRadius}" ry="${borderRadius}"/></clipPath>
+    </defs>
+    <rect x="0" y="0" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" rx="${borderRadius}" ry="${borderRadius}" fill="#000000"/>
+    <g clip-path="url(#rp-front)">
+        <image width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" xlink:href="${frontData}" />
+    </g>
+    <rect x="${CANVAS_WIDTH + interval}" y="0" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" rx="${borderRadius}" ry="${borderRadius}" fill="#000000"/>
+    <g clip-path="url(#rp-back)">
+        <image x="${CANVAS_WIDTH + interval}" y="0" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" xlink:href="${backData}" />
+    </g>
 </svg>`;
 
         const fileName = `brelok-obe-storony-${getNumber()}-${getRegion()}.svg`;

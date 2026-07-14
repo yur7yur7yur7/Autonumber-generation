@@ -68,7 +68,7 @@ export const DEFAULT_SETTINGS = {
     numberY: 25,
 
     // Скругление углов
-    mainBorderRadius: 0,
+    mainBorderRadius: 18,
     innerBorderRadius: 18,
 
     // Размеры белых прямоугольников

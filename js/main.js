@@ -108,6 +108,14 @@ function loadSettings() {
         settings.margin = DEFAULT_SETTINGS.margin;
         migrated = true;
     }
+    // One-shot migration (2026-07-14): legacy defaults had mainBorderRadius=0 (sharp corners).
+    // New default is 18 (rounded), and 0 was the only pre-rounding baseline. If a user
+    // saved settings with 0, treat it as "never touched" and upgrade; explicit user choice
+    // is preserved by re-saving once they move the slider.
+    if (settings.mainBorderRadius === 0) {
+        settings.mainBorderRadius = DEFAULT_SETTINGS.mainBorderRadius;
+        migrated = true;
+    }
     // Persist after migration so the next load doesn't re-run.
     if (migrated) {
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch (_) {}
@@ -420,7 +428,7 @@ async function drawPlateImmediate() {
     clearLastDrawnElements();
 
     // Рисуем фоны
-    drawBackground(CANVAS_WIDTH, CANVAS_HEIGHT, SCALE_FACTOR);
+    drawBackground(CANVAS_WIDTH, CANVAS_HEIGHT, SCALE_FACTOR, settings.mainBorderRadius);
     drawInnerBackground(CANVAS_WIDTH, CANVAS_HEIGHT, SCALE_FACTOR, settings.mainBorderRadius);
 
     // Основная рамка
