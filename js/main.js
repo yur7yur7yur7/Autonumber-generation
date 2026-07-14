@@ -9,12 +9,13 @@ import {setDrawingContext, drawBackground, drawInnerBackground, drawRoundedRect}
 import {setFrontContext, drawFrontSide} from './drawing-front.js';
 import {setBackContext, drawBackSide} from './drawing-back.js';
 import {setSettingsCallbacks, createSettingsPanel, updateSettingsVisibility} from './settings-panel.js';
-import {setupDownloadButton, setDownloadContext} from './download.js';
+import {setupDownloadButton, setDownloadContext, downloadBothSides} from './download.js';
 import {setLogoContext, createLogoPanel} from './logos.js';
 import {setupPreviewOverlay, rebuildPreviewOverlay} from './preview-overlay.js';
 import {drawSideDots} from './drawing-utils.js';
 import {EMOJI_CATEGORIES} from './emojis.js';
 import {clearLastDrawnElements} from './element-registry.js';
+import {openResultPreview} from './result-preview.js';
 
 const {CANVAS_WIDTH, CANVAS_HEIGHT, SCALE_FACTOR, STORAGE_KEY} = CONFIG;
 
@@ -761,6 +762,64 @@ function getRearDataURL(timeoutMs = 1500) {
 
 // Настраиваем кнопку скачивания
 setupDownloadButton(canvas, () => numberInput.value, () => regionInput.value, getRearDataURL);
+
+// Кнопка «Посмотреть результат» — открывает модалку предпросмотра на шаблоне.
+const previewBtn = document.createElement('button');
+previewBtn.id = 'previewResultBtn';
+previewBtn.className = 'download-btn';
+previewBtn.textContent = '👀 Посмотреть результат';
+previewBtn.style.marginLeft = '10px';
+document.querySelector('.actions').appendChild(previewBtn);
+
+async function runSendToPrint() {
+    const result = await downloadBothSides(
+        canvas,
+        () => numberInput.value,
+        () => regionInput.value,
+        getRearDataURL
+    );
+    if (!result) return false;
+    const endpoint = (CONFIG.TELEGRAM_RELAY_URL || '').trim();
+    if (!endpoint) {
+        showTemporaryMessage('⚠️ Не настроена отправка в Telegram', 'warning');
+        return false;
+    }
+    try {
+        const resp = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ svg: result.svgString, filename: result.fileName })
+        });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        await resp.json().catch(() => ({}));
+        showTemporaryMessage('✅ Готово! Отправлено в Telegram', 'success');
+        return true;
+    } catch (e) {
+        console.error('Telegram relay:', e);
+        showTemporaryMessage('⚠️ Не отправлено: ' + e.message, 'warning');
+        return false;
+    }
+}
+
+previewBtn.addEventListener('click', async () => {
+    previewBtn.disabled = true;
+    const original = previewBtn.textContent;
+    previewBtn.textContent = '⏳ Готовлю...';
+    try {
+        // Передняя сторона: текущая отрисовка канвы.
+        const frontDataURL = canvas.toDataURL('image/png');
+        // Задняя: пытаемся получить из test.html. Если нет — null (заглушка).
+        const backDataURL = await getRearDataURL(1500);
+        await openResultPreview({
+            frontDataURL,
+            backDataURL,
+            onSendToPrint: () => runSendToPrint()
+        });
+    } finally {
+        previewBtn.disabled = false;
+        previewBtn.textContent = original;
+    }
+});
 
 // Канал с test.html для проксирования «Создать макет».
 // Editor объявляет о себе (editor-ready), отвечает на editor-query (если test.html
