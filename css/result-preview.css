@@ -33,7 +33,9 @@
     justify-content: center;
     align-items: center;
     z-index: 1000;
-    padding: 24px;
+    /* На самом оверлее используем vw — он от ширины viewport, что подходит для внешних
+       полей, не зависящих от размера модалки. */
+    padding: clamp(12px, 2vw, 32px);
     box-sizing: border-box;
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
@@ -46,12 +48,16 @@
     width: min(95vw, var(--rp-width), calc(95vh * 765 / 456));
     aspect-ratio: 765 / 456;
     max-height: 95vh;
+    /* container-type: inline-size — все cqw внутри модалки отсчитываются от её ширины.
+       Это даёт плавное масштабирование элементов (кнопки, лейблы, отступы) на любом
+       экране при сохранении aspect-ratio. */
+    container-type: inline-size;
     background:
         linear-gradient(180deg, #1a1d24 0%, #0c0e12 100%);
-    border-radius: 20px;
+    border-radius: 2cqw;
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow:
-        0 32px 80px rgba(0, 0, 0, 0.75),
+        0 2.7cqw 6.7cqw rgba(0, 0, 0, 0.75),
         0 0 0 1px rgba(255, 255, 255, 0.04),
         inset 0 1px 0 rgba(255, 255, 255, 0.08);
     overflow: hidden;
@@ -104,15 +110,17 @@
 
 .rp-close {
     position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 40px;
-    height: 40px;
-    border-radius: 20px;
+    /* cqw — контейнерные единицы (от ширины .rp-modal), плавно масштабируются.
+       min-нижний порог (max) защищает от слишком мелких значений на узких экранах. */
+    top: max(5px, 1cqw);
+    right: max(5px, 1cqw);
+    width: max(22px, 3.6cqw);
+    height: max(22px, 3.6cqw);
+    border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(0, 0, 0, 0.45);
     color: #fff;
-    font-size: 18px;
+    font-size: max(10px, 1.6cqw);
     line-height: 1;
     cursor: pointer;
     display: flex;
@@ -128,26 +136,24 @@
 
 .rp-actions {
     position: absolute;
-    /* Кнопки прижаты к самому низу модалки, чтобы не перекрывали нижнюю
-       (заднюю) плашку в кармане шаблона. */
-    bottom: 8px;
+    bottom: max(3px, 0.8cqw);
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 12px;
+    gap: max(4px, 1cqw);
     z-index: 3;
 }
 
 .rp-btn {
     font: inherit;
     border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 12px;
-    padding: 11px 22px;
-    font-size: 14px;
+    border-radius: max(6px, 1cqw);
+    padding: max(5px, 1cqw) max(10px, 1.9cqw);
+    font-size: max(10px, 1.25cqw);
     font-weight: 600;
     letter-spacing: 0.2px;
     cursor: pointer;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 max(3px, 0.7cqw) max(8px, 2cqw) rgba(0, 0, 0, 0.45);
     transition: background-color 0.18s ease, transform 0.12s ease, opacity 0.15s ease, box-shadow 0.18s ease;
 }
 .rp-btn:active:not(:disabled) { transform: translateY(1px); }
@@ -159,7 +165,8 @@
 }
 .rp-btn--primary:hover:not(:disabled) {
     background: linear-gradient(180deg, #f97316 0%, #ea580c 100%);
-    box-shadow: 0 10px 28px rgba(249, 115, 22, 0.45), 0 8px 24px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 max(5px, 0.85cqw) max(12px, 2.4cqw) rgba(249, 115, 22, 0.45),
+                0 max(3px, 0.7cqw) max(8px, 2cqw) rgba(0, 0, 0, 0.45);
 }
 .rp-btn--primary:disabled {
     background: linear-gradient(180deg, #4b5563 0%, #374151 100%);
@@ -187,10 +194,10 @@
     transform: translate(-50%, -50%);
     background: rgba(0, 0, 0, 0.55);
     color: rgba(255, 255, 255, 0.95);
-    font-size: 15px;
+    font-size: max(10px, 1.35cqw);
     font-weight: 500;
     letter-spacing: 0.2px;
-    padding: 10px 18px;
+    padding: max(4px, 0.9cqw) max(8px, 1.7cqw);
     border-radius: 999px;
     z-index: 3;
     border: 1px solid rgba(255, 255, 255, 0.08);
