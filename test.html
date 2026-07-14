@@ -1171,7 +1171,7 @@
             backgroundColor: '#000000',
             preserveObjectStacking: true,
             // Скругляем углы холста — углы чёрного фона станут прозрачными, как у
-            // настоящей плашки. Тот же радиус, что у frontRect ниже, чтобы
+            // настоящей плашки. Тот же радиус, что у numberRect/regionRect ниже, чтобы
             // внутренний белый и внешний чёрный радиусы совпадали по контуру.
             clipPath: new fabric.Rect({
                 left: 0,
@@ -1386,26 +1386,35 @@
         applyBackBackground(canvas)
             .catch((err) => console.error(err));
 
-        // Один цельный белый прямоугольник под номер + регион.
-        // Общие габариты как в drawing-front.js (numberAreaWidth + regionAreaWidth + 1*scaledMargin):
-        // занимает от scaledMargin до (PLATE_WIDTH - scaledMargin), зазор между ними = scaledMargin.
-        const combinedGap = scaledMargin;
-        const combinedWidth = scaledNumberAreaWidth + combinedGap + scaledRegionAreaWidth;
-
-        const frontRect = new fabric.Rect({
+        // Два белых прямоугольника — под номер и под регион, как в drawing-front.js.
+        // Между ними — чёрная полоса шириной scaledMargin, одинаковой с периметром.
+        // Прямоугольник под номер
+        const numberRect = new fabric.Rect({
             left: scaledMargin,
             top: scaledMargin,
-            width: combinedWidth,
+            width: scaledNumberAreaWidth,
             height: innerHeight,
             fill: '#ffffff',
-            // Чёрная кайма вокруг белой плашки формируется
-            // backgroundColor='#000000' холста, как у номера в editor.html.
             rx: scaledInnerRadius,
             ry: scaledInnerRadius,
             selectable: false,
             evented: false
         });
-        canvas.add(frontRect);
+        // Прямоугольник под регион
+        const regionRectX = 1224 - scaledRegionAreaWidth - scaledMargin;
+        const regionRect = new fabric.Rect({
+            left: regionRectX,
+            top: scaledMargin,
+            width: scaledRegionAreaWidth,
+            height: innerHeight,
+            fill: '#ffffff',
+            rx: scaledInnerRadius,
+            ry: scaledInnerRadius,
+            selectable: false,
+            evented: false
+        });
+        canvas.add(numberRect);
+        canvas.add(regionRect);
 
         // Текстбоксы внутри левого белого прямоугольника (под номер)
         const text = new fabric.Textbox('ТЕСТ TEST ТЕСТ', {
