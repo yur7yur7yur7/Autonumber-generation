@@ -114,7 +114,9 @@
 
 .rp-actions {
     position: absolute;
-    bottom: 12px;
+    /* Кнопки прижаты к самому низу модалки, чтобы не перекрывали нижнюю
+       (заднюю) плашку в кармане шаблона. */
+    bottom: 4px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
