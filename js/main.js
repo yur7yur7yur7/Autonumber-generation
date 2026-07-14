@@ -839,6 +839,14 @@ maketChannel?.addEventListener('message', (event) => {
         maketChannel.postMessage({ type: 'maket-result', success: true });
     } else if (data.type === 'editor-query') {
         maketChannel.postMessage({ type: 'editor-ready' });
+    } else if (data.type === 'front-snapshot-request') {
+        try {
+            const dataURL = canvas.toDataURL('image/png');
+            maketChannel.postMessage({ type: 'front-snapshot', dataURL });
+        } catch (e) {
+            console.warn('Не удалось отдать снимок передней стороны:', e);
+            maketChannel.postMessage({ type: 'front-snapshot', dataURL: null });
+        }
     }
 });
 maketChannel?.postMessage({ type: 'editor-ready' });
