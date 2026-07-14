@@ -2528,33 +2528,71 @@
                             pollHandle = null;
                         }
                     } else if (data.type === 'maket-result') {
-                        showToast(
-                            data.success ? '✅ Макет отправлен' : '⚠️ Не удалось отправить макет',
-                            !data.success
-                        );
+                        // Если наш временный sendMaketFromTest слушатель активен — он сам покажет тост.
+                        // Здесь — no-op, чтобы не дублировать сообщение.
                     }
                 });
             }
 
-            btn.addEventListener('click', () => {
-                if (!channel) {
-                    alert('Откройте editor.html, чтобы создать макет');
+            async function sendMaketFromTest() {
+                if (!channel || !ready) return false;
+                // Делегируем отправку editor.html — у него есть доступ к `downloadBothSides` и relay.
+                return new Promise((resolve) => {
+                    const handler = (event) => {
+                        const d = event.data;
+                        if (!d || d.type !== 'maket-result') return;
+                        channel.removeEventListener('message', handler);
+                        showToast(
+                            d.success ? '✅ Макет отправлен' : '⚠️ Не удалось отправить макет',
+                            !d.success
+                        );
+                        resolve(Boolean(d.success));
+                    };
+                    channel.addEventListener('message', handler);
+                    channel.postMessage({ type: 'rear-create-maket' });
+                });
+            }
+
+            btn.addEventListener('click', async () => {
+                if (!channel || !ready) {
+                    showToast('Откройте editor.html, чтобы посмотреть результат', true);
                     return;
                 }
-                if (!ready) {
-                    alert('Откройте editor.html, чтобы создать макет');
-                    return;
-                }
-                // Анимация: на 1.2с превращаем кнопку в «Отправка...»
+                // Запрашиваем у editor.html снимок передней стороны через maket-канал.
+                // editor.html отвечает сообщением front-snapshot с dataURL.
+                const frontDataURL = await new Promise((resolve) => {
+                    const handler = (event) => {
+                        const d = event.data;
+                        if (!d || d.type !== 'front-snapshot') return;
+                        channel.removeEventListener('message', handler);
+                        resolve(d.dataURL || null);
+                    };
+                    channel.addEventListener('message', handler);
+                    channel.postMessage({ type: 'front-snapshot-request' });
+                    setTimeout(() => {
+                        channel.removeEventListener('message', handler);
+                        resolve(null);
+                    }, 1500);
+                });
+
                 const original = btn.textContent;
-                btn.textContent = '⏳ Отправка...';
+                btn.textContent = '⏳ Готовлю...';
                 btn.disabled = true;
-                showToast('⏳ Отправляю макет...', false);
-                channel.postMessage({ type: 'rear-create-maket' });
-                setTimeout(() => {
+                try {
+                    // Локально берём снимок задней стороны — у нас она своя.
+                    canvas.renderAll();
+                    const backDataURL = canvas.lowerCanvasEl
+                        ? canvas.lowerCanvasEl.toDataURL('image/png')
+                        : canvas.toDataURL('image/png');
+                    await openResultPreview({
+                        frontDataURL,
+                        backDataURL,
+                        onSendToPrint: () => sendMaketFromTest()
+                    });
+                } finally {
                     btn.textContent = original;
                     btn.disabled = false;
-                }, 1200);
+                }
             });
 
             // Изначально кнопка неактивна, пока editor.html не объявит о себе.
