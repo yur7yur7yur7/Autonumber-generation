@@ -136,7 +136,8 @@
 
 .rp-actions {
     position: absolute;
-    bottom: max(3px, 0.8cqw);
+    /* Кнопки прижаты к самому низу модалки без отступов. */
+    bottom: 0;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
