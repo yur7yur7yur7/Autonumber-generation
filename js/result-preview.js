@@ -19,10 +19,12 @@ function buildModalMarkup() {
 
     const modal = document.createElement('div');
     modal.className = 'rp-modal';
-
     const tpl = document.createElement('img');
     tpl.className = 'rp-template';
-    tpl.src = 'images/template.png';
+    // Cache-busting query: заставляет браузер загрузить свежую версию template.png,
+    // а не закешированную. Иначе после правок изображения пользователь видит
+    // старую раскладку карманов и плашки «не попадают» в карманы.
+    tpl.src = 'images/template.png?v=' + Date.now();
     tpl.alt = 'Шаблон брелка';
     modal.appendChild(tpl);
 
