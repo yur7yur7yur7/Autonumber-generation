@@ -226,45 +226,60 @@ function jsonResponse(obj, status) {
     });
 }
 
-// Build a multipart/form-data body for sendMediaGroup. Telegram's recommended
-// shape: top-level body is the raw JSON describing the group; each `attach://`
-// reference resolves to a sibling part whose `name` matches the attach name.
-// We send the JSON as the FIRST part (no Content-Disposition, Content-Type
-// application/json) and then attach each PNG. The bot accepts this layout
-// reliably across all current API versions.
+// Build a multipart/form-data body for sendMediaGroup.
+//
+// Telegram's Bot API expects the following shape (per their docs and source):
+//   1. chat_id as its own form-data text part;
+//   2. media as its own form-data text part whose body is the JSON array of
+//      InputMedia objects (caption + parse_mode live inside each entry, not
+//      at the top level — except parse_mode which IS allowed at top level);
+//   3. each `attach://<name>` reference resolves to a file part whose
+//      Content-Disposition name equals <name> exactly (no extension).
+//
+// Earlier versions of this function packed everything into one JSON blob
+// (or skipped the chat_id part) and Telegram returned HTTP 400 with
+// "chat_id: chat not found" / "wrong type" — depending on which field was
+// misinterpreted. The shape below is the one accepted by the API.
 function buildMediaGroupMultipart(chatId, caption, mediaItems) {
     const boundary = '----BrelokBoundary' + crypto.randomUUID().replace(/-/g, '');
     const enc = new TextEncoder();
     const parts = [];
 
-    const mediaJson = {
-        chat_id: chatId,
-        parse_mode: 'MarkdownV2',
-        media: mediaItems.map((m, idx) => {
-            const entry = {
-                type: 'photo',
-                media: 'attach://' + m.kind + '.png',
-            };
-            if (idx === 0) {
-                entry.caption = caption;
-            }
-            return entry;
-        }),
-    };
-
-    // Raw JSON part. No Content-Disposition — Telegram infers the role of the
-    // first application/json part as the request body for sendMediaGroup.
+    // 1) chat_id — text part. Keep it as a string exactly as supplied by the
+    // TG_CHAT_IDS secret; Telegram accepts both numeric strings and positive
+    // integers but mixing forms across requests is a recipe for confusion.
     parts.push(enc.encode(
         '--' + boundary + '\r\n' +
+        'Content-Disposition: form-data; name="chat_id"\r\n' +
+        '\r\n' +
+        chatId + '\r\n'
+    ));
+
+    // 2) media — JSON array as a text part.
+    const mediaJson = mediaItems.map((m, idx) => {
+        const entry = {
+            type: 'photo',
+            media: 'attach://' + m.kind,
+        };
+        if (idx === 0) {
+            entry.caption = caption;
+            entry.parse_mode = 'MarkdownV2';
+        }
+        return entry;
+    });
+    parts.push(enc.encode(
+        '--' + boundary + '\r\n' +
+        'Content-Disposition: form-data; name="media"\r\n' +
         'Content-Type: application/json; charset=utf-8\r\n' +
         '\r\n' +
         JSON.stringify(mediaJson) + '\r\n'
     ));
 
+    // 3) Attached files — one part per item, name must match `attach://<name>`.
     for (const m of mediaItems) {
         parts.push(enc.encode(
             '--' + boundary + '\r\n' +
-            'Content-Disposition: form-data; name="' + m.kind + '.png"; filename="' + m.kind + '.png"\r\n' +
+            'Content-Disposition: form-data; name="' + m.kind + '"; filename="' + m.kind + '.png"\r\n' +
             'Content-Type: image/png\r\n' +
             '\r\n'
         ));
