@@ -1387,16 +1387,13 @@
             .catch((err) => console.error(err));
 
         // Один цельный белый прямоугольник под номер + регион (без чёрной полосы между ними).
-        // Занимает от scaledMargin до (PLATE_WIDTH - scaledMargin), ширина =
-        // numberAreaWidth + regionAreaWidth + 1*scaledMargin (зазор между ними закрашен белым).
-        const combinedGap = scaledMargin;
-        const combinedWidth = scaledNumberAreaWidth + combinedGap + scaledRegionAreaWidth;
-
+        // Симметричный отступ scaledMargin от всех четырёх краёв канвы, чтобы чёрная
+        // рамка была одинаковой ширины (≈11.9 канвас-пикселей) по всему периметру.
         const frontRect = new fabric.Rect({
             left: scaledMargin,
             top: scaledMargin,
-            width: combinedWidth,
-            height: innerHeight,
+            width: 1224 - (scaledMargin * 2),
+            height: 252 - (scaledMargin * 2),
             fill: '#ffffff',
             rx: scaledInnerRadius,
             ry: scaledInnerRadius,
