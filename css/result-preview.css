@@ -5,17 +5,18 @@
     --rp-width: 765px;
     --rp-height: 456px;
 
-    /* Размеры плашек 1224×252 подогнаны под карманы с сохранением пропорции 1224/252≈4.857.
-       Ширина = высота × 1224/252 — плашка ложится без искажения.
-       object-fit: cover центрирует/обрезает, если карман чуть шире, чем нужно. */
-    --rp-front-x: 393px;
-    --rp-front-y: 70px;
-    --rp-front-w: 320.5px;
-    --rp-front-h: 66px;
-    --rp-back-x: 383.5px;
-    --rp-back-y: 335px;
-    --rp-back-w: 350px;
-    --rp-back-h: 72px;
+    /* Координаты плашек в карманах template.png (765×456) — в процентах от родителя
+       (.rp-modal с aspect-ratio 765/456), чтобы плашка сидела в кармане независимо
+       от размера и соотношения экрана. Ширина × высота подобраны с сохранением
+       пропорции 1224/252≈4.857. */
+    --rp-front-x: 51.37%;
+    --rp-front-y: 15.35%;
+    --rp-front-w: 41.90%;
+    --rp-front-h: 14.47%;
+    --rp-back-x: 50.13%;
+    --rp-back-y: 73.46%;
+    --rp-back-w: 45.75%;
+    --rp-back-h: 15.79%;
 }
 
 .rp-overlay {
@@ -32,10 +33,12 @@
 
 .rp-modal {
     position: relative;
-    width: min(95vw, var(--rp-width));
-    /* height вычисляем из пропорций шаблона */
+    /* Ширина ограничена тремя условиями: 95% viewport, max 765px, и так, чтобы при
+       aspect-ratio 765/456 высота не превышала 95vh (calc: w <= 95vh * 765/456). */
+    width: min(95vw, var(--rp-width), calc(95vh * 765 / 456));
+    /* height вычисляем из aspect-ratio; дополнительных max-height не нужно,
+       иначе aspect-ratio нарушается и шаблон визуально сплющивается. */
     aspect-ratio: 765 / 456;
-    max-height: 95vh;
     background: #000;
     border-radius: 12px;
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
