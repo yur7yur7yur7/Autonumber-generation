@@ -547,7 +547,7 @@
                 min-width: 0;
             }
 
-            /* «Создать макет» на десктопе — по центру внизу, ровно над #snap-panel.
+            /* «Посмотреть результат» на десктопе — по центру внизу, ровно над #snap-panel.
                Центрируем через margin:auto + фиксированную ширину,
                чтобы transform не использовался вообще.
                bottom подобран с запасом под выросшую панель (3 тоггла + кнопка). */
@@ -667,7 +667,7 @@
         }
         #font-toggle:active { transform: translateX(-50%) scale(0.96); }
 
-        /* Кнопка «Создать макет» — поверх, всегда видна, яркий акцент.
+        /* Кнопка «Посмотреть результат» — поверх, всегда видна, яркий акцент.
            Оранжевый + белая кайма + плотная тень, чтобы выделяться на тёмно-зелёном
            фоне back.png. */
         #create-maket {
@@ -849,6 +849,10 @@
                 box-shadow: 0 -8px 32px rgba(0,0,0,0.25);
             }
             #logo-panel.lp-open {
+                bottom: 68px;
+                /* Растягиваем панель до максимума, который помещается между
+                   bottom: 68px и верхним краем экрана (12px запас). */
+                max-height: calc(100vh - 80px);
                 transform: translateY(0);
             }
             /* Хват сверху, чтобы было видно что это раскрывающаяся шторка */
@@ -906,6 +910,13 @@
             #snap-panel .sp-body { padding: 8px 10px; }
             #snap-panel .sp-row { padding: 8px 10px; }
 
+            /* Панель шрифтов на мобильном — открывается над гамбургер-кнопкой
+               тоггла так же, как snap-panel. Поднятие на ту же величину (68px),
+               что и у #snap-panel.sp-open, чтобы поведение было единообразным. */
+            #font-panel.fp-open {
+                bottom: 68px;
+            }
+
             /* Шапки bottom-sheet'ов — зона хвата для свайпа вниз.
                touch-action: pan-y разрешает вертикальный скролл страницы/списка,
                но даёт JS перехватить pointer-события для закрытия панели. */
@@ -921,7 +932,7 @@
                 cursor: grabbing;
             }
 
-            /* «Создать макет» на мобильном — по центру внизу, выше гамбургеров.
+            /* «Посмотреть результат» на мобильном — по центру внизу, выше гамбургеров.
                Центрирование через margin:auto, transform не используется. */
             #create-maket {
                 /* На мобильном z-index ниже панелей (10) и тогглов (11):
@@ -972,7 +983,16 @@
                 left: 8px;
                 right: 8px;
                 bottom: 8px;
-                max-height: calc(100vh - 16px);
+                /* Запас сверху достаточен, чтобы при открытии панели (bottom: 56px)
+                   её шапка не уходила за верх экрана. */
+                max-height: calc(100vh - 80px);
+            }
+            /* В альбомном мобильном открытые панели поднимаются над тогглами
+               так же, как и в портретном. 56px = высота тоггла + 8px зазор. */
+            #logo-panel.lp-open,
+            #snap-panel.sp-open,
+            #font-panel.fp-open {
+                bottom: 56px;
             }
             #logo-panel .lp-header,
             #snap-panel .sp-header,
@@ -998,7 +1018,7 @@
             #logo-toggle { left: 8px; }
             #snap-toggle { right: 8px; }
 
-            /* «Создать макет» в альбомном — по центру внизу, выше тогглов */
+            /* «Посмотреть результат» в альбомном — по центру внизу, выше тогглов */
             #create-maket {
                 bottom: 60px;
                 padding: 9px 14px;
@@ -1074,6 +1094,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="css/result-preview.css">
 </head>
 <body>
     <div id="canvas-wrap">
@@ -1102,7 +1123,7 @@
             <input type="color" id="ctx-color-input" value="#111111" aria-label="Выбрать цвет текста">
         </label>
     </div>
-    <button id="create-maket" type="button" aria-label="Создать макет" data-tooltip="Создаёт и отправляет макет">⬇⬇ Создать макет</button>
+    <button id="create-maket" type="button" aria-label="Посмотреть результат" data-tooltip="Создаёт и отправляет макет">Посмотреть результат</button>
     <div id="maket-toast" role="status" aria-live="polite"></div>
     <script>
         // Размеры передней стороны — как в js/drawing-front.js + js/config.js
@@ -1215,12 +1236,45 @@
             longPressStart = null;
         }
 
+        // Попадает ли точка (в scene-space канваса) в круглую иконку поворота (mtr)
+        // какого-либо объекта. Используется, чтобы тап/удержание по mtr не открывал
+        // контекстное меню долгого нажатия.
+        // Радиус хита = радиус иконки (10) + небольшой запас (4). Должен совпадать
+        // с реальным размером иконки в replaceRotateControl().
+        const MTR_HIT_RADIUS_SQ = 14 * 14;
+        function isPointOnRotateControl(point) {
+            const objects = canvas.getObjects();
+            for (let i = 0; i < objects.length; i++) {
+                const obj = objects[i];
+                if (!obj || !obj.visible || obj.__guide) continue;
+                if (!obj.controls || !obj.controls.mtr) continue;
+                const mtr = obj.controls.mtr;
+                if (mtr.x === undefined || mtr.y === undefined) continue;
+                const halfH = obj.height / 2;
+                // Локальное смещение mtr относительно центра объекта.
+                const lx = mtr.x * halfH + (mtr.offsetX || 0);
+                const ly = mtr.y * obj.height + (mtr.offsetY || 0);
+                // Переводим из локальной системы объекта в scene-space через матрицу трансформации.
+                const localPt = { x: lx, y: ly };
+                const worldPt = fabric.util.transformPoint(localPt, obj.calcTransformMatrix());
+                const dx = point.x - worldPt.x;
+                const dy = point.y - worldPt.y;
+                if (dx * dx + dy * dy <= MTR_HIT_RADIUS_SQ) return true;
+            }
+            return false;
+        }
+
         function startLongPress(event) {
             if (!isMobile()) return;
             // Только для касания, не для пера/мыши.
             if (event.pointerType && event.pointerType !== 'touch') return;
             const target = canvas.findTarget(event);
             if (!target || target.__guide) return;
+            // Если тап пришёлся по иконке поворота (mtr) — не открываем контекстное меню.
+            // fabric при попадании в control-handle ставит target.__corner === 'mtr'.
+            if (target.__corner === 'mtr') return;
+            const pointer = canvas.getPointer(event);
+            if (isPointOnRotateControl(pointer)) return;
             longPressStart = { x: event.clientX, y: event.clientY };
             longPressTimer = setTimeout(() => {
                 longPressTimer = null;
@@ -2116,8 +2170,16 @@
                     console.warn('Не удалось загрузить логотип:', logo.file);
                     return;
                 }
-                // Цель — ~ 80 px по большей стороне (логотипы добавляются в свободное место тестового холста)
-                const target = 80;
+                // Размер берём от ВИЗУАЛЬНОГО размера канвы, чтобы логотип занимал не меньше
+                // ~10% её площади на любом экране (мобильный/десктоп), независимо от
+                // текущего зума. canvas.getWidth()/getHeight() возвращают display-размер
+                // после setDimensions(); делим на zoom, чтобы получить scene-space.
+                const FRACTION_OF_CANVAS = 0.18; // ~10% площади по линейной стороне
+                const cw = canvas.getWidth();
+                const ch = canvas.getHeight();
+                const zoom = canvas.getZoom() || 1;
+                const targetVisual = Math.max(120, FRACTION_OF_CANVAS * Math.max(cw, ch));
+                const target = Math.round(targetVisual / zoom);
                 const aspect = img.width / img.height;
                 let w, h;
                 if (aspect >= 1) { w = target; h = target / aspect; }
@@ -2238,16 +2300,18 @@
                         img.crossOrigin = 'anonymous';
                         img.src = `images/logos/${logo.file}`;
                         img.onload = () => {
+                            // Рендерим превью в высоком разрешении, чтобы при растягивании
+                            // canvas до 100% кнопки логотип оставался чётким, а не пиксельным.
                             const c = document.createElement('canvas');
-                            c.width = 64;
-                            c.height = 64;
+                            c.width = 128;
+                            c.height = 128;
                             const cx = c.getContext('2d');
                             const aspect = img.width / img.height;
-                            let dw = 56, dh = 56;
-                            if (aspect > 1) dh = 56 / aspect;
-                            else dw = 56 * aspect;
-                            cx.clearRect(0, 0, 64, 64);
-                            cx.drawImage(img, (64 - dw) / 2, (64 - dh) / 2, dw, dh);
+                            let dw = 112, dh = 112;
+                            if (aspect > 1) dh = 112 / aspect;
+                            else dw = 112 * aspect;
+                            cx.clearRect(0, 0, 128, 128);
+                            cx.drawImage(img, (128 - dw) / 2, (128 - dh) / 2, dw, dh);
                             btn.appendChild(c);
                         };
                         img.onerror = () => {
@@ -2428,7 +2492,7 @@
         })();
 
         // ============================================================
-        // Кнопка «Создать макет» — проксирует клик в editor.html через канал.
+        // Кнопка «Посмотреть результат» — проксирует клик в editor.html через канал.
         // Если editor.html не открыт, кнопка остаётся видимой, но клик подсказывает
         // пользователю открыть редактор.
         // ============================================================
@@ -2521,5 +2585,6 @@
 
         canvas.requestRenderAll();
     </script>
+    <script type="module" src="js/result-preview.js"></script>
 </body>
 </html>
