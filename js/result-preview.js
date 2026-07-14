@@ -75,6 +75,8 @@ export function openResultPreview({ frontDataURL, backDataURL, onSendToPrint }) 
         front.className = 'rp-layer';
         front.style.setProperty('--rp-layer-x', 'var(--rp-front-x)');
         front.style.setProperty('--rp-layer-y', 'var(--rp-front-y)');
+        front.style.setProperty('--rp-layer-w', 'var(--rp-front-w)');
+        front.style.setProperty('--rp-layer-h', 'var(--rp-front-h)');
         front.src = frontDataURL;
         front.alt = 'Передняя сторона';
         modal.appendChild(front);
@@ -85,6 +87,8 @@ export function openResultPreview({ frontDataURL, backDataURL, onSendToPrint }) 
             back.className = 'rp-layer';
             back.style.setProperty('--rp-layer-x', 'var(--rp-back-x)');
             back.style.setProperty('--rp-layer-y', 'var(--rp-back-y)');
+            back.style.setProperty('--rp-layer-w', 'var(--rp-back-w)');
+            back.style.setProperty('--rp-layer-h', 'var(--rp-back-h)');
             back.src = backDataURL;
             back.alt = 'Задняя сторона';
             modal.appendChild(back);
@@ -94,6 +98,8 @@ export function openResultPreview({ frontDataURL, backDataURL, onSendToPrint }) 
             stub.className = 'rp-layer rp-layer--missing';
             stub.style.setProperty('--rp-layer-x', 'var(--rp-back-x)');
             stub.style.setProperty('--rp-layer-y', 'var(--rp-back-y)');
+            stub.style.setProperty('--rp-layer-w', 'var(--rp-back-w)');
+            stub.style.setProperty('--rp-layer-h', 'var(--rp-back-h)');
             stub.textContent = 'Открой редактор задней стороны (test.html)';
             modal.appendChild(stub);
             sendBtn.disabled = true;
