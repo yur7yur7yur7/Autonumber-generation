@@ -725,8 +725,71 @@ if (window.visualViewport) {
     });
 }
 
+// Канал обмена с test.html (редактор задней стороны).
+// Editor просит снимок канвы, test.html отвечает PNG dataURL.
+const REAR_CHANNEL = 'brelok-rear';
+const rearChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel(REAR_CHANNEL) : null;
+const rearListeners = new Set();
+rearChannel?.addEventListener('message', (event) => {
+    const data = event.data;
+    if (!data || data.type !== 'rear-snapshot') return;
+    rearListeners.forEach((resolve) => {
+        try { resolve(data.dataURL); } catch (_) { /* ignore listener error */ }
+    });
+    rearListeners.clear();
+});
+
+/**
+ * Возвращает PNG-снимок задней стороны из test.html.
+ * Резолвится в null, если редактор не открыт или не отвечает.
+ */
+function getRearDataURL(timeoutMs = 1500) {
+    if (!rearChannel) return Promise.resolve(null);
+    return new Promise((resolve) => {
+        const timer = setTimeout(() => {
+            rearListeners.delete(onResponse);
+            resolve(null);
+        }, timeoutMs);
+        const onResponse = (dataURL) => {
+            clearTimeout(timer);
+            resolve(dataURL);
+        };
+        rearListeners.add(onResponse);
+        rearChannel.postMessage({ type: 'rear-snapshot-request' });
+    });
+}
+
 // Настраиваем кнопку скачивания
-setupDownloadButton(canvas, () => numberInput.value, () => regionInput.value);
+setupDownloadButton(canvas, () => numberInput.value, () => regionInput.value, getRearDataURL);
+
+// Канал с test.html для проксирования «Создать макет».
+// Editor объявляет о себе (editor-ready), отвечает на editor-query (если test.html
+// был открыт раньше editor.html), принимает rear-create-maket и имитирует клик
+// по кнопке #downloadBothBtn. После успешного клика отправляет maket-result обратно.
+const MAKET_CHANNEL = 'brelok-maket';
+const maketChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel(MAKET_CHANNEL) : null;
+maketChannel?.addEventListener('message', (event) => {
+    const data = event.data;
+    if (!data) return;
+    if (data.type === 'rear-create-maket') {
+        const btn = document.getElementById('downloadBothBtn');
+        if (!btn) return;
+        btn.click();
+        // setupDownloadButton асинхронно шлёт SVG в Telegram relay. Сообщаем test.html
+        // о старте; финальный успех/ошибка не отслеживается (его UI уже в editor.html).
+        maketChannel.postMessage({ type: 'maket-result', success: true });
+    } else if (data.type === 'editor-query') {
+        maketChannel.postMessage({ type: 'editor-ready' });
+    }
+});
+maketChannel?.postMessage({ type: 'editor-ready' });
+// Если editor.html стал видимым впервые (например, открыли позже test.html),
+// повторно объявляем о себе, чтобы test.html снял disabled с кнопки.
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        maketChannel?.postMessage({ type: 'editor-ready' });
+    }
+});
 
 
 setDownloadContext(ctx, settings, {

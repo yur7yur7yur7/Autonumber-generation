@@ -185,6 +185,17 @@
             font-weight: 600;
             font-size: 13px;
         }
+        /* Хват сверху у панели шрифтов — тот же, что у панелей логотипов и привязок.
+           Появляется только в открытом состоянии. */
+        #font-panel.fp-open .fp-header::before {
+            content: "";
+            display: block;
+            width: 36px;
+            height: 4px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 2px;
+            margin: -4px auto 8px;
+        }
         #font-panel .fp-list {
             overflow-y: auto;
             padding: 10px;
@@ -535,6 +546,33 @@
                 max-width: none;
                 min-width: 0;
             }
+
+            /* «Создать макет» на десктопе — по центру внизу, ровно над #snap-panel.
+               Центрируем через margin:auto + фиксированную ширину,
+               чтобы transform не использовался вообще.
+               bottom подобран с запасом под выросшую панель (3 тоггла + кнопка). */
+            #create-maket {
+                top: auto;
+                bottom: 320px;
+                left: 0;
+                right: 0;
+                width: 220px;
+                padding: 16px 24px;
+                font-size: 16px;
+                border-radius: 16px;
+                margin-left: auto;
+                margin-right: auto;
+                transform: none !important;
+                transition: background-color 0.18s ease, box-shadow 0.18s ease;
+            }
+            /* Все интерактивные состояния на десктопе оставляют
+               позицию кнопки неизменной. */
+            #create-maket:hover,
+            #create-maket:active,
+            #create-maket:focus,
+            #create-maket:focus-visible {
+                transform: none !important;
+            }
         }
         #canvas-wrap {
             display: flex;
@@ -629,6 +667,134 @@
         }
         #font-toggle:active { transform: translateX(-50%) scale(0.96); }
 
+        /* Кнопка «Создать макет» — поверх, всегда видна, яркий акцент.
+           Оранжевый + белая кайма + плотная тень, чтобы выделяться на тёмно-зелёном
+           фоне back.png. */
+        #create-maket {
+            display: inline-flex;
+            position: fixed;
+            z-index: 12;
+            background: #f97316;
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            border-radius: 14px;
+            padding: 12px 18px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 0.2px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55), 0 0 0 3px rgba(249, 115, 22, 0.35);
+            cursor: pointer;
+            align-items: center;
+            gap: 6px;
+            touch-action: manipulation;
+            opacity: 1;
+            transition: background-color 0.18s ease, box-shadow 0.18s ease;
+        }
+        #create-maket:hover {
+            /* Намеренно пусто: визуальное состояние кнопки не меняется
+               при наведении и удержании. */
+        }
+        /* Анимация нажатия отключена: кнопка не двигается и не меняет
+           размер во время клика. */
+        #create-maket:active { transform: none; }
+        #create-maket:focus-visible {
+            outline: 2px solid #93c5fd;
+            outline-offset: 2px;
+        }
+        #create-maket:disabled {
+            cursor: not-allowed;
+            background: #9a3412;
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
+        }
+        /* Всплывающая подсказка рядом с кнопкой (стрелочка снизу, текст сверху).
+           Появляется при hover/focus-visible, прячется иначе. Не мешает тач-устройствам
+           (на мобильном hover не работает). */
+        #create-maket::after,
+        #create-maket::before {
+            position: absolute;
+            left: 50%;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-50%) translateY(4px);
+            transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+        #create-maket::after {
+            content: attr(data-tooltip);
+            top: -10px;
+            transform: translate(-50%, -100%) translateY(4px);
+            background: #111827;
+            color: #f9fafb;
+            font: 600 12px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            letter-spacing: 0.1px;
+            text-shadow: none;
+            padding: 7px 10px;
+            border-radius: 6px;
+            white-space: nowrap;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.45);
+        }
+        #create-maket::before {
+            content: "";
+            top: -2px;
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid #111827;
+            transform: translateX(-50%) translateY(4px);
+        }
+        #create-maket:hover::after,
+        #create-maket:focus-visible::after,
+        #create-maket:hover::before,
+        #create-maket:focus-visible::before {
+            opacity: 1;
+            transform: translate(-50%, -100%) translateY(0);
+        }
+        #create-maket:hover::before,
+        #create-maket:focus-visible::before {
+            transform: translateX(-50%) translateY(0);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #create-maket:active { transform: none; }
+            #create-maket { transition: none; }
+            #create-maket::after,
+            #create-maket::before { transition: opacity 0.05s linear; }
+        }
+
+        /* Всплывающая подсказка после отправки макета */
+        #maket-toast {
+            position: fixed;
+            z-index: 60;
+            left: 50%;
+            bottom: 100px;
+            transform: translateX(-50%) translateY(12px);
+            background: #065f46;
+            color: #ecfdf5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 10px 16px;
+            border-radius: 999px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+        #maket-toast.mt-show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        #maket-toast.mt-error {
+            background: #991b1b;
+            color: #fef2f2;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #maket-toast { transition: opacity 0.05s linear; transform: translateX(-50%); }
+            #maket-toast.mt-show { transform: translateX(-50%); }
+        }
+
         /* Snap-hint: на случай если JS не успел скрыть — авто-исчезает через 1.5s.
            pointer-events: none чтобы не перехватывал клики. */
         #snap-hint {
@@ -659,6 +825,14 @@
             }
             #canvas-wrap canvas {
                 max-width: none;
+            }
+            /* На мобильном border-radius: 31px (заданный в общем CSS под десктоп)
+               обрезает углы плашки номера, потому что радиус фиксирован,
+               а канва сильно уменьшена. Используем пропорциональное
+               скругление ~2.5% от ширины канвы, с безопасным диапазоном. */
+            #canvas-wrap .canvas-container,
+            #canvas-wrap canvas {
+                border-radius: clamp(10px, 2.5%, 24px);
             }
             /* Панель логотипов — bottom sheet, занимает 60vh, можно закрыть тапом вне */
             #logo-panel {
@@ -732,6 +906,46 @@
             #snap-panel .sp-body { padding: 8px 10px; }
             #snap-panel .sp-row { padding: 8px 10px; }
 
+            /* Шапки bottom-sheet'ов — зона хвата для свайпа вниз.
+               touch-action: pan-y разрешает вертикальный скролл страницы/списка,
+               но даёт JS перехватить pointer-события для закрытия панели. */
+            #logo-panel .lp-header,
+            #snap-panel .sp-header,
+            #font-panel .fp-header {
+                cursor: grab;
+                touch-action: pan-y;
+            }
+            #logo-panel .lp-header:active,
+            #snap-panel .sp-header:active,
+            #font-panel .fp-header:active {
+                cursor: grabbing;
+            }
+
+            /* «Создать макет» на мобильном — по центру внизу, выше гамбургеров.
+               Центрирование через margin:auto, transform не используется. */
+            #create-maket {
+                /* На мобильном z-index ниже панелей (10) и тогглов (11):
+                   при всплытии любой панели кнопка уходит под неё. */
+                z-index: 8;
+                left: 12px;
+                right: 12px;
+                top: auto;
+                bottom: 76px;
+                width: 220px;
+                margin-left: auto;
+                margin-right: auto;
+                transform: none !important;
+            }
+            #create-maket:hover,
+            #create-maket:active,
+            #create-maket:focus,
+            #create-maket:focus-visible {
+                transform: none !important;
+            }
+            #maket-toast {
+                bottom: 160px;
+            }
+
             /* Гамбургер-кнопка snap-панели (базовый display:none в общем CSS).
                На мобильном показывается; на десктопе скрыта. */
             #snap-toggle,
@@ -783,6 +997,13 @@
             }
             #logo-toggle { left: 8px; }
             #snap-toggle { right: 8px; }
+
+            /* «Создать макет» в альбомном — по центру внизу, выше тогглов */
+            #create-maket {
+                bottom: 60px;
+                padding: 9px 14px;
+                font-size: 13px;
+            }
         }
 
         /* ============================================================
@@ -846,6 +1067,11 @@
             }
             #snap-panel .sp-header { font-size: 11px; padding: 7px 10px; }
             #font-panel .fp-preview { font-size: 17px; }
+            #create-maket {
+                bottom: 64px;
+                padding: 8px 12px;
+                font-size: 12px;
+            }
         }
     </style>
 </head>
@@ -876,6 +1102,8 @@
             <input type="color" id="ctx-color-input" value="#111111" aria-label="Выбрать цвет текста">
         </label>
     </div>
+    <button id="create-maket" type="button" aria-label="Создать макет" data-tooltip="Создаёт и отправляет макет">⬇⬇ Создать макет</button>
+    <div id="maket-toast" role="status" aria-live="polite"></div>
     <script>
         // Размеры передней стороны — как в js/drawing-front.js + js/config.js
         const SCALE_FACTOR = 1224 / 720;                    // ≈ 1.7
@@ -917,7 +1145,9 @@
         window.addEventListener('orientationchange', syncRotateHint);
 
         const canvas = new fabric.Canvas('c', {
-            backgroundColor: 'transparent',
+            // Чёрный фон задаёт видимую кайму вокруг белой плашки, как у номера
+            // в editor.html (scaledMargin = 7 × SCALE_FACTOR ≈ 11.9 px).
+            backgroundColor: '#000000',
             preserveObjectStacking: true
         });
 
@@ -1102,8 +1332,8 @@
             width: combinedWidth,
             height: innerHeight,
             fill: '#ffffff',
-            stroke: '#111111',
-            strokeWidth: 4,
+            // Чёрная кайма вокруг белой плашки формируется
+            // backgroundColor='#000000' холста, как у номера в editor.html.
             rx: scaledInnerRadius,
             ry: scaledInnerRadius,
             selectable: false,
@@ -1139,13 +1369,6 @@
         // Голубая рамка выделения ровно по ширине текста — для всех текстбоксов на канвасе
         const SELECTION_BLUE = '#3b82f6';
         const HORIZONTAL_PADDING = 12; // px вокруг текста внутри рамки выделения
-
-        let lastPointer = { x: 0, y: 0 };
-        canvas.on('mouse:move', (e) => {
-            const p = canvas.getPointer(e.e);
-            lastPointer.x = p.x;
-            lastPointer.y = p.y;
-        });
 
         function measureTextWidth(tb, text) {
             const probe = document.createElement('canvas').getContext('2d');
@@ -1193,7 +1416,7 @@
             const el = document.createElement('div');
             el.id = 'rotate-tooltip';
             el.style.cssText = `
-                position: absolute;
+                position: fixed;
                 pointer-events: none;
                 background: #1f2937;
                 color: #ffffff;
@@ -1207,6 +1430,8 @@
                 white-space: nowrap;
                 z-index: 10;
                 display: none;
+                left: 0;
+                top: 0;
             `;
             document.body.appendChild(el);
             rotateTooltip = el;
@@ -1218,7 +1443,9 @@
             const normalized = ((Math.round(degrees) % 360) + 360) % 360;
             tip.textContent = `${normalized}°`;
             tip.style.display = 'block';
-            positionRotateTooltipAtPointer();
+            // Сначала пробуем у кружка поворота, чтобы тултип не
+            // прыгал в (0,0), пока палец ещё не сдвинулся.
+            positionRotateTooltipAtObject(tb);
             rotateTooltipTb = tb;
         }
 
@@ -1227,13 +1454,29 @@
             rotateTooltipTb = null;
         }
 
-        // Tooltip следует за указателем мыши — не зависит от повёрнутого bounding box
-        function positionRotateTooltipAtPointer() {
-            if (!rotateTooltip) return;
-            const canvasEl = canvas.getElement();
-            const rect = canvasEl.getBoundingClientRect();
-            const screenX = rect.left + window.scrollX + lastPointer.x;
-            const screenY = rect.top + window.scrollY + lastPointer.y;
+        // Позиция иконки поворота (mtr) относительно объекта.
+        // Совпадает с параметрами контрола в replaceRotateControl():
+        //   x: 0 (горизонтально по центру), y: -0.5 (над верхней гранью),
+        //   offsetY: -28 (дополнительный отступ вверх).
+        // Считаем в координатах объекта, потом через центр объекта
+        // переводим в координаты канвы, потом — в viewport.
+        const ROTATE_HANDLE_OFFSET_Y = -28; // px над верхней гранью
+
+        function positionRotateTooltipAtObject(obj) {
+            if (!rotateTooltip || !obj) return;
+            const rect = canvas.getElement().getBoundingClientRect();
+            const zoom = canvas.getZoom();
+            const vpt = canvas.viewportTransform;
+            // mtr в Fabric: y: -0.5 (над верхней гранью объекта) + offsetY.
+            // У нашего контрола offsetY = -28 (ещё 28 px вверх).
+            // obj.left/obj.top хранят ЦЕНТР объекта (originX/Y = center).
+            // Координаты кружка в системе канвы:
+            //   x = obj.left
+            //   y = obj.top - height/2 + offsetY  (offsetY = -28)
+            const cx = obj.left;
+            const cy = obj.top - (obj.height * 0.5) + ROTATE_HANDLE_OFFSET_Y;
+            const screenX = rect.left + vpt[4] + cx * zoom;
+            const screenY = rect.top + vpt[5] + cy * zoom;
             rotateTooltip.style.left = `${screenX}px`;
             rotateTooltip.style.top = `${screenY}px`;
         }
@@ -1260,7 +1503,8 @@
         // потому что контрол читает snapState.angle при создании
         const snapState = {
             position: true,   // привязка к краям/центрам объектов и холста
-            angle: true       // поворот с шагом 15° (0, 15, 30, ...)
+            angle: true,      // поворот с шагом 15° (0, 15, 30, ...)
+            showHint: true    // показывать текстовую подсказку при snap
         };
 
         function applyAngleSnapToAll() {
@@ -1358,8 +1602,9 @@
             applyCenterOrigin(obj);
 
             obj.on('rotating', () => {
+                // Подсказка градусов висит у кружка поворота, чтобы не
+                // убегала в (0,0), пока палец не сдвинулся.
                 showRotateTooltip(obj, obj.angle || 0);
-                positionRotateTooltipAtPointer();
             });
             obj.on('mouseup', () => hideRotateTooltip());
             obj.on('mouseleave', () => hideRotateTooltip());
@@ -1415,9 +1660,11 @@
             }
         });
 
-        // Перетаскивание объекта — обновляем позицию tooltip по курсору
+        // Перетаскивание объекта — если был активен rotate-tooltip,
+        // его позиция пересчитывается в showRotateTooltip/showRotateTooltip
+        // → positionRotateTooltipAtObject. Здесь ничего не делаем.
         canvas.on('object:moving', () => {
-            if (rotateTooltipTb) positionRotateTooltipAtPointer();
+            // no-op: rotateTooltip показывается только на rotating, не на moving
         });
 
         // ============================================================
@@ -1432,7 +1679,7 @@
             const el = document.createElement('div');
             el.id = 'snap-hint';
             el.style.cssText = `
-                position: absolute;
+                position: fixed;
                 pointer-events: none;
                 background: rgba(31,41,55,0.92);
                 color: #ffffff;
@@ -1445,6 +1692,8 @@
                 z-index: 10;
                 display: none;
                 letter-spacing: 0.2px;
+                left: 0;
+                top: 0;
             `;
             document.body.appendChild(el);
             snapHint = el;
@@ -1452,17 +1701,38 @@
         }
 
         function showSnapHint(text, tb) {
+            // Тоггл «Подсказки» в панели «Привязки» — глобально
+            // вкл/выкл snap-подсказку. Направляющие линии остаются видны.
+            if (snapState.showHint === false) return;
             const h = ensureSnapHint();
             h.textContent = text;
             h.style.display = 'block';
             positionSnapHint(tb);
         }
+        // Snap-подсказка висит над центром объекта. Используем
+        // position:fixed + viewport-координаты (без scrollX/Y), чтобы
+        // на мобильном она не «убегала» вместе со страницей при
+        // появлении/скрытии адресной строки.
+        //
+        // Координаты объекта в Fabric хранятся в системе канвы
+        // (логический размер 1224×252). Чтобы получить пиксель на экране,
+        // их нужно прогнать через viewportTransform (pan + zoom).
+        // Без этого в книжной ориентации на мобильном, где канва сильно
+        // уменьшена зумом, подсказка «убегала» далеко вправо от объекта.
         function positionSnapHint(tb) {
             if (!snapHint || !tb) return;
             const rect = canvas.getElement().getBoundingClientRect();
+            const zoom = canvas.getZoom();
+            const vpt = canvas.viewportTransform;
             const b = tb.getBoundingRect(true, true);
-            const sx = rect.left + window.scrollX + b.left + b.width / 2;
-            const sy = rect.top + window.scrollY + b.top - 10;
+            // b.left/b.top/b.width/height — в координатах канвы (без vpt).
+            // Центр по X в координатах канвы:
+            const cx = b.left + b.width / 2;
+            // Верх объекта в координатах канвы, минус 10 px запаса.
+            const topCanvas = b.top - 10;
+            // Переводим в screen-координаты через viewportTransform.
+            const sx = rect.left + vpt[4] + cx * zoom;
+            const sy = rect.top + vpt[5] + topCanvas * zoom;
             snapHint.style.left = `${sx}px`;
             snapHint.style.top = `${sy}px`;
             snapHint.style.transform = 'translate(-50%, -100%)';
@@ -1643,10 +1913,71 @@
             <div class="sp-body">
                 ${rowTemplate('Положение', 'position', 'края / центры рамки и других элементов')}
                 ${rowTemplate('Угол', 'angle', 'шаг 15° при повороте')}
+                ${rowTemplate('Подсказки', 'showHint', 'всплывающий текст при срабатывании')}
                 <button class="sp-delete" type="button" disabled>🗑 Удалить выделенное</button>
             </div>
         `;
         document.body.appendChild(panel);
+
+        // ============================================================
+        // SWIPE-DOWN-TO-DISMISS: общий хелпер для bottom-sheet'ов.
+        // Ловит pointer-события на шапке панели; если палец уехал вниз
+        // больше порога — закрывает панель (вызывает onDismiss).
+        // Вертикальный скролл внутри панели не блокируется, потому что
+        // pointer-события слушаются только на header, а не на всём листе.
+        // ============================================================
+        const SWIPE_DOWN_DISMISS_PX = 80;       // px вниз от точки старта
+        const SWIPE_DOWN_MAX_LAT = 24;          // максимально допустимый боковой увод
+
+        function attachSwipeDownToDismiss(panelEl, headerSelector, openClass, onDismiss) {
+            const header = panelEl.querySelector(headerSelector);
+            if (!header) return;
+            let startY = 0;
+            let startX = 0;
+            let activePointer = null;
+            let dismissed = false;
+
+            header.addEventListener('pointerdown', (e) => {
+                // Только тач/перо — мышь не нужна.
+                if (e.pointerType && e.pointerType === 'mouse') return;
+                if (!panelEl.classList.contains(openClass)) return;
+                activePointer = e.pointerId;
+                startY = e.clientY;
+                startX = e.clientX;
+                dismissed = false;
+            });
+
+            header.addEventListener('pointermove', (e) => {
+                if (activePointer === null || e.pointerId !== activePointer) return;
+                if (dismissed) return;
+                const dy = e.clientY - startY;
+                const dx = e.clientX - startX;
+                // Боковой увод — пользователь свайпает не вниз, отмена.
+                if (Math.abs(dx) > SWIPE_DOWN_MAX_LAT) {
+                    activePointer = null;
+                    return;
+                }
+                if (dy > SWIPE_DOWN_DISMISS_PX) {
+                    dismissed = true;
+                    activePointer = null;
+                    onDismiss();
+                }
+            });
+
+            const cancel = () => {
+                activePointer = null;
+                dismissed = false;
+            };
+            header.addEventListener('pointerup', cancel);
+            header.addEventListener('pointercancel', cancel);
+            header.addEventListener('pointerleave', cancel);
+        }
+
+        // Подключаем swipe-down к snap-панели.
+        attachSwipeDownToDismiss(panel, '.sp-header', 'sp-open', () => {
+            panel.classList.remove('sp-open');
+            snapToggleBtn.textContent = '⚙ Привязки';
+        });
 
         const deleteBtn = panel.querySelector('.sp-delete');
         const refreshDeleteState = () => {
@@ -1710,6 +2041,11 @@
             refreshPanelToggleUI('angle');
             applyAngleSnapToAll();
         });
+        document.getElementById('snap-showHint').addEventListener('change', (e) => {
+            snapState.showHint = e.target.checked;
+            refreshPanelToggleUI('showHint');
+            if (!snapState.showHint) hideSnapHint();
+        });
 
         // Применяем начальный snap угла к уже существующим текстбоксам
         applyAngleSnapToAll();
@@ -1742,6 +2078,15 @@
             } else {
                 clearGuides();
                 hideSnapHint();
+            }
+            // После возможного snap (или без него) синхронизируем позицию
+            // подсказки с текущим положением объекта. Без этого хинт
+            // остаётся в точке снапа, а объект уезжает дальше — выглядит
+            // так, будто подсказка «убегает» от объекта. Особенно заметно
+            // в книжной ориентации, где канва шире viewport и объект
+            // легко увести на 100+ px вбок.
+            if (snapHint && snapHint.style.display !== 'none') {
+                positionSnapHint(obj);
             }
         });
 
@@ -1829,6 +2174,12 @@
                 if (!panel.classList.contains('lp-open')) return;
                 if (panel.contains(e.target)) return;
                 if (toggleBtn.contains(e.target)) return;
+                panel.classList.remove('lp-open');
+                toggleBtn.textContent = '☰ Логотипы';
+            });
+
+            // Свайп вниз за верхнее ребро (шапку) — закрыть sheet.
+            attachSwipeDownToDismiss(panel, '.lp-header', 'lp-open', () => {
                 panel.classList.remove('lp-open');
                 toggleBtn.textContent = '☰ Логотипы';
             });
@@ -2043,9 +2394,125 @@
                 fontPanel.classList.remove('fp-open');
                 fontToggleBtn.textContent = '✎ Текст';
             });
+
+            // Свайп вниз за шапку — закрыть панель.
+            attachSwipeDownToDismiss(fontPanel, '.fp-header', 'fp-open', () => {
+                fontPanel.classList.remove('fp-open');
+                fontToggleBtn.textContent = '✎ Текст';
+            });
         }
 
         initFontPanel();
+
+        // ============================================================
+        // Канал с editor.html: отдаём снимок канвы по запросу.
+        // Чёрный фон вокруг плашки — это часть дизайна (видимая «рамка»,
+        // как у номера на передней стороне), поэтому в PNG сохраняем
+        // backgroundColor как есть.
+        // ============================================================
+        (function attachRearChannel() {
+            if (typeof BroadcastChannel === 'undefined') return;
+            const channel = new BroadcastChannel('brelok-rear');
+            channel.addEventListener('message', (event) => {
+                const data = event.data;
+                if (!data || data.type !== 'rear-snapshot-request') return;
+                try {
+                    const lower = canvas.lowerCanvasEl;
+                    canvas.renderAll();
+                    const dataURL = lower ? lower.toDataURL('image/png') : canvas.toDataURL('image/png');
+                    channel.postMessage({ type: 'rear-snapshot', dataURL });
+                } catch (e) {
+                    console.warn('Не удалось отдать снимок канвы:', e);
+                }
+            });
+        })();
+
+        // ============================================================
+        // Кнопка «Создать макет» — проксирует клик в editor.html через канал.
+        // Если editor.html не открыт, кнопка остаётся видимой, но клик подсказывает
+        // пользователю открыть редактор.
+        // ============================================================
+        (function attachCreateMaket() {
+            const btn = document.getElementById('create-maket');
+            if (!btn) return;
+            const channel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('brelok-maket') : null;
+            const toast = document.getElementById('maket-toast');
+            let ready = false;
+            let toastTimer = null;
+
+            function showToast(text, isError) {
+                if (!toast) return;
+                toast.textContent = text;
+                toast.classList.toggle('mt-error', Boolean(isError));
+                toast.classList.add('mt-show');
+                if (toastTimer) clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => {
+                    toast.classList.remove('mt-show');
+                    toastTimer = null;
+                }, 2200);
+            }
+
+            if (channel) {
+                channel.addEventListener('message', (event) => {
+                    const data = event.data;
+                    if (!data) return;
+                    if (data.type === 'editor-ready') {
+                        ready = true;
+                        btn.disabled = false;
+                        if (pollHandle) {
+                            clearInterval(pollHandle);
+                            pollHandle = null;
+                        }
+                    } else if (data.type === 'maket-result') {
+                        showToast(
+                            data.success ? '✅ Макет отправлен' : '⚠️ Не удалось отправить макет',
+                            !data.success
+                        );
+                    }
+                });
+            }
+
+            btn.addEventListener('click', () => {
+                if (!channel) {
+                    alert('Откройте editor.html, чтобы создать макет');
+                    return;
+                }
+                if (!ready) {
+                    alert('Откройте editor.html, чтобы создать макет');
+                    return;
+                }
+                // Анимация: на 1.2с превращаем кнопку в «Отправка...»
+                const original = btn.textContent;
+                btn.textContent = '⏳ Отправка...';
+                btn.disabled = true;
+                showToast('⏳ Отправляю макет...', false);
+                channel.postMessage({ type: 'rear-create-maket' });
+                setTimeout(() => {
+                    btn.textContent = original;
+                    btn.disabled = false;
+                }, 1200);
+            });
+
+            // Изначально кнопка неактивна, пока editor.html не объявит о себе.
+            btn.disabled = true;
+
+            // Если editor.html открыли до test.html, его первоначальный editor-ready
+            // ушёл в пустоту. Опрос каждые 500 мс (макс. 30 с) принудительно «будит»
+            // editor.html, который отвечает editor-ready на editor-query.
+            let pollHandle = null;
+            if (channel) {
+                let attempts = 0;
+                pollHandle = setInterval(() => {
+                    if (ready || attempts >= 60) {
+                        clearInterval(pollHandle);
+                        pollHandle = null;
+                        return;
+                    }
+                    attempts++;
+                    channel.postMessage({ type: 'editor-query' });
+                }, 500);
+            }
+        })();
 
         // Финальный пересчёт размеров канвы — после применения фона и лого-панели
         // (могут измениться layout / отступы).

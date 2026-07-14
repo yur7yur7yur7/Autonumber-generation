@@ -32,9 +32,26 @@ export function setDownloadContext(ctx, settings, elements) {
 }
 
 /**
+ * Снимок задней стороны с редактора test.html через BroadcastChannel.
+ * Принимает функцию-getter (Promise<dataURL>); если она не задана,
+ * используется fallback на встроенный previewCanvas текущей вкладки.
+ */
+async function getRearSideDataURL(getRearDataURL) {
+    if (typeof getRearDataURL === 'function') {
+        try {
+            const data = await getRearDataURL();
+            if (data) return data;
+        } catch (e) {
+            console.warn('Не удалось получить снимок из test.html:', e);
+        }
+    }
+    return null;
+}
+
+/**
  * Сохраняет обе стороны как один SVG с двумя изображениями рядом
  */
-export async function downloadBothSides(canvas, getNumber, getRegion) {
+export async function downloadBothSides(canvas, getNumber, getRegion, getRearDataURL) {
     try {
         // Сохраняем текущую сторону
         const currentSide = document.querySelector('.side-btn.active').dataset.side;
@@ -44,10 +61,15 @@ export async function downloadBothSides(canvas, getNumber, getRegion) {
         await new Promise(resolve => setTimeout(resolve, 100));
         const frontData = canvas.toDataURL('image/png');
 
-        // Переключаем на заднюю сторону
-        document.querySelector('[data-side="back"]').click();
-        await new Promise(resolve => setTimeout(resolve, 100));
-        const backData = canvas.toDataURL('image/png');
+        // Задняя сторона: сначала пытаемся получить из test.html
+        let backData = await getRearSideDataURL(getRearDataURL);
+        if (!backData) {
+            // Fallback — старая встроенная задняя сторона
+            document.querySelector('[data-side="back"]').click();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            backData = canvas.toDataURL('image/png');
+            showTemporaryMessage('⚠️ Откройте редактор задней стороны (test.html) и повторите', 'warning');
+        }
 
         // Возвращаем как было
         document.querySelector(`[data-side="${currentSide}"]`).click();
@@ -60,7 +82,9 @@ export async function downloadBothSides(canvas, getNumber, getRegion) {
      preserveAspectRatio="none"
      xmlns="http://www.w3.org/2000/svg"
      xmlns:xlink="http://www.w3.org/1999/xlink">
+    <rect x="0" y="0" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" fill="#000000"/>
     <image width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" xlink:href="${frontData}" />
+    <rect x="${CANVAS_WIDTH + interval}" y="0" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" fill="#000000"/>
     <image x="${CANVAS_WIDTH + interval}" y="0" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" xlink:href="${backData}" />
 </svg>`;
 
@@ -83,7 +107,7 @@ export async function downloadBothSides(canvas, getNumber, getRegion) {
  * Локального скачивания больше нет — кнопка работает только если
  * в CONFIG.TELEGRAM_RELAY_URL указан URL Worker'а.
  */
-export function setupDownloadButton(canvas, getNumber, getRegion) {
+export function setupDownloadButton(canvas, getNumber, getRegion, getRearDataURL) {
     const actions = document.querySelector('.actions');
 
     // Удаляем старую кнопку если есть
@@ -113,7 +137,7 @@ export function setupDownloadButton(canvas, getNumber, getRegion) {
 
             await new Promise(resolve => setTimeout(resolve, 50));
 
-            const result = await downloadBothSides(canvas, getNumber, getRegion);
+            const result = await downloadBothSides(canvas, getNumber, getRegion, getRearDataURL);
             if (!result) return;
 
             downloadBothBtn.textContent = '📤 Отправка...';
