@@ -1169,7 +1169,19 @@
             // Чёрный фон задаёт видимую кайму вокруг белой плашки, как у номера
             // в editor.html (scaledMargin = 7 × SCALE_FACTOR ≈ 11.9 px).
             backgroundColor: '#000000',
-            preserveObjectStacking: true
+            preserveObjectStacking: true,
+            // Скругляем углы холста — углы чёрного фона станут прозрачными, как у
+            // настоящей плашки. Тот же радиус, что у frontRect ниже, чтобы
+            // внутренний белый и внешний чёрный радиусы совпадали по контуру.
+            clipPath: new fabric.Rect({
+                left: 0,
+                top: 0,
+                width: 1224,
+                height: 252,
+                rx: scaledInnerRadius,
+                ry: scaledInnerRadius,
+                absolutePositioned: true
+            })
         });
 
         // ============================================================
