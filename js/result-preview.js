@@ -66,6 +66,76 @@ function buildModalMarkup() {
  * Возвращает Promise, который резолвится в { sent: boolean } после закрытия модалки.
  */
 export function openResultPreview({ frontDataURL, backDataURL, onSendToPrint }) {
-    // Полная реализация появится в Task 2. Сейчас — заглушка, чтобы можно было подключить файлы.
-    return Promise.resolve({ sent: false });
+    return new Promise((resolve) => {
+        const { overlay, close, sendBtn, cancelBtn } = buildModalMarkup();
+        const modal = overlay.querySelector('.rp-modal');
+
+        // Слой передней стороны.
+        const front = document.createElement('img');
+        front.className = 'rp-layer';
+        front.style.setProperty('--rp-layer-x', 'var(--rp-front-x)');
+        front.style.setProperty('--rp-layer-y', 'var(--rp-front-y)');
+        front.src = frontDataURL;
+        front.alt = 'Передняя сторона';
+        modal.appendChild(front);
+
+        // Слой задней стороны или заглушка.
+        if (backDataURL) {
+            const back = document.createElement('img');
+            back.className = 'rp-layer';
+            back.style.setProperty('--rp-layer-x', 'var(--rp-back-x)');
+            back.style.setProperty('--rp-layer-y', 'var(--rp-back-y)');
+            back.src = backDataURL;
+            back.alt = 'Задняя сторона';
+            modal.appendChild(back);
+            sendBtn.disabled = false;
+        } else {
+            const stub = document.createElement('div');
+            stub.className = 'rp-layer rp-layer--missing';
+            stub.style.setProperty('--rp-layer-x', 'var(--rp-back-x)');
+            stub.style.setProperty('--rp-layer-y', 'var(--rp-back-y)');
+            stub.textContent = 'Открой редактор задней стороны (test.html)';
+            modal.appendChild(stub);
+            sendBtn.disabled = true;
+            sendBtn.title = 'Нужен снимок задней стороны';
+        }
+
+        let resolved = false;
+        function finish(sent) {
+            if (resolved) return;
+            resolved = true;
+            document.removeEventListener('keydown', onKey);
+            overlay.remove();
+            resolve({ sent });
+        }
+
+        function onKey(e) {
+            if (e.key === 'Escape') finish(false);
+        }
+        document.addEventListener('keydown', onKey);
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) finish(false);
+        });
+        close.addEventListener('click', () => finish(false));
+        cancelBtn.addEventListener('click', () => finish(false));
+
+        sendBtn.addEventListener('click', async () => {
+            if (sendBtn.disabled) return;
+            sendBtn.disabled = true;
+            const original = sendBtn.textContent;
+            sendBtn.textContent = '⏳ Отправка...';
+            try {
+                const ok = await onSendToPrint();
+                finish(Boolean(ok));
+            } catch (e) {
+                console.error('sendToPrint failed:', e);
+                sendBtn.disabled = false;
+                sendBtn.textContent = '⚠️ Не отправлено';
+                setTimeout(() => { sendBtn.textContent = original; }, 1800);
+            }
+        });
+
+        document.body.appendChild(overlay);
+    });
 }
