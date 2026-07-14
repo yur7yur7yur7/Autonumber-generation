@@ -2,9 +2,9 @@
 
 :root {
     /* Размеры модалки на экране: сохраняем пропорции шаблона 765:456 ≈ 1.678.
-       Модалка стала больше (980×584 max) — для воздуха и читаемости подписей. */
-    --rp-width: 980px;
-    --rp-height: 584px;
+       Модалка 1200×715 — чтобы кнопки внизу не залезали на заднюю плашку. */
+    --rp-width: 1200px;
+    --rp-height: 715px;
 
     /* Координаты плашек в карманах template.png (765×456) — в процентах от родителя
        (.rp-modal с aspect-ratio 765/456), чтобы плашка сидела в кармане независимо
@@ -181,53 +181,18 @@
 
 .rp-hint {
     position: absolute;
-    top: 14px;
-    left: 14px;
+    top: 18px;
+    left: 18px;
     background: rgba(0, 0, 0, 0.55);
-    color: rgba(255, 255, 255, 0.92);
-    font-size: 12px;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 15px;
+    font-weight: 500;
     letter-spacing: 0.2px;
-    padding: 7px 12px;
+    padding: 10px 18px;
     border-radius: 999px;
     max-width: 60%;
     z-index: 3;
     border: 1px solid rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
-}
-
-.rp-center-label {
-    position: absolute;
-    /* По центру модалки между верхним и нижним карманами шаблона.
-       В шаблонных координатах середина между карманами ≈ y=238 (на 765×456);
-       238/456 ≈ 52.19% — ставим по центру модалки с лёгким подъёмом вверх,
-       чтобы не конфликтовать с цепочкой шаблона. */
-    top: 47%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    color: rgba(255, 255, 255, 0.88);
-    text-align: center;
-    pointer-events: none;
-    z-index: 2;
-}
-
-.rp-center-label__title {
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.rp-center-label__sub {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.55);
-    letter-spacing: 0.4px;
 }
