@@ -55,8 +55,11 @@ function buildModalMarkup() {
     cancelBtn.textContent = 'Закрыть';
     actions.appendChild(cancelBtn);
 
-    modal.appendChild(actions);
+    // Панель кнопок лежит ВНЕ .rp-modal (sibling), внутри .rp-overlay.
+    // Так кнопки не накладываются на template.png и не конкурируют
+    // с процентно-якорным нижним карманом задней стороны.
     overlay.appendChild(modal);
+    overlay.appendChild(actions);
 
     return { overlay, modal, close, sendBtn, cancelBtn };
 }

@@ -29,9 +29,12 @@
     background:
         radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.85) 100%),
         rgba(8, 10, 14, 0.75);
+    /* Колонка: модалка сверху, панель кнопок снизу. По горизонтали всё по центру. */
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
+    gap: clamp(8px, 1.2vw, 16px);
     z-index: 1000;
     /* На самом оверлее используем vw — он от ширины viewport, что подходит для внешних
        полей, не зависящих от размера модалки. */
@@ -135,14 +138,15 @@
 }
 
 .rp-actions {
-    position: absolute;
-    /* Кнопки прижаты к самому низу модалки без отступов. */
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
+    /* Панель кнопок — отдельный блок в .rp-overlay (sibling .rp-modal),
+       НЕ внутри .rp-modal. Кнопки не накладываются на template.png.
+       container-type: inline-size — cqw внутри .rp-btn* отсчитываются от
+       ширины панели (≈ ширины модалки). */
+    container-type: inline-size;
     display: flex;
     gap: max(4px, 1cqw);
     z-index: 3;
+    flex-shrink: 0;
 }
 
 .rp-btn {
