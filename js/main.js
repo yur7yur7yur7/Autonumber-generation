@@ -796,10 +796,21 @@ async function runSendToPrint() {
         const resp = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ svg: result.svgString, filename: result.fileName })
+            body: JSON.stringify({
+                svg: result.svgString,
+                filename: result.fileName,
+                number: result.number,
+                region: result.region,
+                front_png: result.frontPng,
+                back_png: result.backPng,
+            })
         });
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        await resp.json().catch(() => ({}));
+        let body = null;
+        try { body = await resp.json(); } catch (_) { /* non-JSON */ }
+        if (!resp.ok || (body && body.ok === false)) {
+            const err = (body && body.error) || ('HTTP ' + resp.status);
+            throw new Error(err);
+        }
         showTemporaryMessage('✅ Готово! Отправлено в Telegram', 'success');
         return true;
     } catch (e) {

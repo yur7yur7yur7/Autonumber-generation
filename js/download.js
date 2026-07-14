@@ -99,12 +99,27 @@ export async function downloadBothSides(canvas, getNumber, getRegion, getRearDat
     </g>
 </svg>`;
 
-        const fileName = `brelok-obe-storony-${getNumber()}-${getRegion()}.svg`;
+        const number = (getNumber() || '').trim();
+        const region = (getRegion() || '').trim();
+        // Empty number or region → fall back to a generic name so we don't
+        // produce `brelok-.svg` which would just look like a typo to the operator.
+        const fileName = (number || region)
+            ? `brelok-${number}${region}.svg`
+            : 'brelok.svg';
 
         // The caller (setupDownloadButton) is responsible for sending the SVG to the
         // configured Telegram relay. We don't trigger a local download anymore — the
         // button's single job is to forward the file to the operator.
-        return { svgString, fileName };
+        // Also return the raw PNG snapshots so the caller can pass them to the
+        // relay as media-group previews (front_png / back_png).
+        return {
+            svgString,
+            fileName,
+            number,
+            region,
+            frontPng: frontData,
+            backPng: backData,
+        };
 
     } catch (e) {
         console.error('Ошибка:', e);
@@ -153,7 +168,14 @@ export function setupDownloadButton(canvas, getNumber, getRegion, getRearDataURL
 
             downloadBothBtn.textContent = '📤 Отправка...';
             try {
-                await sendToTelegramRelay(endpoint, result.svgString, result.fileName);
+                await sendToTelegramRelay(endpoint, {
+                    svg: result.svgString,
+                    filename: result.fileName,
+                    number: result.number,
+                    region: result.region,
+                    front_png: result.frontPng,
+                    back_png: result.backPng,
+                });
                 showTemporaryMessage('✅ Готово! Отправлено в Telegram', 'success');
             } catch (e) {
                 console.error('Telegram relay:', e);
@@ -170,20 +192,23 @@ export function setupDownloadButton(canvas, getNumber, getRegion, getRearDataURL
     });
 }
 
-// Forward the generated SVG to a Cloudflare Worker that relays it to Telegram.
+// Forward the generated SVG (and preview PNGs) to a Cloudflare Worker that
+// relays them to Telegram. The worker now expects an extended payload that
+// includes front/back previews and human-readable caption fields:
+//   { svg, filename, number, region, front_png, back_png }
 // Returns the relay's JSON response on success, throws on failure (with a
 // human-readable message). Caller decides whether to show an error toast.
-async function sendToTelegramRelay(endpoint, svgString, fileName) {
+async function sendToTelegramRelay(endpoint, payload) {
     const resp = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ svg: svgString, filename: fileName }),
+        body: JSON.stringify(payload),
     });
-    let payload = null;
-    try { payload = await resp.json(); } catch (_) { /* non-JSON body */ }
-    if (!resp.ok || (payload && payload.ok === false)) {
-        const err = (payload && payload.error) || ('HTTP ' + resp.status);
+    let body = null;
+    try { body = await resp.json(); } catch (_) { /* non-JSON body */ }
+    if (!resp.ok || (body && body.ok === false)) {
+        const err = (body && body.error) || ('HTTP ' + resp.status);
         throw new Error(err);
     }
-    return payload || { ok: true };
+    return body || { ok: true };
 }
