@@ -1404,31 +1404,6 @@
         });
         canvas.add(frontRect);
 
-        // Текстбоксы внутри левого белого прямоугольника (под номер)
-        const text = new fabric.Textbox('ТЕСТ TEST ТЕСТ', {
-            left: scaledMargin + 20,
-            top: 60,
-            width: scaledNumberAreaWidth - 40,
-            fontSize: 40,
-            fill: '#000000',
-            fontFamily: 'Arial',
-            textAlign: 'center'
-        });
-
-        const text2 = new fabric.Textbox('Тест serif красный', {
-            left: scaledMargin + 20,
-            top: 150,
-            width: scaledNumberAreaWidth - 40,
-            fontSize: 36,
-            fill: '#d62828',
-            fontFamily: 'Georgia',
-            fontStyle: 'italic',
-            textAlign: 'center'
-        });
-
-        canvas.add(text);
-        canvas.add(text2);
-
         // Голубая рамка выделения ровно по ширине текста — для всех текстбоксов на канвасе
         const SELECTION_BLUE = '#3b82f6';
         const HORIZONTAL_PADDING = 12; // px вокруг текста внутри рамки выделения
@@ -1703,11 +1678,8 @@
             }
         });
 
-        // Применяем к обоим уже созданным текстбоксам
-        styleTextbox(text);
-        styleTextbox(text2);
-
-        // И на любые будущие текстбоксы, добавляемые на канвас
+        // Применяем к текстбоксам, добавляемым на канвас (включая дефолтную подпись
+        // из initFontPanel → addTextWithFont и любые будущие клики по шрифтам).
         canvas.on('text:editing-exited', (e) => {
             if (e.target) fitTextboxWidthToContent(e.target);
         });
@@ -1975,7 +1947,6 @@
             <div class="sp-header">⚙ Привязки</div>
             <div class="sp-body">
                 ${rowTemplate('Положение', 'position', 'края / центры рамки и других элементов')}
-                ${rowTemplate('Угол', 'angle', 'шаг 15° при повороте')}
                 ${rowTemplate('Подсказки', 'showHint', 'всплывающий текст при срабатывании')}
                 <button class="sp-delete" type="button" disabled>🗑 Удалить выделенное</button>
             </div>
@@ -2099,11 +2070,11 @@
                 hideSnapHint();
             }
         });
-        document.getElementById('snap-angle').addEventListener('change', (e) => {
-            snapState.angle = e.target.checked;
-            refreshPanelToggleUI('angle');
-            applyAngleSnapToAll();
-        });
+        // document.getElementById('snap-angle').addEventListener('change', (e) => {
+        //     snapState.angle = e.target.checked;
+        //     refreshPanelToggleUI('angle');
+        //     applyAngleSnapToAll();
+        // });
         document.getElementById('snap-showHint').addEventListener('change', (e) => {
             snapState.showHint = e.target.checked;
             refreshPanelToggleUI('showHint');
@@ -2402,15 +2373,17 @@
         ];
         const SIGNATURE_TEXT = 'Ваша красивая подпись';
 
-        async function addTextWithFont(font) {
-            await document.fonts.load(`40px "${font.family}"`, SIGNATURE_TEXT);
+        async function addTextWithFont(font, options = {}) {
+            const fontSize = options.fontSize || 40;
+            const width = options.width || 520;
+            await document.fonts.load(`${fontSize}px "${font.family}"`, SIGNATURE_TEXT);
             const textbox = new fabric.Textbox(SIGNATURE_TEXT, {
                 left: PLATE_WIDTH / 2,
                 top: PLATE_HEIGHT / 2,
                 originX: 'center',
                 originY: 'center',
-                width: 520,
-                fontSize: 40,
+                width,
+                fontSize,
                 fontFamily: font.family,
                 fill: '#111111',
                 textAlign: 'center'
@@ -2476,6 +2449,16 @@
         }
 
         initFontPanel();
+
+        // Дефолтная подпись при загрузке — шрифт Everlasting, текст по центру канвы.
+        // Размер побольше, чем при ручном выборе шрифта из панели — это первый
+        // и единственный объект на канве при открытии test.html, он должен
+        // сразу читаться как пример оформления.
+        (async () => {
+            const defaultFont = FONT_OPTIONS.find(f => f.name === 'Everlasting')
+                || FONT_OPTIONS[FONT_OPTIONS.length - 1];
+            await addTextWithFont(defaultFont, { fontSize: 56, width: 720 });
+        })();
 
         // ============================================================
         // Канал с editor.html: отдаём снимок канвы по запросу.
