@@ -45,9 +45,9 @@ import { ALLOWED_CHARS, RUS_TO_LAT } from './config.js';
 import { showTemporaryMessage } from './validation.js';
 
 const FRONT_HIDE_SELECTORS = [
-    '#font-toggle', '#logo-toggle', '#snap-toggle', '#front-toggle',
+    '#font-toggle', '#logo-toggle', '#snap-toggle',
     '#create-maket', '#maket-toast',
-    '#font-panel', '#logo-panel', '#snap-panel', '#front-panel', '#ctx-menu',
+    '#font-panel', '#logo-panel', '#snap-panel', '#ctx-menu',
     '#rotate-hint'
 ];
 
@@ -489,6 +489,10 @@ export function initSideToggle(deps) {
             document.querySelector('.back-canvas-wrap')?.setAttribute('hidden', '');
             setUserObjectsVisible(canvas, getFrontRect, false);
             hideBackChrome();
+            // Панель «Общие настройки» и её гамбургер-кнопка привязаны к передней
+            // стороне: показываются здесь, прячутся в ветке `back` ниже.
+            document.getElementById('front-panel')?.style.removeProperty('display');
+            document.getElementById('front-toggle')?.style.removeProperty('display');
             frontCanvasWrap?.removeAttribute('hidden');
             fitCanvasToViewport();
             // Пока шрифт GibddFont не загружен — блокируем input и очищаем value,
@@ -517,6 +521,12 @@ export function initSideToggle(deps) {
             document.querySelector('.back-canvas-wrap')?.removeAttribute('hidden');
             setUserObjectsVisible(canvas, getFrontRect, true);
             restoreBackChrome();
+            // Прячем панель «Общие настройки» и её гамбургер — она принадлежит
+            // только передней стороне. На десктопе панель была бы видна рядом с
+            // тканью задней стороны и вводила бы в заблуждение, на мобильном
+            // гамбургер перекрывал бы нижние кнопки задней стороны.
+            document.getElementById('front-panel')?.style.setProperty('display', 'none', 'important');
+            document.getElementById('front-toggle')?.style.setProperty('display', 'none', 'important');
             fitCanvasToViewport();
             canvas.requestRenderAll();
         }
@@ -537,10 +547,22 @@ export function initSideToggle(deps) {
         sideLabel.addEventListener('keydown', onKey);
     }
 
-    // Делаем геттер доступным для classic-скриптов (rear-snapshot в back.html
-    // работает в обычном <script> и не может импортировать модуль напрямую).
+    // Делаем геттер и команды видимости доступными для classic-скриптов в
+    // back.html (initFontPanel / initLogoPanel создают панели после загрузки
+    // модуля и должны подавить свой «показ» на стороне front). Также
+    // rear-snapshot в back.html работает в обычном <script> и не может
+    // импортировать модуль напрямую.
     if (typeof window !== 'undefined') {
-        window.__sideToggle = { getCurrentSide };
+        window.__sideToggle = {
+            getCurrentSide,
+            // Вызывается после создания #font-panel / #logo-panel, если они
+            // появились уже после setSide('front') (иначе hideBackChrome их
+            // пропустил, потому что querySelectorAll их ещё не видел).
+            // Если активна back — панель должна быть видна, ничего не делаем.
+            syncChromeVisibility() {
+                if (currentSide === 'front') hideBackChrome();
+            }
+        };
     }
 
     teardown = () => {

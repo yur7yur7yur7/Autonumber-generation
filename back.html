@@ -331,6 +331,72 @@
             #rotate-hint .rh-dismiss:active { transform: none; }
         }
 
+        /* ============================================================
+           ПРЕЛОАДЕР: ждём шрифты и фоновую картинку, прежде чем
+           показать интерфейс. Подсказка «Поверните устройство» живёт
+           в отдельном #rotate-hint (z-index: 100) и работает только
+           на мобильной портретной ориентации — в прелоадер её
+           не встраиваем.
+           ============================================================ */
+        #loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(15, 23, 42, 0.72);
+            color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            box-sizing: border-box;
+            opacity: 0;
+            transition: opacity 0.22s ease;
+        }
+        #loading-overlay.lo-show {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            text-align: center;
+            opacity: 1;
+        }
+        #loading-overlay .lo-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            background: rgba(31, 41, 55, 0.96);
+            border-radius: 18px;
+            padding: 22px 24px;
+            max-width: 280px;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+        }
+        #loading-overlay .lo-spinner {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 3px solid rgba(248, 250, 252, 0.2);
+            border-top-color: #3b82f6;
+            animation: lo-spin 0.8s linear infinite;
+        }
+        @keyframes lo-spin {
+            to { transform: rotate(360deg); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #loading-overlay .lo-spinner { animation: none; }
+            #loading-overlay { transition: opacity 0.05s linear; }
+        }
+        #loading-overlay .lo-title {
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+        #loading-overlay .lo-sub {
+            font-size: 13px;
+            line-height: 1.4;
+            color: #cbd5e1;
+        }
+
         /* Контекстное меню долгого нажатия (мобильные) */
         #ctx-menu {
             display: none;
@@ -571,6 +637,21 @@
                 max-width: none;
                 min-width: 0;
             }
+
+            /* Панель «Общие настройки» — на передней стороне. Те же координаты
+               и размеры, что и у #snap-panel, чтобы тулбары двух сторон
+               визуально совпадали. */
+            #front-panel {
+                position: fixed;
+                bottom: 12px;
+                left: 50%;
+                right: auto;
+                transform: translateX(-50%);
+                width: min(320px, calc(100vw - 40px));
+                max-width: none;
+                min-width: 0;
+            }
+            #front-toggle { display: none !important; }
 
             /* «Посмотреть результат» на десктопе — по центру внизу, ровно над #snap-panel.
                Центрируем через margin:auto + фиксированную ширину,
@@ -926,24 +1007,29 @@
         #front-toggle:active { transform: scale(0.96); }
 
         /* Мобильный breakpoint — гамбургер-кнопка видна, панель становится
-           bottom-sheet (как #snap-panel.sp-open). */
+           bottom-sheet (как #snap-panel.sp-open). Те же правила, что и для
+           snap-панели на задней стороне: full-width между отступами,
+           скрыта за нижним краем, выезжает по тапу на гамбургер. */
         @media (max-width: 768px), (orientation: landscape) and (max-height: 600px) {
             #front-toggle { display: inline-flex; }
             #front-panel {
                 position: fixed;
+                top: auto;
+                left: 12px;
+                right: 12px;
                 bottom: 12px;
-                left: 50%;
-                right: auto;
-                transform: translateX(-50%) translateY(calc(100% + 24px));
-                width: min(320px, calc(100vw - 40px));
                 max-width: none;
                 min-width: 0;
+                font-size: 11px;
+                box-shadow: 0 -8px 32px rgba(0,0,0,0.25);
+                transform: translateY(calc(100% + 24px));
                 transition: transform 0.25s ease;
             }
             #front-panel.fp-open {
-                transform: translateX(-50%) translateY(0);
+                bottom: 68px;
+                transform: translateY(0);
             }
-            #front-panel .sp-header::before {
+            #front-panel.fp-open .sp-header::before {
                 content: "";
                 display: block;
                 width: 36px;
@@ -952,6 +1038,9 @@
                 border-radius: 2px;
                 margin: -4px auto 8px;
             }
+            #front-panel .sp-header { padding: 9px 12px; font-size: 12px; }
+            #front-panel .sp-body { padding: 8px 10px; }
+            #front-panel .sp-row { padding: 8px 10px; }
         }
         @media (prefers-reduced-motion: reduce) {
             #front-toggle:active { transform: none; }
@@ -1274,14 +1363,15 @@
             /* Гамбургер-кнопка snap-панели (базовый display:none в общем CSS).
                На мобильном показывается; на десктопе скрыта. */
             #snap-toggle,
-            #font-toggle { display: inline-flex; }
+            #font-toggle,
+            #front-toggle { display: inline-flex; }
 
             /* Тач-френдли: канва и панели */
             canvas {
                 touch-action: manipulation;
                 -webkit-tap-highlight-color: transparent;
             }
-            #logo-panel, #snap-panel {
+            #logo-panel, #snap-panel, #front-panel {
                 -webkit-overflow-scrolling: touch;
             }
         }
@@ -1293,7 +1383,8 @@
             }
             #logo-panel,
             #snap-panel,
-            #font-panel {
+            #font-panel,
+            #front-panel {
                 left: 8px;
                 right: 8px;
                 bottom: 8px;
@@ -1324,7 +1415,8 @@
             }
             #logo-toggle,
             #snap-toggle,
-            #font-toggle {
+            #font-toggle,
+            #front-toggle {
                 bottom: 8px;
                 padding: 9px 14px;
                 font-size: 13px;
@@ -1444,6 +1536,13 @@
             <button class="rh-dismiss" type="button">Понятно</button>
         </div>
     </div>
+    <div id="loading-overlay" role="alertdialog" aria-modal="true" aria-labelledby="loading-overlay-title" aria-describedby="loading-overlay-desc" aria-busy="true">
+        <div class="lo-card">
+            <div class="lo-spinner" aria-hidden="true"></div>
+            <div class="lo-title" id="loading-overlay-title">Загружаем элементы…</div>
+            <div class="lo-sub" id="loading-overlay-desc">Шрифты и фон — обычно несколько секунд</div>
+        </div>
+    </div>
     <div id="ctx-menu" role="menu" aria-hidden="true">
         <button class="cm-action" type="button" data-action="delete" role="menuitem">🗑 Удалить</button>
         <div class="cm-divider" role="separator"></div>
@@ -1472,13 +1571,69 @@
         const innerHeight = PLATE_HEIGHT - (scaledMargin * 2);           // ≈ 228.2
 
         // ============================================================
+        // Прелоадер: показываем оверлей ДО инициализации fabric, чтобы
+        // пользователь не видел flicker «всё мигнуло → появилось».
+        // Подсказка «Поверните устройство» — отдельный #rotate-hint, он сам
+        // включается только на мобильной портретной ориентации, в прелоадер
+        // её не встраиваем.
+        // ============================================================
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const isMobilePortrait = () =>
+            window.matchMedia('(max-width: 768px) and (orientation: portrait)').matches;
+
+        const LoadingScreen = {
+            show() {
+                if (!loadingOverlay) return;
+                loadingOverlay.classList.add('lo-show');
+            },
+            hide() {
+                if (!loadingOverlay) return;
+                loadingOverlay.classList.remove('lo-show');
+                loadingOverlay.removeAttribute('aria-busy');
+            }
+        };
+
+        // Ждём шрифты и фоновую картинку параллельно. Safety-таймаут 6с —
+        // на случай, если fonts.ready или картинка зависнут, экран не должен
+        // висеть вечно.
+        function waitForBackImage(url) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                let settled = false;
+                const done = () => {
+                    if (settled) return;
+                    settled = true;
+                    resolve();
+                };
+                img.onload = done;
+                img.onerror = done;
+                setTimeout(done, 5000); // дополнительная страховка от зависания
+                img.src = url;
+            });
+        }
+
+        // Прелоадер стартует сразу.
+        LoadingScreen.show();
+
+        Promise.all([
+            (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve())
+                .catch(() => {}),
+            waitForBackImage('images/back.png')
+        ]).finally(() => {
+            // Небольшая задержка, чтобы спиннер не мигал на быстром соединении.
+            setTimeout(() => LoadingScreen.hide(), 250);
+        });
+        // Аварийный таймаут — даже если fonts.ready никогда не резолвится
+        // (например, очень странный браузер), прелоадер всё равно погаснет.
+        setTimeout(() => LoadingScreen.hide(), 6000);
+
+        // ============================================================
         // Подсказка «Поверните экран»: показывается в мобильной портретной
         // ориентации, если пользователь ещё не закрыл её.
         // ============================================================
         const rotateHint = document.getElementById('rotate-hint');
         const ROTATE_HINT_DISMISS_KEY = 'rotate-hint-dismissed';
-        const isMobilePortrait = () =>
-            window.matchMedia('(max-width: 768px) and (orientation: portrait)').matches;
+        // isMobilePortrait объявлена выше в блоке LoadingScreen.
 
         function syncRotateHint() {
             if (!rotateHint) return;
@@ -2543,6 +2698,10 @@
                 </div>
             `;
             document.body.appendChild(panel);
+            // Гонка: panel могла появиться уже после setSide('front'). На front
+            // её нужно скрыть; syncChromeVisibility() идемпотентен — на back
+            // ничего не делает.
+            window.__sideToggle?.syncChromeVisibility?.();
 
             // Мобильный toggle: показываем/прячем панель-нижний sheet.
             // CSS сам отвечает за display кнопки через @media (max-width: 768px), (orientation: landscape) and (max-height: 600px).
@@ -2551,6 +2710,9 @@
             toggleBtn.id = 'logo-toggle';
             toggleBtn.innerHTML = '☰ Логотипы';
             document.body.appendChild(toggleBtn);
+            // Та же гонка, что и для панели логотипов: кнопка могла появиться
+            // уже после setSide('front').
+            window.__sideToggle?.syncChromeVisibility?.();
             toggleBtn.addEventListener('click', () => {
                 panel.classList.toggle('lp-open');
                 toggleBtn.textContent = panel.classList.contains('lp-open') ? '✕ Закрыть' : '☰ Логотипы';
@@ -2750,11 +2912,18 @@
                 <div class="fp-list"></div>
             `;
             document.body.appendChild(fontPanel);
+            // Гонка: fontPanel мог появиться уже после setSide('front'). На front
+            // её нужно скрыть; syncChromeVisibility() идемпотентен — на back
+            // ничего не делает.
+            window.__sideToggle?.syncChromeVisibility?.();
 
             const fontToggleBtn = document.createElement('button');
             fontToggleBtn.id = 'font-toggle';
             fontToggleBtn.textContent = '✎ Текст';
             document.body.appendChild(fontToggleBtn);
+            // Та же гонка, что и для fontPanel: кнопка могла появиться уже
+            // после setSide('front').
+            window.__sideToggle?.syncChromeVisibility?.();
 
             const list = fontPanel.querySelector('.fp-list');
             FONT_OPTIONS.forEach((font) => {
