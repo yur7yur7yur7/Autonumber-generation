@@ -28,6 +28,13 @@
         @font-face { font-family: 'Panel Marta'; src: url('fonts/backpanel/Marta/Marta_Regular.otf') format('opentype'); }
         @font-face { font-family: 'Panel Troika'; src: url('fonts/backpanel/Troika/troika.otf') format('opentype'); }
         @font-face { font-family: 'Panel Sprite Graffiti'; src: url('fonts/backpanel/spritegraffiti/fonts/spritegraffiti.woff2') format('woff2'); }
+        @font-face {
+            font-family: 'GibddFont';
+            src: url('fonts/frontpanel/gibdd-font.ttf') format('truetype');
+            font-weight: bold;
+            font-style: normal;
+            font-display: swap;
+        }
 
         body {
             margin: 0;
@@ -576,8 +583,9 @@
         }
         #canvas-wrap {
             display: flex;
-            justify-content: center;
-            align-items: flex-start;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
             width: 100%;
             max-width: 100%;
             margin: 0 auto;
@@ -591,6 +599,55 @@
         }
         #canvas-wrap .canvas-container {
             overflow: hidden;
+        }
+
+        /* Лейбл режима редактора («Задняя сторона» / «Передняя сторона»).
+           Сверху над канвасом, по центру; работает тогглом при клике. */
+        #canvas-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            color: rgba(255, 255, 255, 0.92);
+            background: rgba(30, 35, 45, 0.78);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            user-select: none;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+        }
+        #canvas-label:hover {
+            background: rgba(30, 35, 45, 0.92);
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+        #canvas-label:active {
+            transform: scale(0.97);
+        }
+        #canvas-label:focus-visible {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+
+        /* Передняя сторона: нативный 2D-канвас рядом с fabric-канвасом.
+           По умолчанию скрыт, показываем тогглом. CSS-размер (width/height)
+           выставляется в fitCanvasToViewport() — те же значения, что у fabric,
+           чтобы геометрия не прыгала при переключении. */
+        #front-canvas-wrap {
+            display: block;
+            margin: 0 auto;
+        }
+        #front-canvas-wrap[hidden] { display: none; }
+        #frontCanvas {
+            display: block;
+            border-radius: 31px;
+            background: #ffffff;
         }
 
         /* Кнопка-гамбургер для панели логотипов — НЕВИДИМАЯ по умолчанию,
@@ -1098,7 +1155,15 @@
 </head>
 <body>
     <div id="canvas-wrap">
-        <canvas id="c" width="1224" height="252"></canvas>
+        <div id="canvas-label" role="button" tabindex="0"
+             aria-label="Переключить сторону брелка"
+             data-side="back">🎨 Задняя сторона</div>
+        <div class="back-canvas-wrap">
+            <canvas id="c" width="1224" height="252"></canvas>
+        </div>
+        <div id="front-canvas-wrap" hidden>
+            <canvas id="frontCanvas" width="1224" height="252"></canvas>
+        </div>
     </div>
     <div id="rotate-hint" role="alertdialog" aria-modal="true" aria-labelledby="rotate-hint-title" aria-describedby="rotate-hint-desc">
         <div class="rh-card">
@@ -1377,6 +1442,13 @@
             canvas.setDimensions({ width: displayW, height: displayH }, { cssOnly: false });
             canvas.setZoom(displayW / PLATE_W);
             canvas.requestRenderAll();
+            // Нативный канвас передней стороны получает те же CSS width/height,
+            // чтобы при тоггле геометрия не прыгала.
+            const frontCanvas = document.getElementById('frontCanvas');
+            if (frontCanvas) {
+                frontCanvas.style.width = displayW + 'px';
+                frontCanvas.style.height = displayH + 'px';
+            }
         }
 
         window.addEventListener('resize', fitCanvasToViewport);
@@ -1403,6 +1475,174 @@
             evented: false
         });
         canvas.add(frontRect);
+
+        // ============================================================
+        // Тоггл «Передняя / Задняя сторона» (только канва, без настроек/панелей).
+        // Лейбл #canvas-label кликабельный. При переключении на «Переднюю»
+        // прячем fabric-канвас + user-объекты + все панели, показываем
+        // нативный #frontCanvas, на котором рисуем номер «М123ММ 777» + RUS
+        // + флаг — той же логикой, что и в editor.html (js/drawing-front.js
+        // + js/drawing-utils.js). При возврате — наоборот.
+        // ============================================================
+        const sideLabel = document.getElementById('canvas-label');
+        const frontCanvas = document.getElementById('frontCanvas');
+        const frontCanvasWrap = document.getElementById('front-canvas-wrap');
+        let currentSide = 'back';
+
+        // Кэшируем модули рисования (загружаются один раз динамическим импортом).
+        let frontDepsPromise = null;
+        function getFrontDeps() {
+            if (!frontDepsPromise) {
+                frontDepsPromise = Promise.all([
+                    import('./js/drawing-front.js'),
+                    import('./js/drawing-utils.js')
+                ]).then(([front, utils]) => ({ front, utils }));
+            }
+            return frontDepsPromise;
+        }
+
+        // Рисует переднюю сторону на нативном канвасе — теми же функциями,
+        // что и editor.html (drawPlateImmediate в js/main.js, строки 426-489).
+        // Settings — дефолты из js/config.js DEFAULT_SETTINGS + правила для точек.
+        async function renderFrontOnNativeCanvas() {
+            if (!frontCanvas) return;
+            const { front, utils } = await getFrontDeps();
+            const ctx = frontCanvas.getContext('2d');
+            const W = frontCanvas.width;   // 1224
+            const H = frontCanvas.height;  // 252
+            const SF = SCALE_FACTOR;
+            const settings = {
+                margin: 7,
+                numberY: 25,
+                regionY: 74,
+                rusX: 14,
+                rusY: 32,
+                flagX: 19,
+                flagY: 1,
+                numberAreaWidth: 522,
+                regionAreaWidth: 178,
+                innerBorderRadius: 18,
+                numberPadding: 14,
+                numberX: 0,
+                regionX: 0,
+                showSideDots: false,
+                showFlag: true,
+                mainBorderRadius: 18,
+                borderThickness: 0
+            };
+            if (settings.showSideDots) {
+                settings.numberPadding = 0;
+                settings.regionX = 23;
+            }
+
+            ctx.clearRect(0, 0, W, H);
+            utils.setDrawingContext(ctx);
+            utils.drawBackground(W, H, SF, settings.mainBorderRadius);
+            utils.drawInnerBackground(W, H, SF, settings.mainBorderRadius);
+            utils.drawRoundedRect(0, 0, W, H, settings.mainBorderRadius * SF, '#000000');
+            if (settings.borderThickness > 0) {
+                ctx.save();
+                ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                ctx.shadowBlur = 5 * SF;
+                ctx.shadowOffsetY = 2 * SF;
+                utils.drawRoundedRect(
+                    2 * SF, 2 * SF,
+                    W - 4 * SF, H - 4 * SF,
+                    (settings.mainBorderRadius * SF) - (2 * SF),
+                    null, '#333333', settings.borderThickness * SF
+                );
+                ctx.restore();
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetY = 0;
+            }
+            front.setFrontContext(ctx, settings);
+            // Готовый номер для примера — кириллица «М123ММ» (транслитерируется
+            // в «M123MM» внутри getDisplayNumber), регион «777» — как в editor.html.
+            front.drawFrontSide('М123ММ', '777', W, H);
+            utils.drawSideDots(ctx, W, H, settings, SF);
+        }
+
+        // Прячем все объекты fabric-слоя кроме frontRect (фоновой плашки).
+        // Используем visible=false, чтобы не потерять координаты/состояние.
+        function setUserObjectsVisible(visible) {
+            const userObjects = canvas.getObjects().filter((o) => o !== frontRect);
+            userObjects.forEach((o) => { o.visible = visible; });
+            canvas.discardActiveObject();
+            canvas.requestRenderAll();
+        }
+
+        // Список UI-элементов, которые прячем при показе «Передней стороны».
+        const FRONT_HIDE_SELECTORS = [
+            '#font-toggle', '#logo-toggle', '#snap-toggle',
+            '#create-maket', '#maket-toast',
+            '#font-panel', '#logo-panel', '#snap-panel', '#ctx-menu',
+            '#rotate-hint'
+        ];
+
+        function setSide(side) {
+            if (side === currentSide) return;
+            currentSide = side;
+            if (sideLabel) {
+                sideLabel.dataset.side = side;
+                sideLabel.textContent = side === 'front' ? '🚗 Передняя сторона' : '🎨 Задняя сторона';
+            }
+
+            if (side === 'front') {
+                // 1) Прячем fabric-канвас (через hidden — чище, чем visibility по объектам)
+                document.querySelector('.back-canvas-wrap')?.setAttribute('hidden', '');
+                // 2) Прячем user-объекты и панели
+                setUserObjectsVisible(false);
+                FRONT_HIDE_SELECTORS.forEach((sel) => {
+                    document.querySelectorAll(sel).forEach((el) => {
+                        el.dataset._prevDisplay = el.dataset._prevDisplay ?? el.style.display ?? '';
+                        el.style.display = 'none';
+                    });
+                });
+                // 3) Показываем нативный канвас и рисуем переднюю сторону
+                frontCanvasWrap?.removeAttribute('hidden');
+                // Уравниваем размер обоих канвасов через общий fitCanvasToViewport
+                // (использует clientWidth #canvas-wrap, который не зависит от того,
+                // виден ли сейчас fabric или native).
+                fitCanvasToViewport();
+                // Ждём готовности шрифта GibddFont, чтобы текст номера нарисовался
+                // им же, что в editor.html. Если шрифт не загрузится — fallback на
+                // Arial Black из стека в drawing-front.js.
+                (document.fonts?.load
+                    ? document.fonts.load('bold 160px "GibddFont"', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+                    : Promise.resolve()
+                ).finally(() => {
+                    renderFrontOnNativeCanvas();
+                });
+            } else {
+                // 1) Прячем нативный канвас
+                frontCanvasWrap?.setAttribute('hidden', '');
+                // 2) Показываем fabric-канвас
+                document.querySelector('.back-canvas-wrap')?.removeAttribute('hidden');
+                // 3) Возвращаем user-объекты и панели
+                setUserObjectsVisible(true);
+                FRONT_HIDE_SELECTORS.forEach((sel) => {
+                    document.querySelectorAll(sel).forEach((el) => {
+                        el.style.display = el.dataset._prevDisplay || '';
+                        delete el.dataset._prevDisplay;
+                    });
+                });
+                // 4) Пересчитываем размер fabric-канвы (она снова видима)
+                fitCanvasToViewport();
+                canvas.requestRenderAll();
+            }
+        }
+
+        if (sideLabel) {
+            sideLabel.addEventListener('click', () => {
+                setSide(currentSide === 'back' ? 'front' : 'back');
+            });
+            sideLabel.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSide(currentSide === 'back' ? 'front' : 'back');
+                }
+            });
+        }
 
         // Голубая рамка выделения ровно по ширине текста — для всех текстбоксов на канвасе
         const SELECTION_BLUE = '#3b82f6';
@@ -2472,6 +2712,8 @@
             channel.addEventListener('message', (event) => {
                 const data = event.data;
                 if (!data || data.type !== 'rear-snapshot-request') return;
+                // Не отдаём снимок как «заднюю сторону», если сейчас активна передняя.
+                if (typeof currentSide !== 'undefined' && currentSide !== 'back') return;
                 try {
                     const lower = canvas.lowerCanvasEl;
                     canvas.renderAll();
