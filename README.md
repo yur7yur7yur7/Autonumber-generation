@@ -46,7 +46,9 @@ python -m http.server 8000
 ```
 .
 ├── index.html              # Landing screen — pick a plate format
-├── editor.html             # Generator UI (formerly the entry point)
+├── editor.html             # Front-side generator (canvas, settings, Telegram send)
+├── back.html               # Back-side designer (fabric canvas, logos, fonts, snap)
+│                            # also hosts the side-toggle module for the front preview
 ├── css/
 │   ├── landing.css         # Landing-page styles (themes, animations, plate frame)
 │   ├── main.css            # Light-mode tokens for the editor
@@ -61,6 +63,7 @@ python -m http.server 8000
 │   ├── drawing-front.js    # Renders the front (number) side on canvas
 │   ├── drawing-back.js     # Renders the back (text + logos) side on canvas
 │   ├── drawing-utils.js    # Rounded rects, shadows, background helpers
+│   ├── side-toggle.js      # Front/back side toggle for back.html (front-side preview)
 │   ├── settings-panel.js   # Settings panel DOM and event wiring
 │   ├── validation.js       # Input filters and toast messages
 │   ├── transliteration.js  # Russian ↔ Latin plate chars

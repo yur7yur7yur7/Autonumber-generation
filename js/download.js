@@ -32,7 +32,7 @@ export function setDownloadContext(ctx, settings, elements) {
 }
 
 /**
- * Снимок задней стороны с редактора test.html через BroadcastChannel.
+ * Снимок задней стороны с редактора back.html через BroadcastChannel.
  * Принимает функцию-getter (Promise<dataURL>); если она не задана,
  * используется fallback на встроенный previewCanvas текущей вкладки.
  */
@@ -42,7 +42,7 @@ async function getRearSideDataURL(getRearDataURL) {
             const data = await getRearDataURL();
             if (data) return data;
         } catch (e) {
-            console.warn('Не удалось получить снимок из test.html:', e);
+            console.warn('Не удалось получить снимок из back.html:', e);
         }
     }
     return null;
@@ -51,14 +51,14 @@ async function getRearSideDataURL(getRearDataURL) {
 /**
  * Чистая сборка SVG из двух готовых PNG-снимков. Не трогает DOM и табы —
  * используется как ядро для editor.html (через downloadBothSides) и напрямую
- * из test.html, где табов с переключением сторон нет.
+ * из back.html, где табов с переключением сторон нет.
  */
 export function buildMaketSvg({ frontDataURL, backDataURL, number, region }) {
     const interval = 20;
     const totalWidth = CANVAS_WIDTH * 2 + interval;
 
     // Радиус скругления в пикселях канвы (как в main.js#drawPlateImmediate).
-    // Fallback на 0 — если контекст не задан (например, в test.html).
+    // Fallback на 0 — если контекст не задан (например, в back.html).
     const borderRadius = (mainSettings?.mainBorderRadius || 0) * (CONFIG.SCALE_FACTOR || 1);
 
     const svgString = `<?xml version="1.0" encoding="UTF-8"?>
@@ -100,7 +100,7 @@ export function buildMaketSvg({ frontDataURL, backDataURL, number, region }) {
 
 /**
  * Снимает обе стороны с editor.html и собирает SVG. Переключает табы —
- * вызывать только из editor.html. Для test.html используйте buildMaketSvg.
+ * вызывать только из editor.html. Для back.html используйте buildMaketSvg.
  */
 export async function downloadBothSides(canvas, getNumber, getRegion, getRearDataURL) {
     try {
@@ -112,14 +112,14 @@ export async function downloadBothSides(canvas, getNumber, getRegion, getRearDat
         await new Promise(resolve => setTimeout(resolve, 100));
         const frontData = canvas.toDataURL('image/png');
 
-        // Задняя сторона: сначала пытаемся получить из test.html
+        // Задняя сторона: сначала пытаемся получить из back.html
         let backData = await getRearSideDataURL(getRearDataURL);
         if (!backData) {
             // Fallback — старая встроенная задняя сторона
             document.querySelector('[data-side="back"]').click();
             await new Promise(resolve => setTimeout(resolve, 100));
             backData = canvas.toDataURL('image/png');
-            showTemporaryMessage('⚠️ Откройте редактор задней стороны (test.html) и повторите', 'warning');
+            showTemporaryMessage('⚠️ Откройте редактор задней стороны (back.html) и повторите', 'warning');
         }
 
         // Возвращаем как было
@@ -141,7 +141,7 @@ export async function downloadBothSides(canvas, getNumber, getRegion, getRearDat
 /**
  * Отправляет результат downloadBothSides в Telegram-реле.
  * Возвращает true при успехе, false при ошибке/ненастроенном реле.
- * Используется из editor.html и test.html как обработчик «Отправить на печать»
+ * Используется из editor.html и back.html как обработчик «Отправить на печать»
  * в модалке result-preview — единая точка входа для обоих редакторов.
  */
 export async function sendMaketToTelegram(result) {

@@ -165,12 +165,12 @@ function saveSettings() {
 // ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
 // ============================================
 
-// Задняя сторона редактируется в test.html — открываем его в новой вкладке
+// Задняя сторона редактируется в back.html — открываем его в новой вкладке
 // и блокируем встроенный обработчик переключения вкладок.
 document.querySelector('.side-btn[data-side="back"]')?.addEventListener('click', (event) => {
     event.stopImmediatePropagation();
     event.preventDefault();
-    window.open('test.html', '_blank', 'noopener');
+    window.open('back.html', '_blank', 'noopener');
 }, true);
 
 document.querySelectorAll('.side-btn').forEach(btn => {
@@ -734,8 +734,8 @@ if (window.visualViewport) {
     });
 }
 
-// Канал обмена с test.html (редактор задней стороны).
-// Editor просит снимок канвы, test.html отвечает PNG dataURL.
+// Канал обмена с back.html (редактор задней стороны).
+// Editor просит снимок канвы, back.html отвечает PNG dataURL.
 const REAR_CHANNEL = 'brelok-rear';
 const rearChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel(REAR_CHANNEL) : null;
 const rearListeners = new Set();
@@ -749,7 +749,7 @@ rearChannel?.addEventListener('message', (event) => {
 });
 
 /**
- * Возвращает PNG-снимок задней стороны из test.html.
+ * Возвращает PNG-снимок задней стороны из back.html.
  * Резолвится в null, если редактор не открыт или не отвечает.
  */
 function getRearDataURL(timeoutMs = 1500) {
@@ -796,7 +796,7 @@ previewBtn.addEventListener('click', async () => {
     try {
         // Передняя сторона: текущая отрисовка канвы.
         const frontDataURL = canvas.toDataURL('image/png');
-        // Задняя: пытаемся получить из test.html. Если нет — null (заглушка).
+        // Задняя: пытаемся получить из back.html. Если нет — null (заглушка).
         const backDataURL = await getRearDataURL(1500);
         await openResultPreview({
             frontDataURL,
@@ -809,9 +809,9 @@ previewBtn.addEventListener('click', async () => {
     }
 });
 
-// Канал с test.html — отдаём снимок передней стороны по запросу, чтобы test.html
+// Канал с back.html — отдаём снимок передней стороны по запросу, чтобы back.html
 // мог собрать обе стороны для своей модалки предпросмотра. Отправку в Telegram
-// test.html делает сам через sendMaketToTelegram, editor.html в этой цепочке
+// back.html делает сам через sendMaketToTelegram, editor.html в этой цепочке
 // больше не нужен.
 const MAKET_CHANNEL = 'brelok-maket';
 const maketChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel(MAKET_CHANNEL) : null;
@@ -831,8 +831,8 @@ maketChannel?.addEventListener('message', (event) => {
     }
 });
 maketChannel?.postMessage({ type: 'editor-ready' });
-// Если editor.html стал видимым впервые (например, открыли позже test.html),
-// повторно объявляем о себе, чтобы test.html снял disabled с кнопки.
+// Если editor.html стал видимым впервые (например, открыли позже back.html),
+// повторно объявляем о себе, чтобы back.html снял disabled с кнопки.
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
         maketChannel?.postMessage({ type: 'editor-ready' });

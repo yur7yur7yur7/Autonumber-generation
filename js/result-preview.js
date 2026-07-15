@@ -96,7 +96,7 @@ function makeLayer({ src, alt, x, y, w, h, missing }) {
 
     if (missing) {
         box.classList.add('rp-layer--missing');
-        box.textContent = 'Открой редактор задней стороны (test.html)';
+        box.textContent = 'Открой редактор задней стороны (back.html)';
         return box;
     }
 
