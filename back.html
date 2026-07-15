@@ -54,6 +54,8 @@
         body:not(.ready) #snap-panel,
         body:not(.ready) #front-toggle,
         body:not(.ready) #front-panel,
+        body:not(.ready) #front-advanced-toggle,
+        body:not(.ready) #front-advanced-panel,
         body:not(.ready) #create-maket,
         body:not(.ready) #maket-toast,
         body:not(.ready) #ctx-menu,
@@ -536,6 +538,117 @@
             border-radius: 6px;
             transition: background 0.12s;
         }
+        /* Иконка тоггла. Селектор без #snap-panel/#front-panel — стили общие,
+           т.к. rowTemplate в обеих панелях использует один класс. */
+        .sp-row .sp-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+            color: #6b7280;
+            transition: color 0.18s ease;
+        }
+        .sp-row .sp-icon svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        /* PNG-иконка (флаг) занимает весь контейнер, currentColor к ней
+           не применим — оставляем родные цвета. */
+        .sp-row .sp-icon img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+        }
+        /* Строка со слайдером: label+value сверху, input range на всю ширину.
+           Используется createFrontSliderPanel в js/side-toggle.js. */
+        .sp-row.sp-slider-row {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 6px;
+            cursor: default;
+        }
+        .sp-row.sp-slider-row:hover {
+            background: transparent;
+        }
+        .sp-row.sp-slider-row .sp-label {
+            display: flex;
+            flex-direction: row;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .sp-row.sp-slider-row .sp-label b {
+            font-size: 13px;
+        }
+        .sp-row.sp-slider-row .sp-slider-value {
+            color: #6b7280;
+            font: 600 12px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            letter-spacing: 0.2px;
+        }
+        .sp-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 24px;
+            background: transparent;
+            cursor: pointer;
+            margin: 0;
+            padding: 0;
+        }
+        .sp-slider:focus {
+            outline: none;
+        }
+        /* Webkit (Chrome/Safari) — дорожка и ползунок */
+        .sp-slider::-webkit-slider-runnable-track {
+            height: 4px;
+            background: #d1d5db;
+            border-radius: 2px;
+        }
+        .sp-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            margin-top: -6px;
+            background: #3b82f6;
+            border-radius: 50%;
+            border: 2px solid #ffffff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+            transition: transform 0.12s ease;
+        }
+        .sp-slider:hover::-webkit-slider-thumb {
+            transform: scale(1.1);
+        }
+        .sp-slider:active::-webkit-slider-thumb {
+            transform: scale(0.95);
+            background: #2563eb;
+        }
+        /* Firefox — дорожка и ползунок */
+        .sp-slider::-moz-range-track {
+            height: 4px;
+            background: #d1d5db;
+            border-radius: 2px;
+        }
+        .sp-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #3b82f6;
+            border-radius: 50%;
+            border: 2px solid #ffffff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .sp-slider::-webkit-slider-thumb { transition: none; }
+        }
+        /* Когда тогл включён — красим иконку в акцентный синий, как у
+           тумблера. */
+        .sp-row:has(input:checked) .sp-icon {
+            color: #3b82f6;
+        }
         #snap-panel .sp-row + .sp-row {
             margin-top: 4px;
         }
@@ -652,6 +765,47 @@
                 min-width: 0;
             }
             #front-toggle { display: none !important; }
+
+            /* Сводная панель «Расширенные настройки» — для производителей, не
+               для клиентов. На десктопе так же, как и на мобиле, прячется за
+               гамбургер-кнопкой (#front-advanced-toggle) — чтобы не мозолила
+               глаза, пока не вызвана. Размеры как у #snap-panel / #front-panel:
+               ширина min(320px, calc(100vw - 40px)), высота по содержимому. */
+            #front-advanced-panel {
+                position: fixed;
+                right: 12px;
+                bottom: 12px;
+                width: min(320px, calc(100vw - 40px));
+                max-width: none;
+                min-width: 0;
+                border-radius: 10px;
+                transform: translateY(calc(100% + 24px));
+                transition: transform 0.25s ease;
+            }
+            #front-advanced-panel.fp-open {
+                bottom: 68px;
+                transform: translateY(0);
+            }
+            #front-advanced-panel.fp-open .sp-header::before {
+                content: "";
+                display: block;
+                width: 36px;
+                height: 4px;
+                background: rgba(255,255,255,0.4);
+                border-radius: 2px;
+                margin: -4px auto 8px;
+            }
+            /* Гамбургер-кнопка видна и на десктопе, и на мобиле — на десктопе
+               ставим её в правый нижний угол на тот же уровень, что и
+               #front-toggle (слева внизу). Базовая форма — круглая
+               иконочная (см. базовое правило выше). */
+            #front-advanced-toggle {
+                display: inline-flex !important;
+                bottom: 12px;
+                left: auto;
+                right: 12px;
+            }
+            #front-advanced-toggle:active { transform: scale(0.96); }
 
             /* «Посмотреть результат» на десктопе — по центру внизу, ровно над #snap-panel.
                Центрируем через margin:auto + фиксированную ширину,
@@ -948,6 +1102,79 @@
             font-size: 11px;
             margin-top: 1px;
         }
+
+        /* Сводная панель «Расширенные настройки» — внешний вид как у
+           #front-panel / #snap-panel. Те же правила chrome: белый фон,
+           тёмная шапка, скруглённые ряды. Содержит ВСЕ позиционные слайдеры
+           передней стороны (раньше жили в трёх отдельных панелях). */
+        #front-advanced-panel {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            user-select: none;
+        }
+        #front-advanced-panel .sp-header {
+            padding: 12px 14px;
+            background: #1f2937;
+            color: #fff;
+            font-weight: 600;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #front-advanced-panel .sp-header-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            color: #f8fafc;
+        }
+        #front-advanced-panel .sp-header-icon svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        #front-advanced-panel .sp-body {
+            padding: 10px 12px;
+            background: #ffffff;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        #front-advanced-panel .sp-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 6px;
+        }
+        #front-advanced-panel .sp-row + .sp-row {
+            margin-top: 4px;
+        }
+        #front-advanced-panel .sp-label {
+            display: flex;
+            flex-direction: row;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 10px;
+            flex: 1;
+            min-width: 0;
+        }
+        #front-advanced-panel .sp-label b {
+            color: #111827;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
         #front-panel .sp-toggle {
             position: relative;
             display: inline-block;
@@ -1041,6 +1268,48 @@
             #front-panel .sp-header { padding: 9px 12px; font-size: 12px; }
             #front-panel .sp-body { padding: 8px 10px; }
             #front-panel .sp-row { padding: 8px 10px; }
+
+            /* Сводная панель «Расширенные настройки» — те же правила,
+               что у #front-panel: bottom-sheet, full-width, выезжает по
+               тапу на гамбургер. На мобиле гамбургер ставим в правый нижний
+               угол на тот же уровень, что и #front-toggle (⚙ Настройки) —
+               на один уровень с «Настройки», а не выше. */
+            #front-advanced-toggle {
+                display: inline-flex;
+                bottom: 12px;
+                left: auto;
+                right: 12px;
+                transform: none;
+            }
+            #front-advanced-panel {
+                position: fixed;
+                top: auto;
+                left: 12px;
+                right: 12px;
+                bottom: 12px;
+                max-width: none;
+                min-width: 0;
+                font-size: 11px;
+                box-shadow: 0 -8px 32px rgba(0,0,0,0.25);
+                transform: translateY(calc(100% + 24px));
+                transition: transform 0.25s ease;
+            }
+            #front-advanced-panel.fp-open {
+                bottom: 68px;
+                transform: translateY(0);
+            }
+            #front-advanced-panel.fp-open .sp-header::before {
+                content: "";
+                display: block;
+                width: 36px;
+                height: 4px;
+                background: rgba(255,255,255,0.4);
+                border-radius: 2px;
+                margin: -4px auto 8px;
+            }
+            #front-advanced-panel .sp-header { padding: 9px 12px; font-size: 12px; }
+            #front-advanced-panel .sp-body { padding: 8px 10px; }
+            #front-advanced-panel .sp-row { padding: 8px 10px; }
         }
         @media (prefers-reduced-motion: reduce) {
             #front-toggle:active { transform: none; }
@@ -1068,6 +1337,45 @@
             gap: 6px;
             touch-action: manipulation;
         }
+        /* Гамбургер «Расширенные настройки» — компактная иконочная кнопка (🔧).
+           Видна и на десктопе, и на мобиле (на десктопе панель скрыта за
+           кнопкой, как и на мобиле). По умолчанию скрыта — показывается
+           через media-override. */
+        #front-advanced-toggle {
+            display: none;
+            position: fixed;
+            z-index: 11;
+            background: #1f2937;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+        /* Иконка внутри иконочной кнопки — крупная, по центру, наследует цвет кнопки.
+           Явно запрещаем pointer-events:none, чтобы клик по эмодзи точно дошёл
+           до родительской <button> (некоторые браузеры на тач-устройствах
+           считают пустой inline-flex span «невидимым» для hit-testing). */
+        #front-advanced-toggle .tg-icon {
+            font-size: 22px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            user-select: none;
+        }
+        #front-advanced-toggle:active { transform: scale(0.96); }
+
         #font-toggle:active { transform: translateX(-50%) scale(0.96); }
 
         /* Кнопка «Посмотреть результат» — поверх, всегда видна, яркий акцент.
@@ -1364,14 +1672,15 @@
                На мобильном показывается; на десктопе скрыта. */
             #snap-toggle,
             #font-toggle,
-            #front-toggle { display: inline-flex; }
+            #front-toggle,
+            #front-advanced-toggle { display: inline-flex; }
 
             /* Тач-френдли: канва и панели */
             canvas {
                 touch-action: manipulation;
                 -webkit-tap-highlight-color: transparent;
             }
-            #logo-panel, #snap-panel, #front-panel {
+            #logo-panel, #snap-panel, #front-panel, #front-advanced-panel {
                 -webkit-overflow-scrolling: touch;
             }
         }
@@ -1384,7 +1693,8 @@
             #logo-panel,
             #snap-panel,
             #font-panel,
-            #front-panel {
+            #front-panel,
+            #front-advanced-panel {
                 left: 8px;
                 right: 8px;
                 bottom: 8px;
@@ -1420,6 +1730,10 @@
                 bottom: 8px;
                 padding: 9px 14px;
                 font-size: 13px;
+            }
+            /* Иконочная кнопка — только bottom подвинуть, размер не трогаем. */
+            #front-advanced-toggle {
+                bottom: 8px;
             }
             #logo-toggle { left: 8px; }
             #snap-toggle { right: 8px; }
@@ -2425,11 +2739,23 @@
         const panel = document.createElement('div');
         panel.id = 'snap-panel';
 
+        // SVG-иконки для тоглов snap-панели. Inline, без сетевых запросов;
+        // цвет берётся из currentColor, чтобы тогл-«вкл» подсветил и иконку.
+        const SNAP_ICONS = {
+            // Четыре угловых «крючка» + точка-объект в центре — привязка
+            // к краям/центру других объектов и холста.
+            position: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8 V4 H8"/><path d="M20 8 V4 H16"/><path d="M4 16 V20 H8"/><path d="M20 16 V20 H16"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/></svg>',
+            // Облачко с тремя точками — всплывающий текст-подсказка.
+            showHint: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5 H20 V16 H12 L8 20 V16 H4 Z"/><circle cx="9" cy="11" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="11" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="11" r="1.1" fill="currentColor" stroke="none"/></svg>'
+        };
+
         function rowTemplate(label, key, hint) {
             const id = `snap-${key}`;
             const on = snapState[key];
+            const icon = SNAP_ICONS[key] || '';
             return `
                 <label class="sp-row" for="${id}">
+                    <span class="sp-icon" aria-hidden="true">${icon}</span>
                     <span class="sp-label">
                         <b>${label}</b>
                         <small>${hint}</small>

@@ -1,4 +1,9 @@
 // ============================================================
+// Иконка «закрыть» для гамбургер-кнопок с toggleIconSvg. Меняет местами
+// иконку в открытом состоянии, чтобы пользователь видел аффорданс закрытия.
+const CLOSE_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>';
+
+// ============================================================
 // Тоггл «Передняя / Задняя сторона» для back.html (бывший test.html).
 // Клик по лейблу #canvas-label переключает между:
 //   - задней стороной (fabric-канва с user-объектами: текст, логотипы, линии)
@@ -33,16 +38,33 @@ let teardown = null;
 // при показе передней стороны, чтобы канва отражала то, что ввёл пользователь.
 let currentNumber = '';
 let currentRegion = '';
-// Настройки передней стороны, управляемые панелью «Общие настройки».
-// showFlag — показывать ли триколор-флаг в правой части номера.
-// showSideDots — рисовать ли точки по бокам (как на настоящем номере РФ).
-const frontSettings = {
-    showFlag: true,
-    showSideDots: false
-};
-
-import { ALLOWED_CHARS, RUS_TO_LAT } from './config.js';
+import { ALLOWED_CHARS, RUS_TO_LAT, DEFAULT_SETTINGS } from './config.js';
 import { showTemporaryMessage } from './validation.js';
+
+// Настройки передней стороны. Управляются четырьмя панелями в setSide('front'):
+//   - «Общие настройки» (тоглы): showFlag, showSideDots.
+//   - «Флаг и RUS» (слайдеры): flagX, flagY, rusX, rusY.
+//   - «Номер» (слайдеры): numberY, numberX, numberAreaWidth, numberPadding.
+//   - «Код региона» (слайдеры): regionY, regionX, regionAreaWidth.
+// Слайдер-панели заменяют ранее хардкоженные значения внутри
+// renderFrontOnNativeCanvas; теперь они читаются отсюда. showSideDots по-
+// прежнему переопределяет numberPadding и regionX внутри render, чтобы
+// хватало места под боковые точки (см. старую логику editor.html).
+const frontSettings = {
+    showFlag: DEFAULT_SETTINGS.showFlag,
+    showSideDots: DEFAULT_SETTINGS.showSideDots,
+    flagX: DEFAULT_SETTINGS.flagX,
+    flagY: DEFAULT_SETTINGS.flagY,
+    rusX: DEFAULT_SETTINGS.rusX,
+    rusY: DEFAULT_SETTINGS.rusY,
+    numberY: DEFAULT_SETTINGS.numberY,
+    numberX: DEFAULT_SETTINGS.numberX,
+    numberAreaWidth: DEFAULT_SETTINGS.numberAreaWidth,
+    numberPadding: DEFAULT_SETTINGS.numberPadding,
+    regionY: DEFAULT_SETTINGS.regionY,
+    regionX: DEFAULT_SETTINGS.regionX,
+    regionAreaWidth: DEFAULT_SETTINGS.regionAreaWidth
+};
 
 const FRONT_HIDE_SELECTORS = [
     '#font-toggle', '#logo-toggle', '#snap-toggle',
@@ -85,25 +107,31 @@ async function renderFrontOnNativeCanvas(ctx, number, region) {
     const W = ctx.canvas.width;   // 1224
     const H = ctx.canvas.height;  // 252
     const SF = W / 720;
+    // Все позиционные/размерные поля читаются из frontSettings, который
+    // редактируется четырьмя панелями (Общие настройки, Флаг и RUS, Номер,
+    // Код региона). Не задаваемые UI-поля (margin, borderThickness, скругления)
+    // берутся из DEFAULT_SETTINGS как было.
     const settings = {
-        margin: 7,
-        numberY: 25,
-        regionY: 74,
-        rusX: 14,
-        rusY: 32,
-        flagX: 19,
-        flagY: 1,
-        numberAreaWidth: 522,
-        regionAreaWidth: 178,
-        innerBorderRadius: 18,
-        numberPadding: 14,
-        numberX: 0,
-        regionX: 0,
+        margin: DEFAULT_SETTINGS.margin,
+        numberY: frontSettings.numberY,
+        regionY: frontSettings.regionY,
+        rusX: frontSettings.rusX,
+        rusY: frontSettings.rusY,
+        flagX: frontSettings.flagX,
+        flagY: frontSettings.flagY,
+        numberAreaWidth: frontSettings.numberAreaWidth,
+        regionAreaWidth: frontSettings.regionAreaWidth,
+        innerBorderRadius: DEFAULT_SETTINGS.innerBorderRadius,
+        numberPadding: frontSettings.numberPadding,
+        numberX: frontSettings.numberX,
+        regionX: frontSettings.regionX,
         showSideDots: frontSettings.showSideDots,
         showFlag: frontSettings.showFlag,
-        mainBorderRadius: 18,
-        borderThickness: 0
+        mainBorderRadius: DEFAULT_SETTINGS.mainBorderRadius,
+        borderThickness: DEFAULT_SETTINGS.borderThickness
     };
+    // Если точки по бокам включены — сдвигаем номер и регион, чтобы хватило
+    // места под боковые точки (старая логика editor.html).
     if (settings.showSideDots) {
         settings.numberPadding = 0;
         settings.regionX = 23;
@@ -340,11 +368,24 @@ export function createFrontPanel(deps) {
     const panel = document.createElement('div');
     panel.id = 'front-panel';
 
+    // Иконки для тоглов. SVG — inline, цвет через currentColor, чтобы
+    // «checked» подсветил иконку в акцентный синий. Для флага используем
+    // готовый PNG-триколор (images/flagRu.png) — у него собственный цвет,
+    // его не тонируем.
+    const FRONT_ICONS = {
+        // Триколор РФ — PNG, размер подгоняет CSS.
+        showFlag: '<img src="images/flagRu.png" alt="" draggable="false">',
+        // Две точки рядом по центру — буквально «точки по бокам».
+        showSideDots: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="8" cy="12" r="2.6"/><circle cx="16" cy="12" r="2.6"/></svg>'
+    };
+
     function rowTemplate(label, key, hint) {
         const id = `front-${key}`;
         const on = frontSettings[key];
+        const icon = FRONT_ICONS[key] || '';
         return `
             <label class="sp-row" for="${id}">
+                <span class="sp-icon" aria-hidden="true">${icon}</span>
                 <span class="sp-label">
                     <b>${label}</b>
                     <small>${hint}</small>
@@ -414,6 +455,126 @@ export function createFrontPanel(deps) {
 }
 
 /**
+ * Создаёт панель со слайдерами для передней стороны. По структуре и
+ * поведению — аналог snap/front-panel: на десктопе постоянно видна, на
+ * мобильном — bottom-sheet с гамбургер-кнопкой. Каждый слайдер пишет в
+ * frontSettings[key] и зовёт onChange.
+ *
+ * @param {Object} deps
+ * @param {string} deps.id — уникальный id панели (например, 'front-flag').
+ *        CSS-селекторы будут `#${id}-panel` и `#${id}-toggle`.
+ * @param {string} deps.title — заголовок в шапке панели.
+ * @param {string} deps.toggleLabel — короткий текст на гамбургер-кнопке
+ *        (используется как aria-label, если задан toggleIconSvg).
+ * @param {string} deps.iconSvg — inline SVG для шапки (опц.).
+ * @param {string} deps.toggleIconSvg — inline SVG для гамбургер-кнопки
+ *        (опц.). Если задан — кнопка рендерит только иконку, без текста.
+ * @param {Array<{key,label,min,max,step?,value}>} deps.sliders
+ * @param {() => void} deps.onChange — вызывается при любом input.
+ * @returns {{ panel: HTMLElement, toggleBtn: HTMLButtonElement, teardown: () => void }}
+ */
+export function createFrontSliderPanel(deps) {
+    const { id, title, toggleLabel, iconSvg = '', toggleIconSvg = '', sliders, onChange } = deps;
+    const fireChange = typeof onChange === 'function' ? onChange : () => {};
+
+    const panel = document.createElement('div');
+    panel.id = `${id}-panel`;
+
+    const rowsHtml = sliders.map((s) => {
+        const stepAttr = s.step != null ? `step="${s.step}"` : '';
+        const safeLabel = String(s.label);
+        const safeKey = String(s.key);
+        const safeId = `${id}-${safeKey}`;
+        return `
+            <div class="sp-row sp-slider-row">
+                <span class="sp-label">
+                    <b>${safeLabel}</b>
+                    <small class="sp-slider-value" data-value-for="${safeKey}">${s.value}</small>
+                </span>
+                <input type="range" class="sp-slider" id="${safeId}"
+                       data-slider-key="${safeKey}"
+                       min="${s.min}" max="${s.max}" ${stepAttr}
+                       value="${s.value}"
+                       aria-label="${safeLabel}">
+            </div>
+        `;
+    }).join('');
+
+    panel.innerHTML = `
+        <div class="sp-header">
+            ${iconSvg ? `<span class="sp-header-icon" aria-hidden="true">${iconSvg}</span>` : ''}
+            ${title}
+        </div>
+        <div class="sp-body">${rowsHtml}</div>
+    `;
+    document.body.appendChild(panel);
+
+    attachSwipeDownToDismiss(panel, '.sp-header', 'fp-open', () => {
+        panel.classList.remove('fp-open');
+        renderToggle(toggleBtn, false);
+    });
+
+    const toggleBtn = document.createElement('button');
+    toggleBtn.id = `${id}-toggle`;
+    toggleBtn.type = 'button';
+    if (toggleLabel) toggleBtn.setAttribute('aria-label', toggleLabel);
+    renderToggle(toggleBtn, false);
+    document.body.appendChild(toggleBtn);
+    toggleBtn.addEventListener('click', () => {
+        const willOpen = !panel.classList.contains('fp-open');
+        panel.classList.toggle('fp-open', willOpen);
+        renderToggle(toggleBtn, willOpen);
+    });
+
+    function renderToggle(btn, isOpen) {
+        if (toggleIconSvg) {
+            // Иконочная кнопка: в открытом состоянии меняем SVG на «закрыть»,
+            // в закрытом — возвращаем исходную иконку. Текст не рендерим.
+            if (isOpen) {
+                btn.innerHTML = '<span class="tg-icon" aria-hidden="true">' + CLOSE_ICON_SVG + '</span>';
+            } else {
+                btn.innerHTML = '<span class="tg-icon" aria-hidden="true">' + toggleIconSvg + '</span>';
+            }
+        } else {
+            btn.textContent = isOpen ? '✕ Закрыть' : toggleLabel;
+        }
+    }
+
+    const onDocClick = (e) => {
+        if (!window.matchMedia('(max-width: 768px), (orientation: landscape) and (max-height: 600px)').matches) return;
+        if (!panel.classList.contains('fp-open')) return;
+        if (panel.contains(e.target)) return;
+        if (toggleBtn.contains(e.target)) return;
+        panel.classList.remove('fp-open');
+        renderToggle(toggleBtn, false);
+    };
+    document.addEventListener('click', onDocClick);
+
+    // Listener'ы на каждый слайдер: input → пишем в frontSettings, обновляем
+    // value-метку, зовём onChange. Используем 'input' (не 'change'), чтобы
+    // обновление было live — пользователь видит результат сразу при движении.
+    const onSliderInput = (e) => {
+        const target = e.target;
+        const key = target.dataset.sliderKey;
+        if (!key) return;
+        const num = parseFloat(target.value);
+        frontSettings[key] = num;
+        const valueEl = panel.querySelector(`.sp-slider-value[data-value-for="${key}"]`);
+        if (valueEl) valueEl.textContent = num;
+        fireChange();
+    };
+    panel.addEventListener('input', onSliderInput);
+
+    const teardown = () => {
+        panel.removeEventListener('input', onSliderInput);
+        document.removeEventListener('click', onDocClick);
+        panel.remove();
+        toggleBtn.remove();
+    };
+    return { panel, toggleBtn, teardown };
+}
+
+/**
  * Устанавливает обработчик тоггла. Возвращает функцию, отключающую его.
  * @param {Object} deps
  * @param {fabric.Canvas} deps.canvas
@@ -462,9 +623,46 @@ export function initSideToggle(deps) {
 
     // Панель «Общие настройки» для передней стороны (тоглы showFlag / showSideDots).
     // При любом изменении тогла — перерисовываем канву с новыми настройками.
+    // Эта панель доступна всем клиентам.
     const { teardown: detachFrontPanel } = createFrontPanel({
         onChange: redrawFront
     });
+
+    // Сводная панель «Расширенные настройки» — для производителей, не для
+    // клиентов. Содержит ВСЕ позиционные/размерные слайдеры передней стороны
+    // (раньше были в editor.html, теперь перенесены сюда). Доступна через
+    // гамбургер-кнопку и на десктопе, и на мобильном — на десктопе она
+    // постоянно видна в правом нижнем углу (как snap-panel), на мобильном
+    // выезжает снизу по тапу на гамбургер.
+    const ADVANCED_PANEL = {
+        id: 'front-advanced',
+        title: '🛠 Расширенные настройки',
+        toggleLabel: 'Расширенные настройки',
+        // Юникод-эмодзи «гаечный ключ» для гамбургер-кнопки — рендерим только значок,
+        // без текста «Расшир.» (название панели уже видно в её шапке).
+        toggleIconSvg: '🔧',
+        sliders: [
+            // Флаг и RUS
+            { key: 'rusX', label: 'RUS X', min: 0, max: 100, value: frontSettings.rusX },
+            { key: 'rusY', label: 'RUS Y', min: 0, max: 100, value: frontSettings.rusY },
+            { key: 'flagX', label: 'Флаг X', min: 0, max: 100, value: frontSettings.flagX },
+            { key: 'flagY', label: 'Флаг Y', min: -50, max: 50, value: frontSettings.flagY },
+            // Номер
+            { key: 'numberY', label: 'Номер Y', min: -50, max: 100, value: frontSettings.numberY },
+            { key: 'numberX', label: 'Номер X', min: -100, max: 100, value: frontSettings.numberX },
+            { key: 'numberAreaWidth', label: 'Ширина номера', min: 400, max: 600, value: frontSettings.numberAreaWidth },
+            { key: 'numberPadding', label: 'Отступ номера', min: 0, max: 50, value: frontSettings.numberPadding },
+            // Регион
+            { key: 'regionY', label: 'Регион Y', min: 0, max: 150, value: frontSettings.regionY },
+            { key: 'regionX', label: 'Регион X', min: -100, max: 100, value: frontSettings.regionX },
+            { key: 'regionAreaWidth', label: 'Ширина региона', min: 150, max: 300, value: frontSettings.regionAreaWidth }
+        ]
+    };
+
+    const detachAdvancedPanel = createFrontSliderPanel({
+        ...ADVANCED_PANEL,
+        onChange: redrawFront
+    }).teardown;
 
     // Стартовая сторона — передняя. setSide('front') пройдёт (currentSide='back'),
     // покажет native-канву, скроет fabric-chrome и front-панель сделает видимой.
@@ -493,6 +691,9 @@ export function initSideToggle(deps) {
             // стороне: показываются здесь, прячутся в ветке `back` ниже.
             document.getElementById('front-panel')?.style.removeProperty('display');
             document.getElementById('front-toggle')?.style.removeProperty('display');
+            // Сводная панель «Расширенные настройки» — только на front.
+            document.getElementById(`${ADVANCED_PANEL.id}-panel`)?.style.removeProperty('display');
+            document.getElementById(`${ADVANCED_PANEL.id}-toggle`)?.style.removeProperty('display');
             frontCanvasWrap?.removeAttribute('hidden');
             fitCanvasToViewport();
             // Пока шрифт GibddFont не загружен — блокируем input и очищаем value,
@@ -527,6 +728,9 @@ export function initSideToggle(deps) {
             // гамбургер перекрывал бы нижние кнопки задней стороны.
             document.getElementById('front-panel')?.style.setProperty('display', 'none', 'important');
             document.getElementById('front-toggle')?.style.setProperty('display', 'none', 'important');
+            // Сводная панель «Расширенные настройки» — тоже только для front.
+            document.getElementById(`${ADVANCED_PANEL.id}-panel`)?.style.setProperty('display', 'none', 'important');
+            document.getElementById(`${ADVANCED_PANEL.id}-toggle`)?.style.setProperty('display', 'none', 'important');
             fitCanvasToViewport();
             canvas.requestRenderAll();
         }
@@ -572,6 +776,7 @@ export function initSideToggle(deps) {
         }
         detachValidation();
         detachFrontPanel();
+        detachAdvancedPanel();
         teardown = null;
         if (typeof window !== 'undefined' && window.__sideToggle) {
             delete window.__sideToggle;
