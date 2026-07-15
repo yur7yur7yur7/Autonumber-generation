@@ -2501,16 +2501,32 @@
         })();
 
         // ============================================================
-        // Кнопка «Посмотреть результат» — проксирует клик в editor.html через канал.
-        // Если editor.html не открыт, кнопка остаётся видимой, но клик подсказывает
-        // пользователю открыть редактор.
+        // Кнопка «Посмотреть результат» — навешивается отдельным модулем внизу.
+        // Здесь только блокируем её до загрузки модуля, чтобы случайный клик
+        // до готовности не сломал UI.
         // ============================================================
-        (function attachCreateMaket() {
+        (function () {
             const btn = document.getElementById('create-maket');
-            if (!btn) return;
-            const channel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('brelok-maket') : null;
+            if (btn) btn.disabled = true;
+        })();
+
+        // Финальный пересчёт размеров канвы — после применения фона и лого-панели
+        // (могут измениться layout / отступы).
+        requestAnimationFrame(fitCanvasToViewport);
+        window.addEventListener('load', fitCanvasToViewport);
+
+        canvas.requestRenderAll();
+    </script>
+    <script type="module" src="js/result-preview.js"></script>
+    <script type="module">
+        import { openResultPreview } from './js/result-preview.js';
+        import { buildMaketSvg, sendMaketToTelegram } from './js/download.js';
+
+        const btn = document.getElementById('create-maket');
+        if (!btn) {
+            console.warn('Кнопка #create-maket не найдена');
+        } else {
             const toast = document.getElementById('maket-toast');
-            let ready = false;
             let toastTimer = null;
 
             function showToast(text, isError) {
@@ -2525,51 +2541,51 @@
                 }, 2200);
             }
 
+            const channel = (typeof BroadcastChannel !== 'undefined')
+                ? new BroadcastChannel('brelok-maket')
+                : null;
+            let editorReady = false;
+
             if (channel) {
                 channel.addEventListener('message', (event) => {
-                    const data = event.data;
-                    if (!data) return;
-                    if (data.type === 'editor-ready') {
-                        ready = true;
+                    if (event.data?.type === 'editor-ready') {
+                        editorReady = true;
                         btn.disabled = false;
                         if (pollHandle) {
                             clearInterval(pollHandle);
                             pollHandle = null;
                         }
-                    } else if (data.type === 'maket-result') {
-                        // Если наш временный sendMaketFromTest слушатель активен — он сам покажет тост.
-                        // Здесь — no-op, чтобы не дублировать сообщение.
                     }
                 });
+                // Если editor.html уже открыт, попросим его объявить о себе.
+                channel.postMessage({ type: 'editor-query' });
             }
 
-            async function sendMaketFromTest() {
-                if (!channel || !ready) return false;
-                // Делегируем отправку editor.html — у него есть доступ к `downloadBothSides` и relay.
+            // Опрос, пока editor.html не ответит (если test.html открыли раньше).
+            let pollHandle = null;
+            let attempts = 0;
+            if (channel) {
+                pollHandle = setInterval(() => {
+                    if (editorReady || attempts >= 60) {
+                        clearInterval(pollHandle);
+                        pollHandle = null;
+                        return;
+                    }
+                    attempts++;
+                    channel.postMessage({ type: 'editor-query' });
+                }, 500);
+            }
+
+            function getRearDataURL() {
+                canvas.renderAll();
+                return canvas.lowerCanvasEl
+                    ? canvas.lowerCanvasEl.toDataURL('image/png')
+                    : canvas.toDataURL('image/png');
+            }
+
+            async function getFrontSnapshot(timeoutMs = 1500) {
+                if (!channel || !editorReady) return null;
                 return new Promise((resolve) => {
-                    const handler = (event) => {
-                        const d = event.data;
-                        if (!d || d.type !== 'maket-result') return;
-                        channel.removeEventListener('message', handler);
-                        showToast(
-                            d.success ? '✅ Макет отправлен' : '⚠️ Не удалось отправить макет',
-                            !d.success
-                        );
-                        resolve(Boolean(d.success));
-                    };
-                    channel.addEventListener('message', handler);
-                    channel.postMessage({ type: 'rear-create-maket' });
-                });
-            }
-
-            btn.addEventListener('click', async () => {
-                if (!channel || !ready) {
-                    showToast('Откройте editor.html, чтобы посмотреть результат', true);
-                    return;
-                }
-                // Запрашиваем у editor.html снимок передней стороны через maket-канал.
-                // editor.html отвечает сообщением front-snapshot с dataURL.
-                const frontDataURL = await new Promise((resolve) => {
                     const handler = (event) => {
                         const d = event.data;
                         if (!d || d.type !== 'front-snapshot') return;
@@ -2581,57 +2597,50 @@
                     setTimeout(() => {
                         channel.removeEventListener('message', handler);
                         resolve(null);
-                    }, 1500);
+                    }, timeoutMs);
                 });
+            }
+
+            btn.addEventListener('click', async () => {
+                if (!editorReady) {
+                    showToast('Откройте editor.html, чтобы посмотреть результат', true);
+                    return;
+                }
 
                 const original = btn.textContent;
                 btn.textContent = '⏳ Готовлю...';
                 btn.disabled = true;
                 try {
-                    // Локально берём снимок задней стороны — у нас она своя.
-                    canvas.renderAll();
-                    const backDataURL = canvas.lowerCanvasEl
-                        ? canvas.lowerCanvasEl.toDataURL('image/png')
-                        : canvas.toDataURL('image/png');
+                    const frontDataURL = await getFrontSnapshot();
+                    const backDataURL = getRearDataURL();
+
                     await openResultPreview({
                         frontDataURL,
                         backDataURL,
-                        onSendToPrint: () => sendMaketFromTest()
+                        onSendToPrint: async () => {
+                            // Переднюю взяли из канала editor.html, задняя — наша.
+                            // Собираем SVG напрямую через buildMaketSvg (минуя табы,
+                            // которых в test.html нет) и шлём в Telegram-реле.
+                            const result = buildMaketSvg({
+                                frontDataURL,
+                                backDataURL,
+                                number: '',
+                                region: '',
+                            });
+                            const ok = await sendMaketToTelegram(result);
+                            showToast(ok ? '✅ Макет отправлен' : '⚠️ Не удалось отправить макет', !ok);
+                            return ok;
+                        },
                     });
+                } catch (e) {
+                    console.error('preview error:', e);
+                    showToast('⚠️ Ошибка при подготовке макета', true);
                 } finally {
                     btn.textContent = original;
-                    btn.disabled = false;
+                    btn.disabled = !editorReady;
                 }
             });
-
-            // Изначально кнопка неактивна, пока editor.html не объявит о себе.
-            btn.disabled = true;
-
-            // Если editor.html открыли до test.html, его первоначальный editor-ready
-            // ушёл в пустоту. Опрос каждые 500 мс (макс. 30 с) принудительно «будит»
-            // editor.html, который отвечает editor-ready на editor-query.
-            let pollHandle = null;
-            if (channel) {
-                let attempts = 0;
-                pollHandle = setInterval(() => {
-                    if (ready || attempts >= 60) {
-                        clearInterval(pollHandle);
-                        pollHandle = null;
-                        return;
-                    }
-                    attempts++;
-                    channel.postMessage({ type: 'editor-query' });
-                }, 500);
-            }
-        })();
-
-        // Финальный пересчёт размеров канвы — после применения фона и лого-панели
-        // (могут измениться layout / отступы).
-        requestAnimationFrame(fitCanvasToViewport);
-        window.addEventListener('load', fitCanvasToViewport);
-
-        canvas.requestRenderAll();
+        }
     </script>
-    <script type="module" src="js/result-preview.js"></script>
 </body>
 </html>

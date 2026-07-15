@@ -9,7 +9,7 @@ import {setDrawingContext, drawBackground, drawInnerBackground, drawRoundedRect}
 import {setFrontContext, drawFrontSide} from './drawing-front.js';
 import {setBackContext, drawBackSide} from './drawing-back.js';
 import {setSettingsCallbacks, createSettingsPanel, updateSettingsVisibility} from './settings-panel.js';
-import {setupDownloadButton, setDownloadContext, downloadBothSides} from './download.js';
+import {setDownloadContext, downloadBothSides, sendMaketToTelegram} from './download.js';
 import {setLogoContext, createLogoPanel} from './logos.js';
 import {setupPreviewOverlay, rebuildPreviewOverlay} from './preview-overlay.js';
 import {drawSideDots} from './drawing-utils.js';
@@ -768,8 +768,8 @@ function getRearDataURL(timeoutMs = 1500) {
     });
 }
 
-// Настраиваем кнопку скачивания
-setupDownloadButton(canvas, () => numberInput.value, () => regionInput.value, getRearDataURL);
+// Настраиваем кнопку скачивания — убрана: кнопка «Скачать макет» больше не
+// показывается в editor.html, отправка идёт через модалку result-preview.
 
 // Кнопка «Посмотреть результат» — открывает модалку предпросмотра на шаблоне.
 const previewBtn = document.createElement('button');
@@ -786,38 +786,7 @@ async function runSendToPrint() {
         () => regionInput.value,
         getRearDataURL
     );
-    if (!result) return false;
-    const endpoint = (CONFIG.TELEGRAM_RELAY_URL || '').trim();
-    if (!endpoint) {
-        showTemporaryMessage('⚠️ Не настроена отправка в Telegram', 'warning');
-        return false;
-    }
-    try {
-        const resp = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                svg: result.svgString,
-                filename: result.fileName,
-                number: result.number,
-                region: result.region,
-                front_png: result.frontPng,
-                back_png: result.backPng,
-            })
-        });
-        let body = null;
-        try { body = await resp.json(); } catch (_) { /* non-JSON */ }
-        if (!resp.ok || (body && body.ok === false)) {
-            const err = (body && body.error) || ('HTTP ' + resp.status);
-            throw new Error(err);
-        }
-        showTemporaryMessage('✅ Готово! Отправлено в Telegram', 'success');
-        return true;
-    } catch (e) {
-        console.error('Telegram relay:', e);
-        showTemporaryMessage('⚠️ Не отправлено: ' + e.message, 'warning');
-        return false;
-    }
+    return sendMaketToTelegram(result);
 }
 
 previewBtn.addEventListener('click', async () => {
@@ -840,23 +809,16 @@ previewBtn.addEventListener('click', async () => {
     }
 });
 
-// Канал с test.html для проксирования «Создать макет».
-// Editor объявляет о себе (editor-ready), отвечает на editor-query (если test.html
-// был открыт раньше editor.html), принимает rear-create-maket и имитирует клик
-// по кнопке #downloadBothBtn. После успешного клика отправляет maket-result обратно.
+// Канал с test.html — отдаём снимок передней стороны по запросу, чтобы test.html
+// мог собрать обе стороны для своей модалки предпросмотра. Отправку в Telegram
+// test.html делает сам через sendMaketToTelegram, editor.html в этой цепочке
+// больше не нужен.
 const MAKET_CHANNEL = 'brelok-maket';
 const maketChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel(MAKET_CHANNEL) : null;
 maketChannel?.addEventListener('message', (event) => {
     const data = event.data;
     if (!data) return;
-    if (data.type === 'rear-create-maket') {
-        const btn = document.getElementById('downloadBothBtn');
-        if (!btn) return;
-        btn.click();
-        // setupDownloadButton асинхронно шлёт SVG в Telegram relay. Сообщаем test.html
-        // о старте; финальный успех/ошибка не отслеживается (его UI уже в editor.html).
-        maketChannel.postMessage({ type: 'maket-result', success: true });
-    } else if (data.type === 'editor-query') {
+    if (data.type === 'editor-query') {
         maketChannel.postMessage({ type: 'editor-ready' });
     } else if (data.type === 'front-snapshot-request') {
         try {
