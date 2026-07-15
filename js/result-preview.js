@@ -19,6 +19,18 @@ function buildModalMarkup() {
 
     const modal = document.createElement('div');
     modal.className = 'rp-modal';
+
+    // Обёртка modal + actions — одно визуальное «окно» с общей рамкой и фоном.
+    const windowEl = document.createElement('div');
+    windowEl.className = 'rp-window';
+    windowEl.appendChild(modal);
+
+    // rp-stage — единый контейнер для шаблона и плашек. Все размеры плашек
+    // считаются от него, а не от .rp-modal с container-type — это гарантирует,
+    // что карманы template.png и плашки совпадают по ширине на любом viewport.
+    const stage = document.createElement('div');
+    stage.className = 'rp-stage';
+
     const tpl = document.createElement('img');
     tpl.className = 'rp-template';
     // Cache-busting query: заставляет браузер загрузить свежую версию template.png,
@@ -26,12 +38,14 @@ function buildModalMarkup() {
     // старую раскладку карманов и плашки «не попадают» в карманы.
     tpl.src = 'images/template.png?v=' + Date.now();
     tpl.alt = 'Шаблон брелка';
-    modal.appendChild(tpl);
+    stage.appendChild(tpl);
 
     const hint = document.createElement('div');
     hint.className = 'rp-hint';
     hint.textContent = 'Так будет выглядеть ваш брелок';
-    modal.appendChild(hint);
+    stage.appendChild(hint);
+
+    modal.appendChild(stage);
 
     const close = document.createElement('button');
     close.type = 'button';
@@ -55,10 +69,10 @@ function buildModalMarkup() {
     cancelBtn.textContent = 'Закрыть';
     actions.appendChild(cancelBtn);
 
-    modal.appendChild(actions);
-    overlay.appendChild(modal);
+    windowEl.appendChild(actions);
+    overlay.appendChild(windowEl);
 
-    return { overlay, modal, close, sendBtn, cancelBtn };
+    return { overlay, modal, stage, close, sendBtn, cancelBtn };
 }
 
 /**
@@ -67,43 +81,68 @@ function buildModalMarkup() {
  * onSendToPrint — async callback, вызывается при клике на «Отправить на печать».
  * Возвращает Promise, который резолвится в { sent: boolean } после закрытия модалки.
  */
+function makeLayer({ src, alt, x, y, w, h, missing }) {
+    // Обёртка фиксированного размера — карман. <img> внутри занимает 100% × 100%
+    // с object-fit: fill, поэтому плашка физически не может вылезти за карман,
+    // даже если натуральный PNG шире/уже контейнера. Это убирает баг с альбомной
+    // мобильной ориентацией, где раньше <img> тянулся к натуральному размеру
+    // и вылезал за правый край модалки.
+    const box = document.createElement('div');
+    box.className = 'rp-layer';
+    box.style.setProperty('--rp-layer-x', x);
+    box.style.setProperty('--rp-layer-y', y);
+    box.style.setProperty('--rp-layer-w', w);
+    box.style.setProperty('--rp-layer-h', h);
+
+    if (missing) {
+        box.classList.add('rp-layer--missing');
+        box.textContent = 'Открой редактор задней стороны (test.html)';
+        return box;
+    }
+
+    const img = document.createElement('img');
+    img.className = 'rp-layer__img';
+    img.src = src;
+    img.alt = alt;
+    img.draggable = false;
+    box.appendChild(img);
+    return box;
+}
+
 export function openResultPreview({ frontDataURL, backDataURL, onSendToPrint }) {
     return new Promise((resolve) => {
-        const { overlay, close, sendBtn, cancelBtn } = buildModalMarkup();
-        const modal = overlay.querySelector('.rp-modal');
+        const { overlay, close, sendBtn, cancelBtn, stage } = buildModalMarkup();
 
         // Слой передней стороны.
-        const front = document.createElement('img');
-        front.className = 'rp-layer';
-        front.style.setProperty('--rp-layer-x', 'var(--rp-front-x)');
-        front.style.setProperty('--rp-layer-y', 'var(--rp-front-y)');
-        front.style.setProperty('--rp-layer-w', 'var(--rp-front-w)');
-        front.style.setProperty('--rp-layer-h', 'var(--rp-front-h)');
-        front.src = frontDataURL;
-        front.alt = 'Передняя сторона';
-        modal.appendChild(front);
+        stage.appendChild(makeLayer({
+            src: frontDataURL,
+            alt: 'Передняя сторона',
+            x: 'var(--rp-front-x)',
+            y: 'var(--rp-front-y)',
+            w: 'var(--rp-front-w)',
+            h: 'var(--rp-front-h)',
+        }));
 
         // Слой задней стороны или заглушка.
         if (backDataURL) {
-            const back = document.createElement('img');
-            back.className = 'rp-layer';
-            back.style.setProperty('--rp-layer-x', 'var(--rp-back-x)');
-            back.style.setProperty('--rp-layer-y', 'var(--rp-back-y)');
-            back.style.setProperty('--rp-layer-w', 'var(--rp-back-w)');
-            back.style.setProperty('--rp-layer-h', 'var(--rp-back-h)');
-            back.src = backDataURL;
-            back.alt = 'Задняя сторона';
-            modal.appendChild(back);
+            stage.appendChild(makeLayer({
+                src: backDataURL,
+                alt: 'Задняя сторона',
+                x: 'var(--rp-back-x)',
+                y: 'var(--rp-back-y)',
+                w: 'var(--rp-back-w)',
+                h: 'var(--rp-back-h)',
+            }));
             sendBtn.disabled = false;
         } else {
-            const stub = document.createElement('div');
-            stub.className = 'rp-layer rp-layer--missing';
-            stub.style.setProperty('--rp-layer-x', 'var(--rp-back-x)');
-            stub.style.setProperty('--rp-layer-y', 'var(--rp-back-y)');
-            stub.style.setProperty('--rp-layer-w', 'var(--rp-back-w)');
-            stub.style.setProperty('--rp-layer-h', 'var(--rp-back-h)');
-            stub.textContent = 'Открой редактор задней стороны (test.html)';
-            modal.appendChild(stub);
+            stage.appendChild(makeLayer({
+                alt: '',
+                x: 'var(--rp-back-x)',
+                y: 'var(--rp-back-y)',
+                w: 'var(--rp-back-w)',
+                h: 'var(--rp-back-h)',
+                missing: true,
+            }));
             sendBtn.disabled = true;
             sendBtn.title = 'Нужен снимок задней стороны';
         }

@@ -2,9 +2,16 @@
 
 :root {
     /* Размеры модалки на экране: сохраняем пропорции шаблона 765:456 ≈ 1.678.
-       Модалка 1200×745. */
-    --rp-width: 1200px;
-    --rp-height: 745px;
+       Модалка 1600×995. */
+    --rp-width: 1600px;
+    --rp-height: 995px;
+
+    /* Высота панели кнопок под модалкой. Используется в формуле ширины модалки,
+       чтобы модалка + кнопки гарантированно помещались в 95vh без скролла —
+       иначе на мобильных в альбомной ориентации кнопки уезжают за нижний край.
+       Значение слегка завышено относительно реальной высоты панели — это
+       оставляет «воздух» между кнопками и нижним краем модалки. */
+    --rp-actions-h: 120px;
 
     /* Координаты плашек в карманах template.png (765×456) — в процентах от родителя
        (.rp-modal с aspect-ratio 765/456), чтобы плашка сидела в кармане независимо
@@ -43,25 +50,65 @@
 
 .rp-modal {
     position: relative;
-    /* Ширина ограничена тремя условиями: 95% viewport, max --rp-width, и так, чтобы при
-       aspect-ratio 765/456 высота не превышала 95vh. */
-    width: min(95vw, var(--rp-width), calc(95vh * 765 / 456));
+    /* Ширина ограничена: 95% viewport, max --rp-width, и так, чтобы модалка
+       вместе с панелью кнопок (--rp-actions-h) помещалась в 95vh без скролла.
+       На мобильных в альбомной ориентации это критично — иначе кнопки уезжают
+       за нижний край viewport и пользователь их не видит. */
+    width: min(95vw, var(--rp-width), calc((95vh - var(--rp-actions-h)) * 765 / 456));
     aspect-ratio: 765 / 456;
-    max-height: 95vh;
+    /* На мобильных в альбомной ориентации (узкая высота viewport) flex-родитель
+       .rp-window мог сжать модалку по высоте — это ломало aspect-ratio и
+       карманы шаблона расходились с плашками. flex-shrink: 0 + align-self:
+       center запрещают сжатие, модалка сохраняет 765:456 на любом экране. */
+    flex-shrink: 0;
+    align-self: center;
     /* container-type: inline-size — все cqw внутри модалки отсчитываются от её ширины.
        Это даёт плавное масштабирование элементов (кнопки, лейблы, отступы) на любом
        экране при сохранении aspect-ratio. */
     container-type: inline-size;
     background:
         linear-gradient(180deg, #1a1d24 0%, #0c0e12 100%);
-    border-radius: 2cqw;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow:
-        0 2.7cqw 6.7cqw rgba(0, 0, 0, 0.75),
-        0 0 0 1px rgba(255, 255, 255, 0.04),
-        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    /* У модалки больше нет своей рамки/тени/скругления — всё это на .rp-window,
+       чтобы модалка и панель кнопок выглядели одним окном. overflow:hidden нужен
+       только для скругления шаблона внутри. */
     overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Общий контейнер «окна»: картинка шаблона + панель кнопок. Одна рамка, одна тень,
+   один border-radius. Стык между модалкой и actions невидим за счёт общей рамки.
+   width: max-content → окно принимает ширину самой широкой секции (модалки),
+   а не сжимается по align-items:center внутри flex-родителя. */
+.rp-window {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background:
+        linear-gradient(180deg, #1a1d24 0%, #161922 50%, #0c0e12 100%);
+    border-radius: clamp(14px, 1.8vw, 28px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.7),
+        0 0 0 1px rgba(255, 255, 255, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    /* Скролл не нужен — ширина модалки уже подобрана так, чтобы модалка+actions
+       помещались в 95vh. max-height оставлен как защита от переполнения. */
+    max-height: 95vh;
+    overflow: hidden;
+}
+
+.rp-window > .rp-modal {
+    /* Скругление только сверху — снизу упирается в панель кнопок. */
+    border-radius: clamp(14px, 1.8vw, 28px) clamp(14px, 1.8vw, 28px) 0 0;
+}
+
+.rp-stage {
+    /* Единый контейнер шаблона и плашек. Заполняет модалку целиком, чтобы
+       проценты --rp-front-x/w и т.п. считали от одного и того же блока —
+       это устраняет расхождение карманов шаблона и плашек на узких экранах. */
+    position: absolute;
+    inset: 0;
 }
 
 .rp-template {
@@ -77,17 +124,28 @@
 
 .rp-layer {
     position: absolute;
-    /* Размер слоя задаётся инлайном через --rp-layer-w/h на конкретном элементе. */
+    /* Размер кармана задаётся инлайном через --rp-layer-w/h. overflow: hidden
+       гарантирует, что вложенный <img> не вылезет за карман ни при каких
+       условиях — это и есть фикс бага с альбомной мобильной ориентацией. */
+    box-sizing: border-box;
     width: var(--rp-layer-w, 100px);
     height: var(--rp-layer-h, 100px);
     /* Карманные координаты задаются инлайном через --rp-layer-x/y. */
     left: var(--rp-layer-x, 0);
     top: var(--rp-layer-y, 0);
-    object-fit: fill;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.rp-layer__img {
+    /* Картинка занимает весь карман; object-fit: fill растягивает её под
+       непрямоугольные пропорции кармана (PNG 1224×252 ≈ 4.86 vs карман ≈ 2.74). */
     display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
     user-select: none;
     -webkit-user-drag: none;
-    pointer-events: none;
 }
 
 .rp-layer--missing {
@@ -106,21 +164,22 @@
     text-align: center;
     padding: 4px;
     box-sizing: border-box;
+    /* pointer-events и overflow наследуются от .rp-layer; ничего лишнего. */
 }
 
 .rp-close {
     position: absolute;
     /* cqw — контейнерные единицы (от ширины .rp-modal), плавно масштабируются.
        min-нижний порог (max) защищает от слишком мелких значений на узких экранах. */
-    top: max(5px, 1cqw);
-    right: max(5px, 1cqw);
-    width: max(22px, 3.6cqw);
-    height: max(22px, 3.6cqw);
+    top: max(8px, 1.2cqw);
+    right: max(8px, 1.2cqw);
+    width: max(28px, 3.2cqw);
+    height: max(28px, 3.2cqw);
     border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(0, 0, 0, 0.45);
     color: #fff;
-    font-size: max(10px, 1.6cqw);
+    font-size: max(12px, 1.5cqw);
     line-height: 1;
     cursor: pointer;
     display: flex;
@@ -135,26 +194,31 @@
 }
 
 .rp-actions {
-    position: absolute;
-    /* Кнопки прижаты к самому низу модалки без отступов. */
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
+    /* Нижняя секция общего окна .rp-window. Без собственного фона/рамки/тени —
+       визуально она просто продолжает картинку вниз. Тонкая разделительная линия
+       сверху отделяет кнопки от шаблона. */
     display: flex;
-    gap: max(4px, 1cqw);
-    z-index: 3;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(6px, 1vw, 18px);
+    padding: clamp(14px, 1.8vw, 30px) clamp(18px, 2.2vw, 36px);
+    width: 100%;
+    box-sizing: border-box;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    /* Скругление снизу совпадает с общим border-radius окна. */
+    border-radius: 0 0 clamp(14px, 1.8vw, 28px) clamp(14px, 1.8vw, 28px);
 }
 
 .rp-btn {
     font: inherit;
     border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: max(6px, 1cqw);
-    padding: max(5px, 1cqw) max(10px, 1.9cqw);
-    font-size: max(10px, 1.25cqw);
+    border-radius: clamp(8px, 1.1vw, 16px);
+    padding: clamp(8px, 1.1vw, 18px) clamp(16px, 2vw, 32px);
+    font-size: clamp(12px, 1.4vw, 22px);
     font-weight: 600;
     letter-spacing: 0.2px;
     cursor: pointer;
-    box-shadow: 0 max(3px, 0.7cqw) max(8px, 2cqw) rgba(0, 0, 0, 0.45);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
     transition: background-color 0.18s ease, transform 0.12s ease, opacity 0.15s ease, box-shadow 0.18s ease;
 }
 .rp-btn:active:not(:disabled) { transform: translateY(1px); }
@@ -166,8 +230,8 @@
 }
 .rp-btn--primary:hover:not(:disabled) {
     background: linear-gradient(180deg, #f97316 0%, #ea580c 100%);
-    box-shadow: 0 max(5px, 0.85cqw) max(12px, 2.4cqw) rgba(249, 115, 22, 0.45),
-                0 max(3px, 0.7cqw) max(8px, 2cqw) rgba(0, 0, 0, 0.45);
+    box-shadow: 0 5px 12px rgba(249, 115, 22, 0.45),
+                0 3px 8px rgba(0, 0, 0, 0.45);
 }
 .rp-btn--primary:disabled {
     background: linear-gradient(180deg, #4b5563 0%, #374151 100%);
