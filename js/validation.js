@@ -17,7 +17,10 @@ export function showTemporaryMessage(text, type = 'error') {
         msgEl = document.createElement('div');
         msgEl.id = 'validation-message';
         msgEl.className = 'validation-message';
-        document.querySelector('.plate-inputs').appendChild(msgEl);
+        // В editor.html контейнер .plate-inputs есть; в back.html его нет —
+        // кладём в document.body, чтобы тост работал в обеих страницах.
+        const host = document.querySelector('.plate-inputs') || document.body;
+        host.appendChild(msgEl);
     }
 
     msgEl.classList.remove('error', 'warning', 'success');

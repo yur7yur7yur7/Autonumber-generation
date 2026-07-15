@@ -39,8 +39,26 @@
         body {
             margin: 0;
             padding: 20px;
-            background: #f0f0f0;
+            background: #f0f0f0 url('images/back.png') center center / cover no-repeat;
+            background-attachment: fixed;
             font-family: sans-serif;
+        }
+        /* До полной инициализации (initSideToggle) — скрываем всё back-chrome,
+           чтобы юзер не видел flicker "всё нарисовалось → прыжок на front".
+           body.ready ставится в самом начале setSide('front') в js/side-toggle.js. */
+        body:not(.ready) #font-toggle,
+        body:not(.ready) #font-panel,
+        body:not(.ready) #logo-toggle,
+        body:not(.ready) #logo-panel,
+        body:not(.ready) #snap-toggle,
+        body:not(.ready) #snap-panel,
+        body:not(.ready) #front-toggle,
+        body:not(.ready) #front-panel,
+        body:not(.ready) #create-maket,
+        body:not(.ready) #maket-toast,
+        body:not(.ready) #ctx-menu,
+        body:not(.ready) #rotate-hint {
+            display: none !important;
         }
         canvas {
             border: 1px solid #ccc;
@@ -640,6 +658,7 @@
            выставляется в fitCanvasToViewport() — те же значения, что у fabric,
            чтобы геометрия не прыгала при переключении. */
         #front-canvas-wrap {
+            position: relative;
             display: block;
             margin: 0 auto;
         }
@@ -656,10 +675,16 @@
             box-sizing: border-box;
             width: 100%;
             max-width: 600px;
+            min-height: 64px;
             margin: 16px auto 0;
-            padding: 12px 16px;
-            font: 600 18px/1.2 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-            letter-spacing: 2px;
+            padding: 10px 16px;
+            /* Тот же стек, что и в js/drawing-front.js (bold "GibddFont", "Arial Black", …)
+               — пользователь видит в инпуте то же начертание, что и на канве.
+               font-size через clamp() — адаптируется к ширине экрана: 22px на
+               мобильном, до 40px на десктопе. На 10-символьном номере "M777MM 777"
+               помещается без обрезки. */
+            font: 700 clamp(22px, 4.5vw, 40px)/1.1 "GibddFont", "Arial Black", Arial, sans-serif;
+            letter-spacing: 0;
             text-align: center;
             text-transform: uppercase;
             color: #f8fafc;
@@ -670,21 +695,68 @@
             backdrop-filter: blur(6px);
             -webkit-backdrop-filter: blur(6px);
         }
+        /* Placeholder — заметно мельче вводимого текста, Times New Roman italic,
+           чтобы визуально отличался "пример/подсказка" от того, что вводит юзер. */
         .front-plate-input::placeholder {
-            color: rgba(248, 250, 252, 0.35);
-            letter-spacing: 1px;
+            color: rgba(248, 250, 252, 0.4);
+            font: italic 400 clamp(13px, 1.6vw, 18px)/1.2 "Times New Roman", Times, serif;
+            letter-spacing: 0.02em;
         }
         .front-plate-input:focus {
             border-color: rgba(59, 130, 246, 0.6);
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
         }
-        .front-plate-hint {
-            display: block;
-            max-width: 600px;
-            margin: 6px auto 0;
-            font: 500 12px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            color: rgba(248, 250, 252, 0.6);
-            text-align: center;
+        /* Мобильный portrait: более агрессивный vw-множитель, чтобы текст
+           был пропорционально крупнее относительно ширины экрана (на узком
+           360px vw даёт ~25px вместо минимума 22px из общего clamp). */
+        @media (max-width: 768px) and (orientation: portrait) {
+            .front-plate-input {
+                font-size: min(7vw, 36px);
+                min-height: 56px;
+                padding: 8px 14px;
+            }
+            .front-plate-input::placeholder {
+                font-size: clamp(13px, 2.4vw, 17px);
+            }
+        }
+        /* Тост валидации — копия стилей из css/main.css (тот файл рассчитан
+           на editor.html, в back.html не подключён). Контейнер #validation-message
+           лежит внутри #front-canvas-wrap, позиционируем относительно него. */
+        .validation-message {
+            position: absolute;
+            background: #333;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font: 500 13px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transform: translateX(-50%) translateY(8px);
+            transition: opacity 0.25s, transform 0.25s;
+            pointer-events: none;
+            z-index: 30;
+            white-space: nowrap;
+            bottom: -38px;
+            left: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+        .validation-message.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .validation-message.error {
+            background: #dc2626;
+            box-shadow: 0 10px 25px rgba(220, 38, 38, 0.35);
+        }
+        .validation-message.warning {
+            background: #d97706;
+            box-shadow: 0 10px 25px rgba(217, 119, 6, 0.35);
+        }
+        .validation-message.success {
+            background: #10b981;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.35);
         }
 
         /* Кнопка-гамбургер для панели логотипов — НЕВИДИМАЯ по умолчанию,
@@ -737,6 +809,154 @@
             touch-action: manipulation;
         }
         #snap-toggle:active { transform: scale(0.96); }
+
+        /* ============================================================
+           ПАНЕЛЬ «ОБЩИЕ НАСТРОЙКИ» (передняя сторона).
+           Структурно повторяет snap-панель: #front-panel + #front-toggle,
+           те же .sp-* классы. Стили изолированы селекторами #front-panel, чтобы
+           не зависеть от снапа. На десктопе панель видна сбоку (как snap);
+           на мобильных — гамбургер-кнопка снизу открывает её как bottom-sheet.
+           ============================================================ */
+        #front-panel {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            min-width: 220px;
+            user-select: none;
+        }
+        #front-panel .sp-header {
+            padding: 12px 14px;
+            background: #1f2937;
+            color: #fff;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        #front-panel .sp-body {
+            padding: 10px 12px;
+            background: #ffffff;
+        }
+        #front-panel .sp-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            transition: background 0.12s;
+        }
+        #front-panel .sp-row + .sp-row { margin-top: 4px; }
+        #front-panel .sp-row:hover { background: #f3f4f6; }
+        #front-panel .sp-label {
+            display: flex;
+            flex-direction: column;
+        }
+        #front-panel .sp-label b {
+            color: #111827;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        #front-panel .sp-label small {
+            color: #6b7280;
+            font-size: 11px;
+            margin-top: 1px;
+        }
+        #front-panel .sp-toggle {
+            position: relative;
+            display: inline-block;
+            width: 38px;
+            height: 22px;
+            flex-shrink: 0;
+        }
+        #front-panel .sp-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            position: absolute;
+        }
+        #front-panel .sp-toggle .sp-bg {
+            position: absolute;
+            inset: 0;
+            background: #d1d5db;
+            border-radius: 22px;
+            transition: background 0.18s;
+        }
+        #front-panel .sp-toggle .sp-knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+            transition: transform 0.18s;
+        }
+        #front-panel .sp-toggle input:checked + .sp-bg { background: #3b82f6; }
+        #front-panel .sp-toggle input:checked + .sp-bg + .sp-knob { transform: translateX(16px); }
+
+        /* Гамбургер-кнопка #front-toggle — по типу #snap-toggle, но
+           слева внизу (snap — справа). На десктопе скрыта. */
+        #front-toggle {
+            display: none;
+            position: fixed;
+            bottom: 12px;
+            left: 12px;
+            z-index: 11;
+            background: #1f2937;
+            color: #fff;
+            border: none;
+            border-radius: 22px;
+            padding: 12px 18px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+            cursor: pointer;
+            align-items: center;
+            gap: 6px;
+            touch-action: manipulation;
+        }
+        #front-toggle:active { transform: scale(0.96); }
+
+        /* Мобильный breakpoint — гамбургер-кнопка видна, панель становится
+           bottom-sheet (как #snap-panel.sp-open). */
+        @media (max-width: 768px), (orientation: landscape) and (max-height: 600px) {
+            #front-toggle { display: inline-flex; }
+            #front-panel {
+                position: fixed;
+                bottom: 12px;
+                left: 50%;
+                right: auto;
+                transform: translateX(-50%) translateY(calc(100% + 24px));
+                width: min(320px, calc(100vw - 40px));
+                max-width: none;
+                min-width: 0;
+                transition: transform 0.25s ease;
+            }
+            #front-panel.fp-open {
+                transform: translateX(-50%) translateY(0);
+            }
+            #front-panel .sp-header::before {
+                content: "";
+                display: block;
+                width: 36px;
+                height: 4px;
+                background: rgba(255,255,255,0.4);
+                border-radius: 2px;
+                margin: -4px auto 8px;
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #front-toggle:active { transform: none; }
+            #front-panel { transition: none; }
+        }
 
         #font-toggle {
             display: inline-flex;
@@ -1194,20 +1414,20 @@
     <div id="canvas-wrap">
         <div id="canvas-label" role="button" tabindex="0"
              aria-label="Переключить сторону брелка"
-             data-side="back">🎨 Задняя сторона</div>
-        <div class="back-canvas-wrap">
+             data-side="front">🚗 Передняя сторона</div>
+        <div class="back-canvas-wrap" hidden>
             <canvas id="c" width="1224" height="252"></canvas>
         </div>
         <div id="front-canvas-wrap" hidden>
             <canvas id="frontCanvas" width="1224" height="252"></canvas>
             <input type="text" id="frontPlateInput" class="front-plate-input"
-                   value="М777ММ777"
-                   maxlength="9"
+                   value=""
+                   maxlength="10"
                    autocomplete="off"
                    spellcheck="false"
                    aria-label="Номер и код региона (6 символов номера, затем 2-3 цифры региона)"
-                   placeholder="М123ММ777">
-            <div class="front-plate-hint">Номер (6 символов) + код региона (2-3 цифры)</div>
+                   placeholder="Введите ваш номер сюда">
+            <div id="validation-message" class="validation-message" role="status" aria-live="polite"></div>
         </div>
     </div>
     <div id="rotate-hint" role="alertdialog" aria-modal="true" aria-labelledby="rotate-hint-title" aria-describedby="rotate-hint-desc">
