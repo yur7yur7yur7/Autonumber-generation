@@ -375,11 +375,17 @@ function formatHumanDate(d) {
             year: 'numeric',
             hour: '2-digit',
             minute: '2-digit',
+            // Worker runtime на Cloudflare живёт в UTC; без явного timeZone
+            // дата в подписи уезжала на -3 часа. Europe/Moscow — постоянный
+            // UTC+3 (без сезонного перевода стрелок с 2014).
+            timeZone: 'Europe/Moscow',
         });
     } catch (e) {
         // toLocaleString may fail in some Workers runtimes if ICU data is
-        // missing — fall back to ISO so we never emit `undefined`.
-        return d.toISOString();
+        // missing — fall back to ISO with explicit +03:00 so the operator
+        // never reads a UTC stamp and mistakes it for local time.
+        const iso = d.toISOString();
+        return iso.replace('Z', '+03:00');
     }
 }
 

@@ -68,7 +68,6 @@ const frontSettings = {
 
 const FRONT_HIDE_SELECTORS = [
     '#font-toggle', '#logo-toggle', '#snap-toggle',
-    '#create-maket', '#maket-toast',
     '#font-panel', '#logo-panel', '#snap-panel', '#ctx-menu',
     '#rotate-hint'
 ];
@@ -438,6 +437,25 @@ export function createFrontPanel(deps) {
     // Listeners на тоглы.
     document.getElementById('front-showFlag').addEventListener('change', (e) => {
         frontSettings.showFlag = e.target.checked;
+        // Поведение как в editor (updateFlagSettings в js/settings-panel.js):
+        // при включённом флаге rusX=14, при выключенном rusX=48 (RUS уходит
+        // на место флага). Слайдер flagX при выключенном флаге становится
+        // неактивным (opacity 0.5, disabled) — визуально дублирует editor.
+        const newRusX = e.target.checked ? 14 : 48;
+        frontSettings.rusX = newRusX;
+        const advPanel = document.getElementById('front-advanced-panel');
+        if (advPanel) {
+            const rusInput = advPanel.querySelector('[data-slider-key="rusX"]');
+            const rusValue = advPanel.querySelector('.sp-slider-value[data-value-for="rusX"]');
+            if (rusInput) rusInput.value = String(newRusX);
+            if (rusValue) rusValue.textContent = String(newRusX);
+            const flagInput = advPanel.querySelector('[data-slider-key="flagX"]');
+            if (flagInput) flagInput.disabled = !e.target.checked;
+            // Меняем opacity через style на самом ряду слайдера, чтобы
+            // совпадало с поведением editor (.setting-item style.opacity).
+            const flagRow = flagInput?.closest('.sp-slider-row');
+            if (flagRow) flagRow.style.opacity = e.target.checked ? '1' : '0.5';
+        }
         onChange();
     });
     document.getElementById('front-showSideDots').addEventListener('change', (e) => {
@@ -474,8 +492,9 @@ export function createFrontPanel(deps) {
  * @returns {{ panel: HTMLElement, toggleBtn: HTMLButtonElement, teardown: () => void }}
  */
 export function createFrontSliderPanel(deps) {
-    const { id, title, toggleLabel, iconSvg = '', toggleIconSvg = '', sliders, onChange } = deps;
+    const { id, title, toggleLabel, iconSvg = '', toggleIconSvg = '', sliders, onChange, resetButtonLabel, onReset } = deps;
     const fireChange = typeof onChange === 'function' ? onChange : () => {};
+    const fireReset = typeof onReset === 'function' ? onReset : null;
 
     const panel = document.createElement('div');
     panel.id = `${id}-panel`;
@@ -505,9 +524,22 @@ export function createFrontSliderPanel(deps) {
             ${iconSvg ? `<span class="sp-header-icon" aria-hidden="true">${iconSvg}</span>` : ''}
             ${title}
         </div>
-        <div class="sp-body">${rowsHtml}</div>
+        <div class="sp-body">${rowsHtml}${fireReset ? `<button type="button" class="sp-reset-btn">${resetButtonLabel || '↺ Сбросить'}</button>` : ''}</div>
     `;
     document.body.appendChild(panel);
+
+    if (fireReset) {
+        const resetBtn = panel.querySelector('.sp-reset-btn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                // Хост сам решает, что сбрасывать (фронт/бэк/что-то ещё).
+                // После onReset хост должен вернуть панель в актуальное состояние —
+                // мы просто зовём onChange на случай, если onReset его не зовёт.
+                fireReset();
+                fireChange();
+            });
+        }
+    }
 
     attachSwipeDownToDismiss(panel, '.sp-header', 'fp-open', () => {
         panel.classList.remove('fp-open');
@@ -661,7 +693,32 @@ export function initSideToggle(deps) {
 
     const detachAdvancedPanel = createFrontSliderPanel({
         ...ADVANCED_PANEL,
-        onChange: redrawFront
+        onChange: redrawFront,
+        resetButtonLabel: '↺ Сбросить настройки',
+        onReset: () => {
+            // Сбрасываем все слайдеры панели к DEFAULT_SETTINGS и обновляем DOM.
+            const panel = document.getElementById(`${ADVANCED_PANEL.id}-panel`);
+            ADVANCED_PANEL.sliders.forEach((s) => {
+                frontSettings[s.key] = DEFAULT_SETTINGS[s.key];
+                if (!panel) return;
+                const input = panel.querySelector(`[data-slider-key="${s.key}"]`);
+                const valueEl = panel.querySelector(`.sp-slider-value[data-value-for="${s.key}"]`);
+                if (input) input.value = String(DEFAULT_SETTINGS[s.key]);
+                if (valueEl) valueEl.textContent = String(DEFAULT_SETTINGS[s.key]);
+            });
+            // Синхронизируем чекбокс «Показывать флаг» и состояние flagX-слайдера
+            // (rusX уже вернулся к DEFAULT_SETTINGS.rusX = 14 — это соответствует
+            // включённому флагу). Чекбокс флага живёт в #front-panel, отдельно.
+            const flagCheckbox = document.getElementById('front-showFlag');
+            if (flagCheckbox) {
+                flagCheckbox.checked = !!DEFAULT_SETTINGS.showFlag;
+                frontSettings.showFlag = !!DEFAULT_SETTINGS.showFlag;
+            }
+            const flagInput = panel?.querySelector('[data-slider-key="flagX"]');
+            if (flagInput) flagInput.disabled = !DEFAULT_SETTINGS.showFlag;
+            const flagRow = flagInput?.closest('.sp-slider-row');
+            if (flagRow) flagRow.style.opacity = DEFAULT_SETTINGS.showFlag ? '1' : '0.5';
+        }
     }).teardown;
 
     // Стартовая сторона — передняя. setSide('front') пройдёт (currentSide='back'),
@@ -759,12 +816,86 @@ export function initSideToggle(deps) {
     if (typeof window !== 'undefined') {
         window.__sideToggle = {
             getCurrentSide,
+            // Программное переключение стороны — нужно, например, чтобы
+            // модалка предпросмотра открывала редактор нужной стороны
+            // по клику на карман плашки, а не через тоггл #canvas-label.
+            // No-op, если уже на этой стороне.
+            setSide(side) {
+                if (side !== 'front' && side !== 'back') return;
+                if (side === currentSide) return;
+                setSide(side);
+            },
             // Вызывается после создания #font-panel / #logo-panel, если они
             // появились уже после setSide('front') (иначе hideBackChrome их
             // пропустил, потому что querySelectorAll их ещё не видел).
             // Если активна back — панель должна быть видна, ничего не делаем.
             syncChromeVisibility() {
                 if (currentSide === 'front') hideBackChrome();
+            },
+            // Снимок задней стороны «как есть». На активной back просто берёт
+            // toDataURL. На активной front — временно показывает user-объекты
+            // (которые были спрятаны в setSide), снимает снимок и возвращает
+            // visible=false, чтобы UI не мигнул. Используется модалкой
+            // «Посмотреть результат», чтобы получить корректный backDataURL
+            // независимо от текущей стороны.
+            getRearSnapshot() {
+                // discardActiveObject обязателен в обеих ветках: если перед
+                // кликом пользователь тапнул по объекту, на снимке остались бы
+                // голубые рамки выделения и уголки mtr (Fabric рисует их в
+                // нижний канвас поверх самих объектов).
+                const wasActive = canvas.getActiveObject();
+                canvas.discardActiveObject();
+                if (currentSide === 'back') {
+                    canvas.renderAll();
+                    let url;
+                    try {
+                        url = canvas.lowerCanvasEl
+                            ? canvas.lowerCanvasEl.toDataURL('image/png')
+                            : canvas.toDataURL('image/png');
+                    } finally {
+                        // Возвращаем выделение, чтобы UI не мигнул, если
+                        // модалка будет закрыта без переключения стороны.
+                        if (wasActive) {
+                            canvas.setActiveObject(wasActive);
+                            canvas.requestRenderAll();
+                        }
+                    }
+                    return url;
+                }
+                // currentSide === 'front': временно показываем user-объекты.
+                // ВАЖНО: requestRenderAll() планирует рендер через rAF, поэтому
+                // toDataURL сразу после него снимет старый кадр (на котором
+                // user-объекты ещё невидимы) → пустая плашка в модалке.
+                // Нужен синхронный renderAll() между включением видимости
+                // и снятием снимка.
+                setUserObjectsVisible(canvas, getFrontRect, true);
+                canvas.renderAll();
+                let url;
+                try {
+                    url = canvas.lowerCanvasEl
+                        ? canvas.lowerCanvasEl.toDataURL('image/png')
+                        : canvas.toDataURL('image/png');
+                } finally {
+                    setUserObjectsVisible(canvas, getFrontRect, false);
+                    if (wasActive) {
+                        canvas.setActiveObject(wasActive);
+                        canvas.requestRenderAll();
+                    }
+                }
+                return url;
+            },
+            // Принудительно перерисовать переднюю сторону в нативный канвас.
+            // Используется перед снятием снимка, если пользователь нажал
+            // «Посмотреть результат», не переключаясь на front — иначе
+            // frontCanvas остаётся пустым с момента загрузки страницы.
+            ensureFrontRendered() {
+                if (typeof redrawFront === 'function') redrawFront();
+            },
+            // Текущие номер/регион — обновляются при вводе в #frontPlateInput
+            // (см. onPlateChange). Используются при сборке подписи в Telegram,
+            // чтобы оператор видел, что именно заказал клиент.
+            getPlate() {
+                return { number: currentNumber, region: currentRegion };
             }
         };
     }

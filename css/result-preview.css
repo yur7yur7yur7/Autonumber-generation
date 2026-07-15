@@ -167,6 +167,37 @@
     /* pointer-events и overflow наследуются от .rp-layer; ничего лишнего. */
 }
 
+/* Кликабельный карман — pointer-events: auto включается явно (по умолчанию
+   .rp-layer их отключает, чтобы клики «проваливались» на оверлей и закрывали
+   модалку). Здесь же hover-эффект и focus-ring — визуальный аффорданс
+   «нажми меня». */
+.rp-layer--clickable {
+    pointer-events: auto;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+.rp-layer--clickable:hover {
+    transform: scale(1.02);
+    filter: brightness(1.08);
+    box-shadow:
+        0 0 0 2px rgba(59, 130, 246, 0.55),
+        0 6px 20px rgba(0, 0, 0, 0.5);
+}
+.rp-layer--clickable:active {
+    transform: scale(0.99);
+}
+.rp-layer--clickable:focus-visible {
+    outline: none;
+    box-shadow:
+        0 0 0 3px rgba(59, 130, 246, 0.8),
+        0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+}
+@media (prefers-reduced-motion: reduce) {
+    .rp-layer--clickable,
+    .rp-layer--clickable:active { transform: none; }
+}
+
 .rp-close {
     position: absolute;
     /* cqw — контейнерные единицы (от ширины .rp-modal), плавно масштабируются.

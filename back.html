@@ -1174,6 +1174,41 @@
             font-size: 13px;
             font-weight: 600;
         }
+        /* Кнопка «Сбросить настройки» внутри расширенной панели — по типу
+           .reset-btn из editor (css/settings-panel.css): синяя, на всю ширину
+           sp-body, с ховером и active-состоянием. Текст идёт в потоке .sp-body
+           (inline-block), поэтому явно делаем display:block через селектор ниже. */
+        #front-advanced-panel .sp-reset-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            margin-top: 10px;
+            padding: 9px 12px;
+            background: #3b82f6;
+            color: #ffffff;
+            border: 1px solid #2563eb;
+            border-radius: 8px;
+            font: 600 13px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            letter-spacing: 0.2px;
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: background 0.15s ease, transform 0.1s ease;
+        }
+        #front-advanced-panel .sp-reset-btn:hover {
+            background: #2563eb;
+        }
+        #front-advanced-panel .sp-reset-btn:active {
+            transform: scale(0.98);
+        }
+        #front-advanced-panel .sp-reset-btn:focus-visible {
+            outline: 2px solid #93c5fd;
+            outline-offset: 2px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #front-advanced-panel .sp-reset-btn:active { transform: none; }
+        }
 
         #front-panel .sp-toggle {
             position: relative;
@@ -1860,6 +1895,8 @@
     <div id="ctx-menu" role="menu" aria-hidden="true">
         <button class="cm-action" type="button" data-action="delete" role="menuitem">🗑 Удалить</button>
         <div class="cm-divider" role="separator"></div>
+        <button class="cm-action" type="button" data-action="rotate-zero" role="menuitem">↻ Выровнять поворот (0°)</button>
+        <div class="cm-divider" role="separator"></div>
         <label class="cm-color" data-action="color">
             <span class="cm-color-swatch" id="ctx-color-swatch" aria-hidden="true"></span>
             <span>Цвет текста</span>
@@ -1993,6 +2030,7 @@
         const ctxColorLabel = ctxMenu?.querySelector('[data-action="color"]');
         const ctxColorInput = document.getElementById('ctx-color-input');
         const ctxColorSwatch = document.getElementById('ctx-color-swatch');
+        const ctxRotateZeroBtn = ctxMenu?.querySelector('[data-action="rotate-zero"]');
         const LONG_PRESS_MS = 600;
         const LONG_PRESS_MOVE_TOLERANCE = 12;
         const isMobile = () => window.matchMedia('(max-width: 768px), (orientation: landscape) and (max-height: 600px)').matches;
@@ -2027,6 +2065,16 @@
                 const color = (active.fill && typeof active.fill === 'string') ? active.fill : '#111111';
                 if (ctxColorSwatch) ctxColorSwatch.style.background = color;
                 if (ctxColorInput) ctxColorInput.value = color;
+            }
+            // «Выровнять (0°)» имеет смысл только если угол ≠ 0. Иначе
+            // disabled — действие ничего не изменит, и пользователь зря
+            // потратит тап. Fabric хранит угол в градусах; сравниваем с
+            // небольшой дельтой на случай дрейфа от snap (15° шаг).
+            if (ctxRotateZeroBtn) {
+                const ANGLE_EPS = 0.01;
+                const currentAngle = active.angle ?? 0;
+                const isAlreadyZero = Math.abs(((currentAngle % 360) + 360) % 360) < ANGLE_EPS;
+                ctxRotateZeroBtn.disabled = isAlreadyZero;
             }
             ctxMenu.classList.add('cm-show');
             ctxMenu.setAttribute('aria-hidden', 'false');
@@ -2134,6 +2182,16 @@
             if (ctxColorSwatch) ctxColorSwatch.style.background = ctxColorInput.value;
         });
         ctxColorLabel?.addEventListener('click', () => ctxColorInput?.click());
+        ctxRotateZeroBtn?.addEventListener('click', () => {
+            const active = canvas.getActiveObject();
+            if (!active) return;
+            // Сбрасываем угол к 0°; setCoords пересчитывает bounding rect,
+            // чтобы выделение/хитбоксы встали ровно по объекту.
+            active.set({ angle: 0 });
+            active.setCoords();
+            canvas.requestRenderAll();
+            hideContextMenu();
+        });
 
         // Закрываем меню при тапе вне его и при прокрутке/ресайзе.
         document.addEventListener('pointerdown', (e) => {
@@ -3328,14 +3386,10 @@
         })();
 
         // ============================================================
-        // Кнопка «Посмотреть результат» — навешивается отдельным модулем внизу.
-        // Здесь только блокируем её до загрузки модуля, чтобы случайный клик
-        // до готовности не сломал UI.
+        // Кнопка «Посмотреть результат» — обработчик навешивается отдельным
+        // модулем ниже. Здесь ничего не блокируем: вся логика локальная, и
+        // ждать готовности editor.html больше не требуется.
         // ============================================================
-        (function () {
-            const btn = document.getElementById('create-maket');
-            if (btn) btn.disabled = true;
-        })();
 
         // Финальный пересчёт размеров канвы — после применения фона и лого-панели
         // (могут измениться layout / отступы).
@@ -3368,6 +3422,10 @@
         if (!btn) {
             console.warn('Кнопка #create-maket не найдена');
         } else {
+            // Разблокируем сразу: вся логика — локальная, editor.html больше
+            // не требуется (его планируется выпилить из проекта).
+            btn.disabled = false;
+
             const toast = document.getElementById('maket-toast');
             let toastTimer = null;
 
@@ -3383,103 +3441,56 @@
                 }, 2200);
             }
 
-            const channel = (typeof BroadcastChannel !== 'undefined')
-                ? new BroadcastChannel('brelok-maket')
-                : null;
-            let editorReady = false;
-
-            if (channel) {
-                channel.addEventListener('message', (event) => {
-                    if (event.data?.type === 'editor-ready') {
-                        editorReady = true;
-                        btn.disabled = false;
-                        if (pollHandle) {
-                            clearInterval(pollHandle);
-                            pollHandle = null;
-                        }
-                    }
-                });
-                // Если editor.html уже открыт, попросим его объявить о себе.
-                channel.postMessage({ type: 'editor-query' });
-            }
-
-            // Опрос, пока editor.html не ответит (если back.html открыли раньше).
-            let pollHandle = null;
-            let attempts = 0;
-            if (channel) {
-                pollHandle = setInterval(() => {
-                    if (editorReady || attempts >= 60) {
-                        clearInterval(pollHandle);
-                        pollHandle = null;
-                        return;
-                    }
-                    attempts++;
-                    channel.postMessage({ type: 'editor-query' });
-                }, 500);
-            }
-
-            function getRearDataURL() {
-                canvas.renderAll();
-                return canvas.lowerCanvasEl
-                    ? canvas.lowerCanvasEl.toDataURL('image/png')
-                    : canvas.toDataURL('image/png');
-            }
-
-            async function getFrontSnapshot(timeoutMs = 1500) {
-                if (!channel || !editorReady) return null;
-                return new Promise((resolve) => {
-                    const handler = (event) => {
-                        const d = event.data;
-                        if (!d || d.type !== 'front-snapshot') return;
-                        channel.removeEventListener('message', handler);
-                        resolve(d.dataURL || null);
-                    };
-                    channel.addEventListener('message', handler);
-                    channel.postMessage({ type: 'front-snapshot-request' });
-                    setTimeout(() => {
-                        channel.removeEventListener('message', handler);
-                        resolve(null);
-                    }, timeoutMs);
-                });
+            function getFrontDataURL() {
+                // Перед снятием снимка просим side-toggle принудительно
+                // перерисовать переднюю сторону — если пользователь ни разу
+                // не переключался на front, frontCanvas пуст.
+                window.__sideToggle?.ensureFrontRendered?.();
+                const frontCanvas = document.getElementById('frontCanvas');
+                return frontCanvas ? frontCanvas.toDataURL('image/png') : null;
             }
 
             btn.addEventListener('click', async () => {
-                if (!editorReady) {
-                    showToast('Откройте editor.html, чтобы посмотреть результат', true);
-                    return;
-                }
-
                 const original = btn.textContent;
                 btn.textContent = '⏳ Готовлю...';
                 btn.disabled = true;
                 try {
-                    const frontDataURL = await getFrontSnapshot();
-                    const backDataURL = getRearDataURL();
+                    const frontDataURL = getFrontDataURL();
+                    const backDataURL = window.__sideToggle?.getRearSnapshot?.() ?? null;
 
                     await openResultPreview({
                         frontDataURL,
                         backDataURL,
                         onSendToPrint: async () => {
-                            // Переднюю взяли из канала editor.html, задняя — наша.
-                            // Собираем SVG напрямую через buildMaketSvg (минуя табы,
-                            // которых в back.html нет) и шлём в Telegram-реле.
+                            // Собираем SVG напрямую через buildMaketSvg и шлём в Telegram-реле.
+                            // Номер и регион берём из frontPlateInput (обновляется
+                            // через onPlateChange в js/side-toggle.js), иначе в
+                            // подписи оператор видит пустые поля.
+                            const { number, region } = window.__sideToggle?.getPlate?.() ?? {};
                             const result = buildMaketSvg({
                                 frontDataURL,
                                 backDataURL,
-                                number: '',
-                                region: '',
+                                number: number || '',
+                                region: region || '',
                             });
                             const ok = await sendMaketToTelegram(result);
                             showToast(ok ? '✅ Макет отправлен' : '⚠️ Не удалось отправить макет', !ok);
                             return ok;
                         },
+                        // Клик по карману — переключаем редактор на нужную сторону.
+                        // Модалка сама закрывается после клика (см. onClose: finish
+                        // в js/result-preview.js). Используем setSide через глобальный
+                        // хук side-toggle — он же учитывает, что мы уже на этой
+                        // стороне (no-op).
+                        onSelectFront: () => window.__sideToggle?.setSide?.('front'),
+                        onSelectBack: () => window.__sideToggle?.setSide?.('back'),
                     });
                 } catch (e) {
                     console.error('preview error:', e);
                     showToast('⚠️ Ошибка при подготовке макета', true);
                 } finally {
                     btn.textContent = original;
-                    btn.disabled = !editorReady;
+                    btn.disabled = false;
                 }
             });
         }
