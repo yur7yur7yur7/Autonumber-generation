@@ -227,17 +227,39 @@
 .rp-actions {
     /* Нижняя секция общего окна .rp-window. Без собственного фона/рамки/тени —
        визуально она просто продолжает картинку вниз. Тонкая разделительная линия
-       сверху отделяет кнопки от шаблона. */
+       сверху отделяет кнопки от шаблона. gap увеличен с clamp(6px, 1vw, 18px)
+       до clamp(10px, 1.4vw, 22px) — на десктопе между тремя кнопками
+       (Отмена · Тест · Подтвердить) было тесно. min-width: 0 защищает
+       flex-элемент от переполнения: если контент (3 кнопки) шире родителя,
+       без min-width:0 элемент игнорирует width:100% и растягивается по
+       min-content — это и был баг с торчащей за пределы модалки панелью. */
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     align-items: center;
-    gap: clamp(6px, 1vw, 18px);
+    gap: clamp(10px, 1.4vw, 22px);
     padding: clamp(14px, 1.8vw, 30px) clamp(18px, 2.2vw, 36px);
     width: 100%;
+    min-width: 0;
     box-sizing: border-box;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
     /* Скругление снизу совпадает с общим border-radius окна. */
     border-radius: 0 0 clamp(14px, 1.8vw, 28px) clamp(14px, 1.8vw, 28px);
+}
+/* Для формы заказа .rp-actions не должна вылезать за .rp-window.
+   Явный max-width + align-self: stretch гарантируют, что панель
+   кнопок не шире своего родителя, даже если контент не помещается —
+   flex-wrap позаботится о переносе. */
+.rp-window.of-window > .rp-actions {
+    max-width: 100%;
+    align-self: stretch;
+}
+/* То же для .rp-modal внутри .rp-window.of-window: явный stretch
+   гарантирует, что модалка занимает всю ширину окна, а не
+   схлопывается по min-content. */
+.rp-window.of-window > .rp-modal {
+    align-self: stretch;
+    max-width: 100%;
 }
 
 .rp-btn {
@@ -251,6 +273,12 @@
     cursor: pointer;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
     transition: background-color 0.18s ease, transform 0.12s ease, opacity 0.15s ease, box-shadow 0.18s ease;
+    /* Текст внутри кнопки не ломается: при нехватке места лучше
+       перенести кнопку целиком на новую строку через flex-wrap на
+       .rp-actions, чем давить текст. flex-shrink: 0 запрещает
+       сжатие кнопки внутри flex-родителя. */
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 .rp-btn:active:not(:disabled) { transform: translateY(1px); }
 
@@ -282,6 +310,28 @@
     background: rgba(17, 24, 39, 0.95);
 }
 
+.rp-btn--test {
+    /* Кнопка-заглушка для отладки: открывает thanks-модалку без реальной
+       отправки в Telegram-бота. Должна явно отличаться от боевой
+       «Подтвердить» (оранжевый primary), чтобы случайно не нажать в проде.
+       Делаем спокойный контурный стиль с янтарным акцентом и подписью
+       "(тест)" в тексте — этого достаточно, чтобы бросаться в глаза
+       разработчику, но не пугать обычного пользователя. */
+    background: rgba(251, 191, 36, 0.12);
+    color: #fbbf24;
+    border: 1px dashed rgba(251, 191, 36, 0.55);
+    box-shadow: none;
+}
+.rp-btn--test:hover:not(:disabled) {
+    background: rgba(251, 191, 36, 0.22);
+    color: #fcd34d;
+    border-color: rgba(251, 191, 36, 0.75);
+}
+.rp-btn--test:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .rp-hint {
     /* Лейбл по центру модалки — между передней и задней плашкой. */
     position: absolute;
@@ -300,4 +350,468 @@
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     pointer-events: none;
+}
+
+/* ============================================================
+   ФОРМА ЗАКАЗА (js/order-form.js → openOrderForm)
+   Визуально — отдельный layout, не похожий на превью брелка.
+   Шапка, поля, success-блок с контактом производителя.
+   ============================================================ */
+
+/* .rp-modal.of-modal перебивает базовые правила .rp-modal:
+   базовый класс заточен под превью брелка (жёсткое aspect-ratio 765/456
+   и width до 1600px). Для формы заказа эти правила вредны — без сброса
+   форма растягивается по ширине до 1600px, высота вычисляется из
+   aspect-ratio ≈ 953px, плюс .rp-actions ~150px снизу — сумма больше
+   95vh → панель кнопок обрезается overflow:hidden родителя .rp-window
+   и на десктопе «уезжает под экран». */
+.rp-modal.of-modal {
+    /* Сбрасываем пропорцию 765/456 — форма тянется по содержимому,
+       никакого фиксированного соотношения сторон тут не нужно. */
+    aspect-ratio: auto;
+    /* box-sizing: border-box обязателен — без него горизонтальный
+       padding (15cqw = 108-192px) добавлялся СНАРУЖИ width:720px,
+       и модалка визуально раздувалась до 1100+px, вылезая за
+       пределы .rp-window. Базовый .rp-modal использует content-box,
+       для формы это не подходит. */
+    box-sizing: border-box;
+    /* Ограничиваем ширину: на десктопе форма не должна разъезжаться
+       на пол-экрана, на мобиле — занимает почти весь viewport. 720px —
+       комфортная ширина для 3-х полей + панели кнопок (Отмена ·
+       Подтвердить (тест) · Подтвердить) в одну строку с запасом.
+       640px было мало — при десктопных clamp()-значениях кнопки
+       съедали 600+px и последняя уезжала на 2-ю строку через
+       flex-wrap. */
+    width: min(720px, 95vw);
+    /* flex-shrink: 0 у базового .rp-modal ломал сжатие модалки под
+       короткий viewport. Для формы это тоже лишнее. */
+    flex-shrink: 1;
+    align-self: stretch;
+    /* container-type: inline-size — все cqw внутри .of-modal и её
+       потомков считаются от ширины самой модалки, а не от viewport.
+       Это ключ к «независимо от размера экрана всё смотрится
+       нормально»: padding-и, отступы и пропорции привязаны к
+       модалке, а не к внешнему миру. По аналогии с превью, где
+       container-type тоже включён на базовом .rp-modal. */
+    container-type: inline-size;
+}
+.rp-window.of-window {
+    /* Базовый .rp-window без width тянется по самой широкой секции —
+       для превью это нормально, но для формы нужно явно ограничить,
+       чтобы окно не «расползлось» под наследуемые правила. min(720px,
+       95vw) совпадает с шириной .of-modal, окно сидит ровно под форму.
+       align-items: stretch (перебивает базовый center) — обе секции
+       (.rp-modal и .rp-actions) тянутся на всю ширину окна, иначе
+       align-items: center оставлял .rp-actions с auto-шириной по
+       контенту (3 кнопки), и она могла оказаться шире .rp-modal,
+       торча за пределы модалки. */
+    width: min(720px, 95vw);
+    max-width: min(720px, 95vw);
+    align-items: stretch;
+}
+.of-modal {
+    /* Узкая вертикальная компоновка — форма, не превью плашки.
+       Горизонтальный padding задан в cqw (от ширины самой модалки,
+       потому что .rp-modal.of-modal имеет container-type:
+       inline-size). 15cqw = 15% от ширины модалки с каждой стороны:
+       на десктопе (модалка 720px) это 108px, на мобиле (модалка 356px)
+       это 53px. Контентная зона полей получается ~70% от ширины
+       модалки (по 15% поля с каждой стороны + 70% контент) — это
+       даёт «воздух» как у превью-модалки, где карманы плашек
+       занимают ~48% ширины шаблона. Сделано по аналогии с cqw-
+       зависимыми размерами в превью (rp-close, rp-hint и т.п.),
+       чтобы модалка выглядела одинаково «воздушно» на любом экране. */
+    display: flex;
+    flex-direction: column;
+    gap: clamp(12px, 1.4vw, 20px);
+    padding: clamp(20px, 3.2vw, 48px) 15cqw clamp(20px, 2.6vw, 40px);
+    color: #f8fafc;
+    overflow-y: auto;
+    /* Учитываем высоту панели кнопок: form + actions должны вместе
+       помещаться в 95vh. --rp-actions-h (120px) — общий лимит для
+       всех .rp-window, его достаточно для нашей панели с 3-мя
+       кнопками (Отмена · Тест · Подтвердить). Без этого .of-modal
+       может скушать всю высоту и оставить кнопки за overflow:hidden. */
+    max-height: calc(95vh - var(--rp-actions-h));
+}
+.of-header { display: flex; flex-direction: column; gap: 6px; }
+.of-title {
+    margin: 0;
+    font-size: clamp(18px, 2.4vw, 30px);
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    color: #f8fafc;
+}
+.of-subtitle {
+    margin: 0;
+    font-size: clamp(12px, 1.4vw, 16px);
+    color: rgba(248, 250, 252, 0.7);
+    line-height: 1.4;
+}
+/* Второстепенная подсказка под основным пояснением — мельче и приглушённее */
+.of-subtitle--hint {
+    margin-top: 2px;
+    font-size: clamp(11px, 1.2vw, 14px);
+    color: rgba(248, 250, 252, 0.55);
+    font-style: italic;
+}
+.of-header--success { text-align: center; padding: 8px 0 4px; }
+.of-header--success .of-title {
+    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.of-form {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(12px, 1.4vw, 18px);
+    min-width: 0;
+}
+.of-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+.of-field__label {
+    font-size: clamp(11px, 1.2vw, 14px);
+    font-weight: 600;
+    color: rgba(248, 250, 252, 0.85);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.of-field__required {
+    color: #f97316;
+    font-weight: 700;
+}
+.of-field__input,
+.of-field__textarea {
+    box-sizing: border-box;
+    width: 100%;
+    /* Горизонтальный padding увеличен с clamp(12px, 1.4vw, 16px)
+       до clamp(14px, 1.8vw, 22px) — текст внутри поля дальше от
+       рамки, читать удобнее. На десктопе 22px × 2 = 44px внутри
+       инпута, на мобиле минимум 14px. Вертикальный padding не
+       трогаем, чтобы высота полей оставалась прежней. */
+    padding: clamp(10px, 1.2vw, 14px) clamp(14px, 1.8vw, 22px);
+    font: inherit;
+    font-size: clamp(13px, 1.5vw, 16px);
+    color: #f8fafc;
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: clamp(8px, 1vw, 14px);
+    outline: none;
+    transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+.of-field__textarea {
+    min-height: clamp(60px, 8vw, 96px);
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.4;
+}
+.of-field__input::placeholder,
+.of-field__textarea::placeholder {
+    color: rgba(248, 250, 252, 0.4);
+}
+.of-field__input:focus,
+.of-field__textarea:focus {
+    border-color: #3b82f6;
+    background: rgba(15, 23, 42, 0.85);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+}
+.of-field--invalid .of-field__input,
+.of-field--invalid .of-field__textarea {
+    border-color: #f97316;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.22);
+}
+
+/* Success-state: спасибо + ссылка на производителя + кнопка закрыть */
+.of-success {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(14px, 1.8vw, 22px);
+    padding: clamp(8px, 1.4vw, 16px) 0 0;
+    text-align: center;
+}
+.of-success__greeting {
+    margin: 0;
+    font-size: clamp(14px, 1.6vw, 18px);
+    color: rgba(248, 250, 252, 0.92);
+    line-height: 1.5;
+}
+.of-success__hint {
+    margin: 0;
+    font-size: clamp(12px, 1.3vw, 15px);
+    color: rgba(248, 250, 252, 0.65);
+    line-height: 1.4;
+}
+.of-success__tg {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: clamp(10px, 1.2vw, 14px) clamp(16px, 2vw, 26px);
+    background: linear-gradient(135deg, #2aabee 0%, #229ed9 100%);
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 999px;
+    font-size: clamp(13px, 1.5vw, 16px);
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    box-shadow: 0 6px 18px rgba(34, 158, 217, 0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.of-success__tg:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(34, 158, 217, 0.5);
+}
+.of-success__tg:active { transform: translateY(0); }
+.of-success__tg:focus-visible {
+    outline: 2px solid #93c5fd;
+    outline-offset: 2px;
+}
+.of-success__tg svg {
+    width: clamp(18px, 2vw, 22px);
+    height: clamp(18px, 2vw, 22px);
+    flex-shrink: 0;
+}
+.of-success__close { min-width: 140px; }
+
+/* ============================================================
+   МОДАЛКА БЛАГОДАРНОСТИ (js/thanks-modal.js → openThanksModal)
+   Появляется после успешной отправки макета. Маленькая, плотная.
+   Контакты производителя — сетка карточек с иконкой + лейбл + хэндл.
+   ============================================================ */
+
+/* .rp-modal.tm-modal перебивает базовые правила .rp-modal — без этого
+   thanks-модалка на десктопе растягивается до 1073px, потому что
+   базовый .rp-modal имеет width: min(95vw, 1600px, ...) и
+   aspect-ratio: 765/456. Симптом: карточка контакта во всю ширину
+   viewport, контент выглядит «пустой колонной». Точно такая же
+   проблема была с формой заказа — там фикс в .rp-modal.of-modal
+   (aspect-ratio:auto + box-sizing:border-box + явная width). Здесь
+   применяем тот же рецепт. */
+.rp-modal.tm-modal {
+    aspect-ratio: auto;
+    box-sizing: border-box;
+    width: min(520px, 95vw);
+    max-width: 100%;
+    flex-shrink: 1;
+    align-self: stretch;
+}
+/* .rp-window.tm-window — явная ширина, чтобы окно не тянулось по
+   самой широкой секции (раньше была только max-width, и без width
+   окно принимало ширину раздувшейся .tm-modal). align-items: stretch
+   заставляет обе секции (.tm-modal и .rp-actions) тянуться на всю
+   ширину окна, как у .of-window. */
+.rp-window.tm-window {
+    width: min(520px, 95vw);
+    max-width: min(520px, 95vw);
+    align-items: stretch;
+}
+.rp-window.tm-window > .rp-actions {
+    max-width: 100%;
+    align-self: stretch;
+}
+
+.tm-window { max-width: min(520px, 95vw); }
+.tm-modal {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(14px, 1.8vw, 22px);
+    padding: clamp(20px, 3.2vw, 44px) clamp(20px, 3.2vw, 52px) clamp(20px, 2.6vw, 36px);
+    color: #f8fafc;
+    text-align: center;
+}
+.tm-header { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.tm-title {
+    margin: 0;
+    font-size: clamp(18px, 2.4vw, 28px);
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    color: #f8fafc;
+    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+.tm-subtitle {
+    margin: 0;
+    font-size: clamp(12px, 1.4vw, 15px);
+    color: rgba(248, 250, 252, 0.72);
+    line-height: 1.4;
+    max-width: 38ch;
+}
+.tm-contacts {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+}
+.tm-contacts__title {
+    margin: 0;
+    font-size: clamp(11px, 1.2vw, 13px);
+    font-weight: 600;
+    color: rgba(248, 250, 252, 0.6);
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+.tm-contacts__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.tm-contacts__empty {
+    margin: 0;
+    font-size: clamp(12px, 1.3vw, 14px);
+    color: rgba(248, 250, 252, 0.5);
+    font-style: italic;
+    text-align: center;
+    padding: 12px;
+    background: rgba(15, 23, 42, 0.4);
+    border-radius: 10px;
+    border: 1px dashed rgba(255, 255, 255, 0.08);
+}
+.tm-contact {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: clamp(10px, 1.2vw, 14px) clamp(14px, 1.6vw, 18px);
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: clamp(10px, 1.2vw, 14px);
+    color: #f8fafc;
+    text-decoration: none;
+    text-align: left;
+    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+.tm-contact:hover {
+    background: rgba(15, 23, 42, 0.8);
+    border-color: rgba(59, 130, 246, 0.45);
+    transform: translateY(-1px);
+}
+.tm-contact:active { transform: translateY(0); }
+.tm-contact:focus-visible {
+    outline: 2px solid #93c5fd;
+    outline-offset: 2px;
+}
+.tm-contact svg {
+    width: clamp(22px, 2.4vw, 28px);
+    height: clamp(22px, 2.4vw, 28px);
+    flex-shrink: 0;
+    color: #93c5fd;
+}
+.tm-contact--telegram svg { color: #2aabee; }
+.tm-contact--whatsapp svg { color: #25d366; }
+.tm-contact--instagram svg { color: #e1306c; }
+.tm-contact--vk svg { color: #4a76a8; }
+
+.tm-contact__label {
+    font-size: clamp(13px, 1.5vw, 16px);
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    color: rgba(248, 250, 252, 0.85);
+    flex: 1;
+}
+.tm-contact__handle {
+    font-size: clamp(12px, 1.3vw, 14px);
+    color: rgba(248, 250, 252, 0.6);
+    font-family: ui-monospace, "SF Mono", "Menlo", "Consolas", monospace;
+}
+.tm-close-bottom { min-width: 140px; }
+
+/* ============================================================
+   RESPONSIVE OVERRIDES ДЛЯ МОДАЛКИ ЗАКАЗА (js/order-form.js)
+   ============================================================
+   Базовые правила .of-modal используют 15cqw горизонтального padding
+   — это идеально для мобильного портрета (модалка ~349px, padding
+   ~52px × 2, контент ~245px), но на десктопе (модалка 720px) даёт
+   padding ~108px × 2, контент всего ~504px — поля ввода получаются
+   визуально узкими, текст описания переносится на 4 строки. Эти
+   @media переопределяют padding/shrift только там, где это нужно,
+   базовые правила .of-modal остаются нетронутыми для мобильного
+   портрета. По правилу из MEMORY.md — @media-блоки в конце файла,
+   чтобы их правила выигрывали каскад при равной специфичности. */
+
+/* ДЕСКТОП: модалка от 769px — сужаем горизонтальный padding с 15cqw
+   до 8cqw, чтобы поля ввода не казались «сжатыми» относительно
+   ширины модалки. 8cqw от 720 = 57.6px × 2 = 115.2px → контент
+   ~604.8px (вместо ~504px). Текст описания перестаёт переноситься
+   на 4 строки, поля ввода визуально шире. */
+@media (min-width: 769px) {
+    .of-modal {
+        padding-left: 8cqw;
+        padding-right: 8cqw;
+    }
+}
+
+/* МОБИЛЬНЫЙ АЛЬБОМ: viewport до 500px по высоте. Задача — НЕ впихнуть
+   всю форму без скролла (это невозможно на 375px высоты), а дать
+   пользователю УВИДЕТЬ, что ниже есть ещё поле (textarea «Комментарий»),
+   чтобы он сам доскроллил внутри модалки. Для этого:
+   1) уменьшаем вертикальные отступы модалки и gap между секциями,
+   2) уменьшаем шрифт заголовка,
+   3) скрываем hint «Ваш заказ отправится производителю...» (это
+      информационный параграф, на альбоме он не нужен — экономит ~20px
+      и помогает textarea «выглянуть» из-за нижнего края модалки),
+   4) уменьшаем min-height textarea (достаточно, чтобы было видно
+      1-2 строки текста).
+   Горизонтальный padding НЕ трогаем — он работает и в альбоме. */
+@media (max-height: 500px) {
+    .of-modal {
+        /* Вертикальный padding компактнее: было clamp(20px, 3.2vw, 48px)/
+           clamp(20px, 2.6vw, 40px), стало clamp(6px, 1.2vw, 10px).
+           На 375px высоты это 6px × 2 = 12px вместо 40px × 2 = 80px,
+           экономия ~68px вертикали. */
+        padding-top: clamp(6px, 1.2vw, 10px);
+        padding-bottom: clamp(6px, 1.2vw, 10px);
+        /* Gap между секциями формы — компактнее. */
+        gap: clamp(5px, 0.9vw, 8px);
+    }
+    .of-title {
+        font-size: clamp(14px, 2vw, 20px);
+        margin-bottom: 2px;
+    }
+    .of-subtitle {
+        font-size: clamp(11px, 1.3vw, 13px);
+        line-height: 1.3;
+    }
+    /* Скрываем hint «Ваш заказ отправится...» на альбоме — это
+       информационный параграф, экономит ~20px вертикали, и без
+       него textarea «выглядывает» из-за нижнего края модалки. */
+    .of-subtitle--hint {
+        display: none;
+    }
+    .of-field {
+        gap: 3px;
+    }
+    .of-field__label {
+        font-size: clamp(10px, 1.1vw, 12px);
+    }
+    .of-field__textarea {
+        /* С clamp(60px, 8vw, 96px) → clamp(32px, 5vw, 44px). */
+        min-height: clamp(32px, 5vw, 44px);
+    }
+    .rp-actions {
+        padding-top: clamp(6px, 1.2vw, 10px);
+        padding-bottom: clamp(6px, 1.2vw, 10px);
+    }
+    .rp-btn {
+        font-size: clamp(11px, 1.2vw, 14px);
+        padding: clamp(5px, 0.9vw, 8px) clamp(10px, 1.4vw, 16px);
+    }
+    .rp-close {
+        width: max(22px, 2.4cqw);
+        height: max(22px, 2.4cqw);
+        font-size: max(10px, 1.1cqw);
+    }
 }

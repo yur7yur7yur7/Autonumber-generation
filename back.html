@@ -3500,6 +3500,8 @@
     <script type="module" src="js/result-preview.js"></script>
     <script type="module">
         import { openResultPreview } from './js/result-preview.js';
+        import { openOrderForm } from './js/order-form.js';
+        import { openThanksModal } from './js/thanks-modal.js';
         import { buildMaketSvg, sendMaketToTelegram } from './js/download.js';
 
         const btn = document.getElementById('create-maket');
@@ -3546,6 +3548,11 @@
                         frontDataURL,
                         backDataURL,
                         onSendToPrint: async () => {
+                            // Сначала — форма заказа (имя, контакт, комментарий).
+                            // Если пользователь нажал «Отмена» или закрыл — отмены
+                            // отправки, чтобы не слать макет без данных.
+                            const order = await openOrderForm();
+                            if (!order) return false;
                             // Собираем SVG напрямую через buildMaketSvg и шлём в Telegram-реле.
                             // Номер и регион берём из frontPlateInput (обновляется
                             // через onPlateChange в js/side-toggle.js), иначе в
@@ -3557,8 +3564,36 @@
                                 number: number || '',
                                 region: region || '',
                             });
-                            const ok = await sendMaketToTelegram(result);
-                            showToast(ok ? '✅ Макет отправлен' : '⚠️ Не удалось отправить макет', !ok);
+                            // Тестовая кнопка-заглушка в order-form.js помечает
+                            // payload флагом __test. В этом режиме мы НЕ шлём
+                            // данные в Telegram-бота (чтобы не засорять прод),
+                            // но имитируем успех — открываем thanks-модалку как
+                            // при обычной отправке. Это позволяет отладить поток
+                            // модалок (preview → order → thanks) без боевых запросов.
+                            const isTest = order.__test === true;
+                            const ok = isTest
+                                ? true
+                                : await sendMaketToTelegram(result, order);
+                            showToast(
+                                isTest
+                                    ? '🧪 Тестовая отправка (в Telegram не отправлено)'
+                                    : ok
+                                        ? '✅ Макет отправлен'
+                                        : '⚠️ Не удалось отправить макет',
+                                !ok
+                            );
+                            // После успешной отправки сразу открываем модалку
+                            // благодарности с контактами производителя. Делаем
+                            // fire-and-forget: НЕ await-им, чтобы preview-модалка
+                            // закрылась раньше (return ok ниже) и не висела
+                            // вместе с thanks-модалкой. thanks-modal закрывается
+                            // только пользователем (требование: висит, пока не
+                            // закроет).
+                            if (ok) {
+                                openThanksModal().catch((err) =>
+                                    console.error('thanks modal:', err)
+                                );
+                            }
                             return ok;
                         },
                         // Клик по карману — переключаем редактор на нужную сторону.
