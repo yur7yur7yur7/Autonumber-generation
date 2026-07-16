@@ -2,11 +2,12 @@
 // Cloudflare Worker — Telegram relay
 // ============================================
 //
-// Receives POST {svg, filename, number, region, front_png, back_png} from the
-// editor's "Скачать макет" button and forwards, per chat in TG_CHAT_IDS:
+// Receives POST {svg, filename, number, region, front_png, back_png, png, order_*}
+// from the editor's "Отправить на печать" button and forwards, per chat in
+// TG_CHAT_IDS:
 //   1. a media group of 1–2 PNG previews (front, optionally back) with a
-//      MarkdownV2 caption that lists number, region, and a human-readable date;
-//   2. the SVG file as a separate sendDocument message.
+//      MarkdownV2 caption that lists number, region, date, and order info;
+//   2. the ready-to-print PNG (or fallback SVG) as a separate sendDocument.
 //
 // Secrets (set via `wrangler secret put` or Cloudflare dashboard, NEVER in code):
 //   TG_BOT_TOKEN  — token from @BotFather
@@ -14,12 +15,16 @@
 //
 // Request body (JSON):
 //   {
-//     "svg":       "<svg ...>...</svg>",
-//     "filename":  "brelok-M789MM21.svg",
-//     "number":    "M789MM",         // optional, used in caption
-//     "region":    "21",             // optional, used in caption
-//     "front_png": "data:image/png;base64,iVBORw0...",  // optional
-//     "back_png":  "data:image/png;base64,iVBORw0..."   // optional
+//     "svg":           "<svg ...>...</svg>",
+//     "png":           "data:image/png;base64,..."   // optional, готовый PNG
+//     "filename":      "brelok-M789MM21.png",
+//     "number":        "M789MM",                     // optional, в caption
+//     "region":        "21",                         // optional, в caption
+//     "front_png":     "data:image/png;base64,..."   // optional, превью
+//     "back_png":      "data:image/png;base64,..."   // optional, превью
+//     "order_name":    "Иван",                       // optional, форма заказа
+//     "order_contact": "@dukas",                     // optional, форма заказа
+//     "order_comment": "Хочу шрифт покрупнее"        // optional, форма заказа
 //   }
 //
 // Response:
@@ -91,7 +96,16 @@ export default {
         // could influence (number, region) so stray '.' or '_' can't break parsing.
         const number = String((body && body.number) || '').trim() || '—';
         const region = String((body && body.region) || '').trim() || '—';
-        const caption = buildCaption({ number, region, hasBack: !!parseDataUrl(body && body.back_png) });
+        const caption = buildCaption({
+            number,
+            region,
+            hasBack: !!parseDataUrl(body && body.back_png),
+            order: {
+                name: String((body && body.order_name) || '').trim(),
+                contact: String((body && body.order_contact) || '').trim(),
+                comment: String((body && body.order_comment) || '').trim(),
+            },
+        });
 
         const frontPng = parseDataUrl(body && body.front_png);
         const backPng = parseDataUrl(body && body.back_png);
@@ -358,7 +372,7 @@ function buildDocumentMultipart(boundary, chatId, fileBytes, filename, mime) {
 }
 
 // Build the MarkdownV2 caption shown under the first photo in the media group.
-function buildCaption({ number, region, hasBack }) {
+function buildCaption({ number, region, hasBack, order }) {
     const date = formatHumanDate(new Date());
     // Escape every user-controlled piece: Telegram's MarkdownV2 requires that
     // these characters appear only inside `*…*`, `_…_`, etc. — anywhere else
@@ -373,6 +387,30 @@ function buildCaption({ number, region, hasBack }) {
         '*Регион:* `' + r + '`',
         '*Дата:* ' + d,
     ];
+    // Блок данных заказа — добавляем, если есть хотя бы одно непустое поле.
+    // Имя и контакт показываем всегда при наличии; комментарий — отдельным
+    // блоком, чтобы оператор сразу видел пожелания.
+    const o = order || {};
+    if (o.name || o.contact || o.comment) {
+        lines.push('', '*👤 Заказ*');
+        if (o.name) {
+            lines.push('*Имя:* ' + escapeMarkdownV2(o.name));
+        }
+        if (o.contact) {
+            lines.push('*Контакт:* `' + escapeMarkdownV2(o.contact) + '`');
+        }
+        if (o.comment) {
+            // Цитируем многострочный комментарий построчно — Telegram MarkdownV2
+            // поддерживает \` внутри ```-блоков, но безопаснее экранировать
+            // каждую строку отдельно и не делать code-блок (в нём переводы
+            // строк не выводятся).
+            lines.push('*Комментарий:*');
+            const commentLines = String(o.comment).split(/\r?\n/);
+            for (const cl of commentLines) {
+                lines.push('_' + escapeMarkdownV2(cl) + '_');
+            }
+        }
+    }
     if (!hasBack) {
         lines.push('', '_Задняя сторона: не приложена_');
     } else {

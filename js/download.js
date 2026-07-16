@@ -241,13 +241,19 @@ function roundRect(ctx, x, y, w, h, r) {
 
 /**
  * Отправляет результат downloadBothSides в Telegram-реле.
- * Возвращает true при успехе, false при ошибке/ненастроенном реле.
+ * Возвращает true при успехе, false при ошибке/ненастроенном реле/отмене.
  * Используется из editor.html и back.html как обработчик «Отправить на печать»
  * в модалке result-preview — единая точка входа для обоих редакторов.
  *
  * Конвертирует SVG из result в PNG перед отправкой — реле ожидает png.
+ *
+ * @param {Object} result       — вывод buildMaketSvg ({svgString, fileName, ...}).
+ * @param {Object} [order]      — данные пользователя из openOrderForm (back.html).
+ *                                 { name, contact, comment } — идут в payload как
+ *                                 order_name / order_contact / order_comment
+ *                                 и попадают в caption в воркере.
  */
-export async function sendMaketToTelegram(result) {
+export async function sendMaketToTelegram(result, order) {
     if (!result) return false;
     const endpoint = (CONFIG.TELEGRAM_RELAY_URL || '').trim();
     if (!endpoint) {
@@ -259,6 +265,18 @@ export async function sendMaketToTelegram(result) {
         // Имя файла тоже меняем с .svg на .png, чтобы оператору в Telegram
         // прилетал правильный файл.
         const pngFileName = (result.fileName || 'brelok.svg').replace(/\.svg$/i, '.png');
+        // Подготовим поля заказа (если есть) — строки приходят уже триммированными
+        // из order-form.js, но на всякий случай ещё раз срезаем пробелы и
+        // ограничиваем длину, чтобы воркеру не прилетело полотно текста.
+        const trim = (v, max) => {
+            const s = (v == null ? '' : String(v)).trim();
+            return s.length > max ? s.slice(0, max) : s;
+        };
+        const orderFields = order ? {
+            order_name: trim(order.name, 80),
+            order_contact: trim(order.contact, 120),
+            order_comment: trim(order.comment, 800),
+        } : {};
         await sendToTelegramRelay(endpoint, {
             // svg оставляем — реле его строго валидирует (Missing or empty
             // svg field); png добавляем рядом как готовое растровое
@@ -270,6 +288,7 @@ export async function sendMaketToTelegram(result) {
             region: result.region,
             front_png: result.frontPng,
             back_png: result.backPng,
+            ...orderFields,
         });
         showTemporaryMessage('✅ Готово! Отправлено в Telegram', 'success');
         return true;
