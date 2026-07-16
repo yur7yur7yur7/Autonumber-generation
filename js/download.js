@@ -3,9 +3,17 @@
 // ============================================
 
 import { showTemporaryMessage } from './validation.js';
-import { CONFIG } from './config.js';
+import { CONFIG, DEFAULT_SETTINGS } from './config.js';
 
 const { CANVAS_WIDTH, CANVAS_HEIGHT } = CONFIG;
+
+// Радиус скругления берётся из mainSettings, который заполняется через
+// setDownloadContext из editor.html (legacy). В бэк-флоу этот вызов не
+// делается → mainSettings === null. Чтобы скругление работало в обоих
+// путях, fallback на DEFAULT_SETTINGS.mainBorderRadius (= 18).
+function getMainBorderRadius() {
+    return (mainSettings?.mainBorderRadius ?? DEFAULT_SETTINGS.mainBorderRadius);
+}
 
 // Глобальные переменные
 let mainCtx = null;
@@ -58,8 +66,10 @@ export function buildMaketSvg({ frontDataURL, backDataURL, number, region }) {
     const totalWidth = CANVAS_WIDTH * 2 + interval;
 
     // Радиус скругления в пикселях канвы (как в main.js#drawPlateImmediate).
-    // Fallback на 0 — если контекст не задан (например, в back.html).
-    const borderRadius = (mainSettings?.mainBorderRadius || 0) * (CONFIG.SCALE_FACTOR || 1);
+    // Fallback на DEFAULT_SETTINGS, если setDownloadContext не вызывался
+    // (например, в back.html — там этот вызов legacy-оболочки editor.html
+    // не происходит).
+    const borderRadius = getMainBorderRadius() * (CONFIG.SCALE_FACTOR || 1);
 
     const svgString = `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${(5.18 * 2 + 0.2)}cm" height="1.07cm" viewBox="0 0 ${totalWidth} ${CANVAS_HEIGHT}"
@@ -139,10 +149,103 @@ export async function downloadBothSides(canvas, getNumber, getRegion, getRearDat
 }
 
 /**
+ * Собирает итоговый PNG-файл макета напрямую через canvas, минуя SVG-as-image.
+ *
+ * Почему не через SVG → <img> → canvas:
+ *   В buildMaketSvg() SVG содержит два вложенных <image xlink:href="data:...">
+ *   с PNG-снимками канвы. Когда такой SVG грузится как <img src=...>, браузер
+ *   не рендерит вложенные <image> в большинстве случаев (same-origin / CORS /
+ *   безопасность SVG-as-image), и в canvas попадает пустой белый фон.
+ *
+ * Поэтому собираем макет сразу на canvas: два скруглённых чёрных прямоугольника
+ * + два PNG-снимка внутри, как в исходной SVG-разметке. Это даёт идентичный
+ * визуальный результат, который реле/оператор видит в Telegram.
+ *
+ * @param {string} frontDataURL - data:image/png;... с передней стороной
+ * @param {string} backDataURL  - data:image/png;... с задней стороной
+ * @returns {Promise<string|null>} data:image/png;base64,... или null при ошибке
+ */
+async function composeMaketPngDataURL(frontDataURL, backDataURL) {
+    if (!frontDataURL || !backDataURL) return null;
+    const interval = 20;
+    const dpr = 2; // ×2 для нормальной резкости при печати
+    const outW = (CANVAS_WIDTH * 2 + interval) * dpr;
+    const outH = CANVAS_HEIGHT * dpr;
+    const radius = getMainBorderRadius() * (CONFIG.SCALE_FACTOR || 1) * dpr;
+
+    // Грузим оба PNG-снимка параллельно (оба — same-origin data URL).
+    const [frontImg, backImg] = await Promise.all([
+        loadImage(frontDataURL),
+        loadImage(backDataURL),
+    ]);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = outW;
+    canvas.height = outH;
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    const sideW = CANVAS_WIDTH * dpr;
+    const sideH = CANVAS_HEIGHT * dpr;
+    const backX = (CANVAS_WIDTH + interval) * dpr;
+
+    // ЛЕВАЯ СТОРОНА: чёрная скруглённая подложка + PNG внутри скруглённой
+    // маски. PNG-снимки приходят ПРЯМОУГОЛЬНЫЕ (canvas.toDataURL не применяет
+    // CSS border-radius), поэтому без clip() они затирают скругление
+    // подложки. Решение — после roundRect вызываем ctx.clip(), и тогда
+    // drawImage обрезается по скруглённой форме (как clip-path в SVG).
+    ctx.save();
+    roundRect(ctx, 0, 0, sideW, sideH, radius);
+    ctx.fillStyle = '#000000';
+    ctx.fill();
+    ctx.clip();
+    ctx.drawImage(frontImg, 0, 0, sideW, sideH);
+    ctx.restore();
+
+    // ПРАВАЯ СТОРОНА — то же самое.
+    ctx.save();
+    roundRect(ctx, backX, 0, sideW, sideH, radius);
+    ctx.fillStyle = '#000000';
+    ctx.fill();
+    ctx.clip();
+    ctx.drawImage(backImg, backX, 0, sideW, sideH);
+    ctx.restore();
+
+    return canvas.toDataURL('image/png');
+}
+
+function loadImage(src) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Не удалось загрузить PNG-снимок стороны'));
+        img.src = src;
+    });
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.arcTo(x + w, y, x + w, y + r, r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+    ctx.lineTo(x + r, y + h);
+    ctx.arcTo(x, y + h, x, y + h - r, r);
+    ctx.lineTo(x, y + r);
+    ctx.arcTo(x, y, x + r, y, r);
+    ctx.closePath();
+}
+
+/**
  * Отправляет результат downloadBothSides в Telegram-реле.
  * Возвращает true при успехе, false при ошибке/ненастроенном реле.
  * Используется из editor.html и back.html как обработчик «Отправить на печать»
  * в модалке result-preview — единая точка входа для обоих редакторов.
+ *
+ * Конвертирует SVG из result в PNG перед отправкой — реле ожидает png.
  */
 export async function sendMaketToTelegram(result) {
     if (!result) return false;
@@ -152,9 +255,17 @@ export async function sendMaketToTelegram(result) {
         return false;
     }
     try {
+        const pngDataURL = await composeMaketPngDataURL(result.frontPng, result.backPng);
+        // Имя файла тоже меняем с .svg на .png, чтобы оператору в Telegram
+        // прилетал правильный файл.
+        const pngFileName = (result.fileName || 'brelok.svg').replace(/\.svg$/i, '.png');
         await sendToTelegramRelay(endpoint, {
+            // svg оставляем — реле его строго валидирует (Missing or empty
+            // svg field); png добавляем рядом как готовое растровое
+            // представление для печати/превью.
             svg: result.svgString,
-            filename: result.fileName,
+            png: pngDataURL,
+            filename: pngFileName,
             number: result.number,
             region: result.region,
             front_png: result.frontPng,
@@ -169,10 +280,11 @@ export async function sendMaketToTelegram(result) {
     }
 }
 
-// Forward the generated SVG (and preview PNGs) to a Cloudflare Worker that
-// relays them to Telegram. The worker now expects an extended payload that
-// includes front/back previews and human-readable caption fields:
-//   { svg, filename, number, region, front_png, back_png }
+// Forward the generated SVG + PNG (and preview PNGs) to a Cloudflare Worker
+// that relays them to Telegram. The worker expects both `svg` (validated
+// strictly — Missing or empty svg field) and `png` (ready-to-print bitmap)
+// alongside front/back previews and caption fields:
+//   { svg, png, filename, number, region, front_png, back_png }
 // Returns the relay's JSON response on success, throws on failure (with a
 // human-readable message). Caller decides whether to show an error toast.
 async function sendToTelegramRelay(endpoint, payload) {

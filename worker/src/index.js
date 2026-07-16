@@ -95,6 +95,10 @@ export default {
 
         const frontPng = parseDataUrl(body && body.front_png);
         const backPng = parseDataUrl(body && body.back_png);
+        // Опциональный готовый PNG-макет целиком (front+back одной картинкой).
+        // Если есть — отправим его как sendDocument с image/png вместо SVG.
+        // Валидация svg выше остаётся как fallback для старых клиентов.
+        const readyPng = parseDataUrl(body && body.png);
         const mediaItems = [];
         if (frontPng) {
             mediaItems.push({ kind: 'front', bytes: frontPng });
@@ -110,7 +114,21 @@ export default {
         }
 
         const filenameSafe = String(filename).replace(/[\r\n"]/g, '_').slice(0, 200);
-        const svgBytes = new TextEncoder().encode(svg);
+        // Что отправлять как sendDocument: готовый PNG-макет (если есть) или
+        // SVG как fallback. Расширение файла должно соответствовать MIME —
+        // иначе Telegram сохранит его с правильным MIME, но имя в *.svg / *.png
+        // врёт, и файл не открывается как ожидаемый формат.
+        let docBytes, docMime, docFilename;
+        if (readyPng) {
+            docBytes = readyPng;
+            docMime = 'image/png';
+            // Если пришло имя с .svg — переименуем в .png, иначе оставим.
+            docFilename = filenameSafe.replace(/\.svg$/i, '.png');
+        } else {
+            docBytes = new TextEncoder().encode(svg);
+            docMime = 'image/svg+xml';
+            docFilename = filenameSafe;
+        }
 
         // Fan out to every chat in TG_CHAT_IDS. Per recipient we do:
         //   1. sendMediaGroup with 1–2 photos + caption (one HTTP call to Telegram)
@@ -155,10 +173,12 @@ export default {
                     : [],
             };
 
-            // 2) SVG document — separate message, no caption.
+            // 2) Document — PNG (если есть в payload) или SVG (fallback). MIME/имя
+            //    согласованы, чтобы Telegram правильно показывал превью и
+            //    сохранял файл с корректным расширением.
             const docBoundary = '----BrelokBoundary' + crypto.randomUUID().replace(/-/g, '');
             const docMultipart = buildDocumentMultipart(
-                docBoundary, chatId, svgBytes, filenameSafe
+                docBoundary, chatId, docBytes, docFilename, docMime
             );
             const docResp = await fetch(
                 'https://api.telegram.org/bot' + botToken + '/sendDocument',
@@ -301,9 +321,10 @@ function buildMediaGroupMultipart(chatId, caption, mediaItems) {
 }
 
 // Build a multipart/form-data body for sendDocument. The 3 parts are: chat_id,
-// document (SVG bytes, image/svg+xml). No caption — Telegram shows it as a
-// bare document after the media-group message above.
-function buildDocumentMultipart(boundary, chatId, fileBytes, filename) {
+// document (bytes with given MIME). No caption — Telegram shows it as a
+// bare document after the media-group message above. MIME берётся из
+// вызывающего кода: image/svg+xml (fallback) или image/png (готовый макет).
+function buildDocumentMultipart(boundary, chatId, fileBytes, filename, mime) {
     const enc = new TextEncoder();
     const parts = [];
 
@@ -317,7 +338,7 @@ function buildDocumentMultipart(boundary, chatId, fileBytes, filename) {
     parts.push(enc.encode(
         '--' + boundary + '\r\n' +
         'Content-Disposition: form-data; name="document"; filename="' + filename + '"\r\n' +
-        'Content-Type: image/svg+xml\r\n' +
+        'Content-Type: ' + mime + '\r\n' +
         '\r\n'
     ));
     parts.push(fileBytes);
