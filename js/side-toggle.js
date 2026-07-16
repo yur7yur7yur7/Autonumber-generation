@@ -492,22 +492,53 @@ export function createFrontPanel(deps) {
  * @returns {{ panel: HTMLElement, toggleBtn: HTMLButtonElement, teardown: () => void }}
  */
 export function createFrontSliderPanel(deps) {
-    const { id, title, toggleLabel, iconSvg = '', toggleIconSvg = '', sliders, onChange, resetButtonLabel, onReset } = deps;
+    const { id, title, toggleLabel, iconSvg = '', toggleIconSvg = '', sliders, onChange, resetButtonLabel, onReset, layout = 'inline' } = deps;
     const fireChange = typeof onChange === 'function' ? onChange : () => {};
     const fireReset = typeof onReset === 'function' ? onReset : null;
+    // layout: 'inline' — старый горизонтальный (label+value сверху, slider снизу).
+    // layout: 'vertical' — для каждого слайдера: название → картинка → слайдер → значение,
+    //                    плюс визуальный разделитель между строками.
+    const vertical = layout === 'vertical';
 
     const panel = document.createElement('div');
     panel.id = `${id}-panel`;
+    if (vertical) panel.classList.add('sp-panel-vertical');
 
-    const rowsHtml = sliders.map((s) => {
+    const rowsHtml = sliders.map((s, idx) => {
         const stepAttr = s.step != null ? `step="${s.step}"` : '';
         const safeLabel = String(s.label);
         const safeKey = String(s.key);
         const safeId = `${id}-${safeKey}`;
+        // Ориентация картинки: явное поле s.orientation (опц.) или авто по key.
+        // Авто: всё, что заканчивается на "Y" — вертикальная (rusY, flagY,
+        // numberY, regionY); остальные — горизонтальная (X, AreaWidth, Padding).
+        const orientation = s.orientation
+            || (/Y$/.test(safeKey) ? 'v' : 'h');
+        const iconHtml = s.icon
+            ? `<img class="sp-slider-icon sp-slider-icon-${orientation}" src="${String(s.icon)}" alt="" draggable="false" aria-hidden="true">`
+            : '';
+        const dividerHtml = (vertical && idx < sliders.length - 1)
+            ? `<hr class="sp-row-divider" aria-hidden="true">`
+            : '';
+        if (vertical) {
+            return `
+                <div class="sp-row sp-slider-row">
+                    <div class="sp-name"><b>${safeLabel}</b></div>
+                    ${iconHtml}
+                    <input type="range" class="sp-slider" id="${safeId}"
+                           data-slider-key="${safeKey}"
+                           min="${s.min}" max="${s.max}" ${stepAttr}
+                           value="${s.value}"
+                           aria-label="${safeLabel}">
+                    <div class="sp-slider-value" data-value-for="${safeKey}">${s.value}</div>
+                </div>
+                ${dividerHtml}
+            `;
+        }
         return `
             <div class="sp-row sp-slider-row">
                 <span class="sp-label">
-                    <b>${safeLabel}</b>
+                    <span class="sp-label-name">${iconHtml}<b>${safeLabel}</b></span>
                     <small class="sp-slider-value" data-value-for="${safeKey}">${s.value}</small>
                 </span>
                 <input type="range" class="sp-slider" id="${safeId}"
@@ -675,24 +706,25 @@ export function initSideToggle(deps) {
         toggleIconSvg: '🔧',
         sliders: [
             // Флаг и RUS
-            { key: 'rusX', label: 'RUS X', min: 0, max: 100, value: frontSettings.rusX },
-            { key: 'rusY', label: 'RUS Y', min: 0, max: 100, value: frontSettings.rusY },
-            { key: 'flagX', label: 'Флаг X', min: 0, max: 100, value: frontSettings.flagX },
-            { key: 'flagY', label: 'Флаг Y', min: -50, max: 50, value: frontSettings.flagY },
+            { key: 'rusX', label: 'RUS X', min: 0, max: 100, value: frontSettings.rusX, icon: 'images/settings/rus-x.png' },
+            { key: 'rusY', label: 'RUS Y', min: 0, max: 100, value: frontSettings.rusY, icon: 'images/settings/rus-y.png' },
+            { key: 'flagX', label: 'Флаг X', min: 0, max: 100, value: frontSettings.flagX, icon: 'images/settings/flag-x.png' },
+            { key: 'flagY', label: 'Флаг Y', min: -50, max: 50, value: frontSettings.flagY, icon: 'images/settings/flag-y.png' },
             // Номер
-            { key: 'numberY', label: 'Номер Y', min: -50, max: 100, value: frontSettings.numberY },
-            { key: 'numberX', label: 'Номер X', min: -100, max: 100, value: frontSettings.numberX },
-            { key: 'numberAreaWidth', label: 'Ширина номера', min: 400, max: 600, value: frontSettings.numberAreaWidth },
-            { key: 'numberPadding', label: 'Отступ номера', min: 0, max: 50, value: frontSettings.numberPadding },
+            { key: 'numberY', label: 'Номер Y', min: -50, max: 100, value: frontSettings.numberY, icon: 'images/settings/num-y.png' },
+            { key: 'numberX', label: 'Номер X', min: -100, max: 100, value: frontSettings.numberX, icon: 'images/settings/num-x.png' },
+            { key: 'numberAreaWidth', label: 'Ширина номера', min: 400, max: 600, value: frontSettings.numberAreaWidth, icon: 'images/settings/num-len.png' },
+            { key: 'numberPadding', label: 'Отступ номера', min: 0, max: 50, value: frontSettings.numberPadding, icon: 'images/settings/num-off.png' },
             // Регион
-            { key: 'regionY', label: 'Регион Y', min: 0, max: 150, value: frontSettings.regionY },
-            { key: 'regionX', label: 'Регион X', min: -100, max: 100, value: frontSettings.regionX },
-            { key: 'regionAreaWidth', label: 'Ширина региона', min: 150, max: 300, value: frontSettings.regionAreaWidth }
+            { key: 'regionY', label: 'Регион Y', min: 0, max: 150, value: frontSettings.regionY, icon: 'images/settings/reg-y.png' },
+            { key: 'regionX', label: 'Регион X', min: -100, max: 100, value: frontSettings.regionX, icon: 'images/settings/reg-x.png' },
+            { key: 'regionAreaWidth', label: 'Ширина региона', min: 150, max: 300, value: frontSettings.regionAreaWidth, icon: 'images/settings/reg-len.png' }
         ]
     };
 
     const detachAdvancedPanel = createFrontSliderPanel({
         ...ADVANCED_PANEL,
+        layout: 'vertical',
         onChange: redrawFront,
         resetButtonLabel: '↺ Сбросить настройки',
         onReset: () => {

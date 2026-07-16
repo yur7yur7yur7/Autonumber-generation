@@ -896,10 +896,12 @@
             position: relative;
             display: block;
             margin: 0 auto;
+            width: fit-content;
         }
         #front-canvas-wrap[hidden] { display: none; }
         #frontCanvas {
             display: block;
+            margin: 0 auto;
             border-radius: 31px;
             background: #ffffff;
         }
@@ -1160,19 +1162,61 @@
         #front-advanced-panel .sp-row + .sp-row {
             margin-top: 4px;
         }
-        #front-advanced-panel .sp-label {
-            display: flex;
-            flex-direction: row;
-            align-items: baseline;
-            justify-content: space-between;
-            gap: 10px;
-            flex: 1;
-            min-width: 0;
+        /* Вертикальная раскладка слайдера в расширенной панели:
+           .sp-name (заголовок) → .sp-slider-icon (картинка) → .sp-slider (range)
+           → .sp-slider-value (число). Базовая .sp-slider-row уже
+           flex-direction: column (см. выше), здесь — отступы между слоями. */
+        #front-advanced-panel.sp-panel-vertical .sp-slider-row {
+            align-items: center;
+            gap: 8px;
         }
-        #front-advanced-panel .sp-label b {
+        #front-advanced-panel.sp-panel-vertical .sp-name {
             color: #111827;
             font-size: 13px;
             font-weight: 600;
+            white-space: nowrap;
+            align-self: flex-start;
+        }
+        /* Иконки-подсказки в вертикальной раскладке расширенной панели.
+           Горизонтальные и вертикальные иконки получают разные боксы, чтобы
+           нативная пропорция PNG не упиралась в квадрат (горизонтальные
+           "num-len"/"reg-len"/"num-off" иначе выглядят слишком мелко). */
+        #front-advanced-panel.sp-panel-vertical .sp-slider-icon {
+            flex-shrink: 0;
+            display: block;
+            object-fit: contain;
+            object-position: center;
+        }
+        /* Вертикальные (key заканчивается на "Y"): rusY, flagY, numberY, regionY —
+           квадратный бокс. PNG там действительно квадратные или близкие к нему. */
+        #front-advanced-panel.sp-panel-vertical .sp-slider-icon-v {
+            width: 56px;
+            height: 56px;
+        }
+        /* Горизонтальные (key заканчивается на "X" / содержит AreaWidth /
+           Padding): rusX, flagX, numberX, numberAreaWidth, numberPadding,
+           regionX, regionAreaWidth — увеличенный бокс, чтобы картинки
+           (num-len с пластиной, num-off со стрелками-отступами и т.п.) не
+           сжимались и были хорошо видны. */
+        #front-advanced-panel.sp-panel-vertical .sp-slider-icon-h {
+            width: 120px;
+            height: 56px;
+        }
+        /* Значение слайдера — справа под range, мелким серым текстом. */
+        #front-advanced-panel.sp-panel-vertical .sp-slider-value {
+            align-self: flex-end;
+            color: #6b7280;
+            font: 600 12px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            letter-spacing: 0.2px;
+            min-width: 24px;
+            text-align: right;
+        }
+        /* Визуальный разделитель между строками слайдеров. */
+        #front-advanced-panel.sp-panel-vertical .sp-row-divider {
+            border: none;
+            border-top: 1px solid #e5e7eb;
+            margin: 6px 0;
+            height: 0;
         }
         /* Кнопка «Сбросить настройки» внутри расширенной панели — по типу
            .reset-btn из editor (css/settings-panel.css): синяя, на всю ширину
@@ -1568,6 +1612,8 @@
             }
             #canvas-wrap .canvas-container {
                 max-width: 100%;
+                margin-left: auto;
+                margin-right: auto;
             }
             #canvas-wrap canvas {
                 max-width: none;
@@ -1846,6 +1892,34 @@
                 bottom: 64px;
                 padding: 8px 12px;
                 font-size: 12px;
+            }
+        }
+        /* ============================================================
+           ДЕСКТОПНЫЙ OVERRIDE ДЛЯ КНОПКИ ПЕРЕКЛЮЧЕНИЯ СТОРОН.
+           Базовые правила #canvas-label определены выше (строки 879-906)
+           и идут в каскаде ПОЗЖЕ любого правила, встроенного в десктоп-
+           @media внутри основного блока, — поэтому override для
+           десктопа кладём отдельным блоком в самом конце <style>, ниже
+           базовых правил. Тут же гарантируем победу по каскаду.
+           ============================================================ */
+        @media (min-width: 769px) and (min-height: 601px) {
+            #canvas-label {
+                padding: 10px 22px;
+                font-size: 15px;
+                font-weight: 700;
+                letter-spacing: 0.4px;
+                color: #ffffff;
+                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                border: 1px solid rgba(255, 255, 255, 0.25);
+                box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35),
+                            0 0 0 1px rgba(37, 99, 235, 0.18);
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+            }
+            #canvas-label:hover {
+                background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+                box-shadow: 0 8px 22px rgba(37, 99, 235, 0.45),
+                            0 0 0 1px rgba(96, 165, 250, 0.5);
             }
         }
     </style>
@@ -2212,10 +2286,15 @@
         // ============================================================
         const PLATE_W = 1224;
         const PLATE_H = 252;
+        // Множитель для ПЕРЕДНЕЙ стороны в мобильном ландшафте — нативный
+        // канвас #frontCanvas сильнее нуждается в уменьшении, чем fabric-
+        // канвас задней стороны (там текст крупнее и инпут под ним).
+        const FRONT_LANDSCAPE_SHRINK = 0.8;
         function fitCanvasToViewport() {
             const wrap = document.getElementById('canvas-wrap');
             if (!wrap) return;
             const isNarrow = window.matchMedia('(max-width: 768px), (orientation: landscape) and (max-height: 600px)').matches;
+            const isLandscapeMobile = window.matchMedia('(orientation: landscape) and (max-height: 600px)').matches;
             // На мобильном оставляем воздух для нижних гамбургер-кнопок (~70px),
             // иначе они перекрывают канву.
             const reservedBottom = isNarrow ? 80 : 0;
@@ -2234,12 +2313,17 @@
             canvas.setDimensions({ width: displayW, height: displayH }, { cssOnly: false });
             canvas.setZoom(displayW / PLATE_W);
             canvas.requestRenderAll();
-            // Нативный канвас передней стороны получает те же CSS width/height,
-            // чтобы при тоггле геометрия не прыгала.
+            // Передняя сторона: в мобильном ландшафте дополнительно уменьшаем
+            // нативный канвас на FRONT_LANDSCAPE_SHRINK (по обоим осям — иначе
+            // Math.min выше упирается в ширину и множитель игнорируется).
+            // Задняя сторона (Fabric.canvas выше) — без изменений.
             const frontCanvas = document.getElementById('frontCanvas');
             if (frontCanvas) {
-                frontCanvas.style.width = displayW + 'px';
-                frontCanvas.style.height = displayH + 'px';
+                const shrink = isLandscapeMobile ? FRONT_LANDSCAPE_SHRINK : 1;
+                const frontW = Math.floor(displayW * shrink);
+                const frontH = Math.floor(displayH * shrink);
+                frontCanvas.style.width = frontW + 'px';
+                frontCanvas.style.height = frontH + 'px';
             }
         }
 
