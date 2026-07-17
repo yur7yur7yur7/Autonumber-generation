@@ -6,6 +6,71 @@ import { CONFIG } from './config.js';
 
 const { CANVAS_WIDTH, CANVAS_HEIGHT } = CONFIG;
 
+// ============================================
+// КЕШИРОВАНИЕ TEMPLATE.PNG
+// ============================================
+// template.png — это статичный фон брелка (карманы для плашек).
+// Раньше src собирался с cache-busting ?v=Date.now() — это обнуляло
+// кеш браузера на КАЖДОМ открытии модалки и заставляло тянуть ~150KB
+// по сети. Реальная причина cache-busting'а была в правках изображения
+// (чтобы пользователь видел новую раскладку карманов), но на проде это
+// лишний запрос — и без того браузер сам инвалидирует кеш при изменении
+// файла (ETag/Last-Modified).
+//
+// Решение: один раз загружаем template через new Image() и сохраняем
+// объект в module-level переменной. Последующие открытия модалки
+// переиспользуют тот же src (браузер отдаст 304 Not Modified без
+// скачивания), а в DOM мы кладём <img> с тем же src.
+//
+// Чтобы template начал качаться сразу при загрузке back.html, а не
+// только когда пользователь жмёт «Готовлю…», стартуем загрузку на
+// уровне модуля (выполнится при первом import этого файла).
+
+const TEMPLATE_SRC = 'images/template.png';
+
+/** @type {HTMLImageElement | null} */
+let cachedTemplate = null;
+/** @type {Promise<HTMLImageElement> | null} */
+let loadingPromise = null;
+
+/**
+ * Возвращает Promise<HTMLImageElement> для template.png. На первом
+ * вызове создаёт Image() и грузит; на последующих — мгновенно
+ * резолвится из кеша. Один и тот же Image-объект переиспользуется.
+ * @returns {Promise<HTMLImageElement>}
+ */
+export function ensureTemplate() {
+    if (cachedTemplate && cachedTemplate.complete && cachedTemplate.naturalWidth > 0) {
+        return Promise.resolve(cachedTemplate);
+    }
+    if (loadingPromise) return loadingPromise;
+
+    const img = new Image();
+    img.decoding = 'async'; // не блокируем основной поток декодированием
+    loadingPromise = new Promise((resolve, reject) => {
+        img.onload = () => {
+            cachedTemplate = img;
+            loadingPromise = null;
+            resolve(img);
+        };
+        img.onerror = (e) => {
+            // Не очищаем loadingPromise полностью — повторные вызовы
+            // в течение одной сессии вернут ту же rejected-промис, и
+            // UI сможет показать осмысленную ошибку. Если хочется
+            // повторить — нужен отдельный `retryTemplate()`.
+            reject(new Error('Не удалось загрузить template.png'));
+        };
+        img.src = TEMPLATE_SRC;
+    });
+    return loadingPromise;
+}
+
+// Стартуем загрузку сразу при импорте модуля — пока пользователь
+// возится с плашкой, template уже качается в фоне. Если вкладку
+// закроют до того, как template докачается, ничего не сломается —
+// кеш просто не наполнится.
+ensureTemplate();
+
 /**
  * Создаёт DOM модалки: шаблон + слоты для передней/задней стороны + кнопки.
  * Возвращает корневой элемент (ещё не вставлен в документ).
@@ -33,12 +98,32 @@ function buildModalMarkup() {
 
     const tpl = document.createElement('img');
     tpl.className = 'rp-template';
-    // Cache-busting query: заставляет браузер загрузить свежую версию template.png,
-    // а не закешированную. Иначе после правок изображения пользователь видит
-    // старую раскладку карманов и плашки «не попадают» в карманы.
-    tpl.src = 'images/template.png?v=' + Date.now();
+    // Без cache-busting ?v=Date.now() — template кешируется браузером
+    // и переиспользуется между открытиями модалки. Загрузка
+    // инициируется через ensureTemplate() на уровне модуля, как
+    // только импортируется result-preview.js. Если template уже в
+    // кеше — присваиваем src синхронно, onload сработает в том же
+    // тике. Если нет — присваиваем src здесь, но плашки .rp-layer
+    // добавляются ПОЗЖЕ (после await ensureTemplate в openResultPreview)
+    // иначе они бы показывались висящими в тёмном пространстве до
+    // загрузки картинки.
+    tpl.src = TEMPLATE_SRC;
     tpl.alt = 'Шаблон брелка';
+    // Класс .rp-template--loading держит картинку прозрачной до
+    // момента, когда openResultPreview вызовет .rp-template--ready
+    // (плавное появление через transition в CSS).
+    tpl.classList.add('rp-template--loading');
     stage.appendChild(tpl);
+
+    // Спиннер по центру модалки — виден, пока template не загружен.
+    // Класс .loading-spinner определён локально в result-preview.css
+    // (свой @keyframes spin) — не зависим от других CSS-файлов.
+    const loader = document.createElement('div');
+    loader.className = 'rp-loader';
+    const spinner = document.createElement('div');
+    spinner.className = 'loading-spinner';
+    loader.appendChild(spinner);
+    stage.appendChild(loader);
 
     const hint = document.createElement('div');
     hint.className = 'rp-hint';
@@ -72,7 +157,7 @@ function buildModalMarkup() {
     windowEl.appendChild(actions);
     overlay.appendChild(windowEl);
 
-    return { overlay, modal, stage, close, sendBtn, cancelBtn };
+    return { overlay, modal, stage, close, sendBtn, cancelBtn, tpl, loader };
 }
 
 /**
@@ -153,51 +238,72 @@ export function openResultPreview({
     onSelectBack
 }) {
     return new Promise((resolve) => {
-        const { overlay, close, sendBtn, cancelBtn, stage } = buildModalMarkup();
+        const { overlay, close, sendBtn, cancelBtn, stage, tpl, loader } = buildModalMarkup();
 
-        // Слой передней стороны. Если передан onSelectFront — карман кликабельный,
-        // после клика модалка закрывается (onClose ссылается на finish ниже —
-        // function declaration поднимается, поэтому ссылка валидна к моменту
-        // срабатывания обработчика).
-        stage.appendChild(makeLayer({
-            src: frontDataURL,
-            alt: 'Передняя сторона',
-            x: 'var(--rp-front-x)',
-            y: 'var(--rp-front-y)',
-            w: 'var(--rp-front-w)',
-            h: 'var(--rp-front-h)',
-            onClick: onSelectFront,
-            onClose: finish,
-        }));
+        // Плашки не добавляем в DOM сразу — иначе они будут видны висящими
+        // в тёмном пространстве, пока template.png не загрузится. Ждём
+        // ensureTemplate() (кеш на уровне модуля — повторные открытия
+        // модалки резолвятся мгновенно), потом добавляем плашки и убираем
+        // loader. Это обёрнуто в Promise.resolve().then() чтобы не
+        // блокировать основной код модалки, если template уже в кеше
+        // (резолв мгновенный, но всё равно асинхронный — иначе модалка
+        // моргнёт «без плашек» на один кадр).
 
-        // Слой задней стороны или заглушка. onSelectBack работает в обоих
-        // случаях — клик по заглушке тоже переводит в редактор задней.
-        if (backDataURL) {
+        const placeLayers = () => {
+            // Слой передней стороны. Если передан onSelectFront — карман
+            // кликабельный, после клика модалка закрывается (onClose
+            // ссылается на finish ниже — function declaration поднимается).
             stage.appendChild(makeLayer({
-                src: backDataURL,
-                alt: 'Задняя сторона',
-                x: 'var(--rp-back-x)',
-                y: 'var(--rp-back-y)',
-                w: 'var(--rp-back-w)',
-                h: 'var(--rp-back-h)',
-                onClick: onSelectBack,
+                src: frontDataURL,
+                alt: 'Передняя сторона',
+                x: 'var(--rp-front-x)',
+                y: 'var(--rp-front-y)',
+                w: 'var(--rp-front-w)',
+                h: 'var(--rp-front-h)',
+                onClick: onSelectFront,
                 onClose: finish,
             }));
-            sendBtn.disabled = false;
-        } else {
-            stage.appendChild(makeLayer({
-                alt: '',
-                x: 'var(--rp-back-x)',
-                y: 'var(--rp-back-y)',
-                w: 'var(--rp-back-w)',
-                h: 'var(--rp-back-h)',
-                missing: true,
-                onClick: onSelectBack,
-                onClose: finish,
-            }));
-            sendBtn.disabled = true;
-            sendBtn.title = 'Нужен снимок задней стороны';
-        }
+
+            // Слой задней стороны или заглушка. onSelectBack работает в обоих
+            // случаях — клик по заглушке тоже переводит в редактор задней.
+            if (backDataURL) {
+                stage.appendChild(makeLayer({
+                    src: backDataURL,
+                    alt: 'Задняя сторона',
+                    x: 'var(--rp-back-x)',
+                    y: 'var(--rp-back-y)',
+                    w: 'var(--rp-back-w)',
+                    h: 'var(--rp-back-h)',
+                    onClick: onSelectBack,
+                    onClose: finish,
+                }));
+                sendBtn.disabled = false;
+            } else {
+                stage.appendChild(makeLayer({
+                    alt: '',
+                    x: 'var(--rp-back-x)',
+                    y: 'var(--rp-back-y)',
+                    w: 'var(--rp-back-w)',
+                    h: 'var(--rp-back-h)',
+                    missing: true,
+                    onClick: onSelectBack,
+                    onClose: finish,
+                }));
+                sendBtn.disabled = true;
+                sendBtn.title = 'Нужен снимок задней стороны';
+            }
+        };
+
+        const onTemplateReady = () => {
+            // Убираем loader и плавно проявляем template (через CSS
+            // transition на .rp-template--ready). К моменту вызова
+            // cachedTemplate.complete === true, так что tpl тоже уже
+            // отрендерил картинку (его src указывает на тот же URL).
+            if (loader.parentNode) loader.remove();
+            tpl.classList.remove('rp-template--loading');
+            tpl.classList.add('rp-template--ready');
+            placeLayers();
+        };
 
         let resolved = false;
         function finish(sent) {
@@ -236,5 +342,27 @@ export function openResultPreview({
         });
 
         document.body.appendChild(overlay);
+
+        // Ждём template. Если он уже в кеше — резолв мгновенный, но всё
+        // равно асинхронный (Promise.resolve().then() — микротаск).
+        // На первом открытии модалки (template ещё не загружен) здесь
+        // будет реальное ожидание HTTP-запроса, и loader виден всё это
+        // время. Если запрос упал — показываем модалку с loader'ом и
+        // текстом ошибки, плашки не появятся (но модалка откроется и
+        // пользователь сможет её закрыть).
+        ensureTemplate().then(onTemplateReady).catch((err) => {
+            console.error('template load failed:', err);
+            if (loader) {
+                loader.innerHTML = '';
+                const errText = document.createElement('p');
+                errText.className = 'rp-loader__error';
+                errText.textContent = 'Не удалось загрузить шаблон. Закройте и попробуйте ещё раз.';
+                loader.appendChild(errText);
+            }
+            // Кнопку «Отправить» оставляем disabled — без template
+            // оператору пришлют плашки без рамки.
+            sendBtn.disabled = true;
+            sendBtn.title = 'Шаблон не загружен';
+        });
     });
 }
