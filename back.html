@@ -2242,6 +2242,47 @@
         canvasEl.addEventListener('pointercancel', endLongPress);
         canvasEl.addEventListener('pointerleave', endLongPress);
 
+        // Десктопный аналог мобильного лонг-тапа: правый клик мыши
+        // открывает то же контекстное меню (delete / color / rotate-zero).
+        // На тачпадах macOS браузер сам превращает Ctrl+клик в button=2,
+        // поэтому дополнительной обработки ctrlKey не нужно.
+        function onCanvasPointerDown(event) {
+            if (event.button !== 2) return;
+            // ПКМ по иконке поворота (mtr) — не открываем меню, это
+            // противоречит поведению fabric-контролов.
+            const target = canvas.findTarget(event);
+            if (target && target.__corner === 'mtr') return;
+            if (target && isPointOnRotateControl(canvas.getPointer(event))) return;
+            // Без объекта под курсором — меню не нужно (все действия
+            // зависят от активного объекта). Закрываем, если было открыто.
+            if (!target || target.__guide) {
+                hideContextMenu();
+                return;
+            }
+            // Активируем объект под курсором, чтобы пункты меню работали
+            // корректно даже когда пользователь ПКМ-кликает по другому
+            // объекту, не выбирая его ЛКМ.
+            const active = canvas.getActiveObject() || target;
+            canvas.setActiveObject(active);
+            canvas.requestRenderAll();
+            // Подменяем нативное контекстное меню браузера. pointerdown
+            // сам по себе меню не отменяет — браузер всё равно покажет
+            // своё, если не подавить событие contextmenu ниже.
+            hideContextMenu();
+            showContextMenu(event.clientX, event.clientY);
+        }
+
+        function onCanvasContextMenu(event) {
+            // Только клики по самому канвасу. Если ПКМ пришёлся по
+            // панелям/кнопкам — не вмешиваемся, пусть браузер ведёт себя
+            // как обычно (например, даст «Сохранить картинку как…»).
+            if (!canvasEl.contains(event.target)) return;
+            event.preventDefault();
+        }
+
+        canvasEl.addEventListener('pointerdown', onCanvasPointerDown);
+        canvasEl.addEventListener('contextmenu', onCanvasContextMenu);
+
         ctxDeleteBtn?.addEventListener('click', () => {
             const active = canvas.getActiveObject();
             if (active) {
@@ -2281,6 +2322,31 @@
         window.addEventListener('scroll', hideContextMenu, true);
         canvas.on('selection:cleared', hideContextMenu);
         canvas.on('object:removed', hideContextMenu);
+
+        // При смене ширины окна переключаем видимость десктопных
+        // контролов (delete/menu). Они доступны только на широком
+        // вьюпорте, чтобы не плодить мелкие тач-цели на мобильных.
+        const narrowMql = window.matchMedia('(max-width: 768px), (orientation: landscape) and (max-height: 600px)');
+        function syncSelectionActionsVisibility() {
+            const visible = !narrowMql.matches;
+            canvas.getObjects().forEach((obj) => {
+                if (!obj.controls) return;
+                if (!obj.controls.delete || !obj.controls.menu) return;
+                // fabric 5.3 читает видимость контрола через getVisibility(),
+                // которая ПЕРВОЙ проверяет obj._controlsVisibility[имя] и
+                // только потом — control.visible. Поэтому прямое
+                // присваивание control.visible игнорируется, если в
+                // _controlsVisibility ключ уже задан. Нужно переписывать
+                // _controlsVisibility через setControlsVisibility().
+                obj.setControlsVisibility({
+                    delete: visible,
+                    menu: visible
+                });
+            });
+            canvas.requestRenderAll();
+        }
+        narrowMql.addEventListener('change', syncSelectionActionsVisibility);
+        window.addEventListener('resize', syncSelectionActionsVisibility);
 
         // ============================================================
         // АДАПТИВНЫЙ КАНВАС: всегда вписываем в viewport с сохранением пропорций.
@@ -2512,7 +2578,7 @@
         const snapState = {
             position: true,   // привязка к краям/центрам объектов и холста
             angle: true,      // поворот с шагом 15° (0, 15, 30, ...)
-            showHint: true    // показывать текстовую подсказку при snap
+            showHint: false   // показывать текстовую подсказку при snap (по умолчанию выключено)
         };
 
         function applyAngleSnapToAll() {
@@ -2543,6 +2609,14 @@
                 actionHandler: fabric.controlsUtils.rotationWithSnapping,
                 snapAngle: snapState.angle ? 15 : 0,        // шаг угла (градусы)
                 snapThreshold: 15,    // порог snap = сам шаг → snap работает ВСЕГДА, не только с Shift
+                // sizeX/sizeY расширяют десктопную хит-зону (fabric берёт
+                // .707*sizeX как радиус). По умолчанию hit-zone считается
+                // от obj.cornerSize (= 8) → R≈5.6px, что меньше визуального
+                // кружка (R≈13). На мобильных hit-test идёт через
+                // isPointOnRotateControl (MTR_HIT_RADIUS=14), не через fabric,
+                // так что sizeX/sizeY влияют только на десктоп.
+                sizeX: 26,
+                sizeY: 26,
                 mouseUpHandler: function (eventData, transformData, x, y) {
                     return true;
                 },
@@ -2592,6 +2666,152 @@
             });
         }
 
+        // Десктопные иконки-действия на рамке выделения:
+        //   • крестик (delete) — справа от mtr, удаляет объект;
+        //   • три точки (menu)  — слева от mtr, открывает контекстное меню
+        //     (то же, что ПКМ или долгий тап на мобильных).
+        // Оба визуально симметричны mtr: тот же halo, тот же offsetY над
+        // рамкой. На мобильных контролы скрываются (applyActionsVisibility),
+        // чтобы не плодить мелкие тач-цели поверх плиты.
+        function addSelectionActions(tb) {
+            // isMobile уже объявлена выше (см. строку ~2113) и использует ту
+            // же matchMedia-формулу, что и другие тогглы видимости.
+            const isActionVisible = !isMobile();
+
+            // fabric.Object.prototype.controls и fabric.Textbox.prototype.controls
+            // — singleton-объекты, общие для всех инстансов соответствующего
+            // класса. Без копирования запись tb.controls.delete = new Control(...)
+            // мутирует общий объект: замыкание последнего созданного контрола
+            // «побеждает», и при клике по крестику любого объекта удаляется
+            // тот, для которого addSelectionActions вызывался последним.
+            // Делаем shallow-копию controls на уровне инстанса — тогда
+            // delete/menu становятся собственными свойствами объекта.
+            tb.controls = Object.assign({}, tb.controls);
+
+            tb.controls.delete = new fabric.Control({
+                x: 0.55,
+                y: -0.5,
+                // offsetY=-15 + x=±0.55: компромисс между
+                //   • -28 — верхние уголки свободны, но клипается clipPath
+                //     у объектов у верхнего края плиты;
+                //   • -12 — не клипается, но delete/menu сидят прямо над
+                //     углами tl/tr и перехватывают клики по ним.
+                // Сдвиг по X с 0.5 на 0.55 дополнительно разводит
+                // delete/menu с уголками вбок.
+                offsetY: -15,
+                // sizeX/sizeY расширяют хит-зону мыши (fabric использует
+                // .707*sizeX как радиус круга). По умолчанию fabric берёт
+                // obj.cornerSize (= 8 из applySelectionStyle), и хит-зона
+                // ~5.6px — меньше визуального кружка (R≈13). 26 даёт
+                // радиус ~18px, комфортно для клика.
+                sizeX: 26,
+                sizeY: 26,
+                cursorStyle: 'pointer',
+                // В Fabric 5.3 actionHandler вызывается ТОЛЬКО на mousemove
+                // внутри transform-цикла. Если пользователь нажал ЛКМ и
+                // сразу отпустил без движения — actionHandler не сработает.
+                // Поэтому выполняем действие прямо в mouseDownHandler.
+                // _currentTransform не трогаем: fabric нормально завершит
+                // transform-цикл на mouseup через _finalizeCurrentTransform,
+                // который вызовет setCoords() на уже удалённом объекте —
+                // это безопасно, т.к. setCoords работает локально.
+                mouseDownHandler: function () {
+                    canvas.remove(tb);
+                    canvas.requestRenderAll();
+                },
+                mouseUpHandler: function () { return true; },
+                render: function (ctx, left, top) {
+                    renderActionIcon(ctx, left, top, drawDeleteGlyph);
+                }
+            });
+
+            tb.controls.menu = new fabric.Control({
+                x: -0.55,
+                y: -0.5,
+                offsetY: -15,
+                // см. комментарий к sizeX в controls.delete выше —
+                // расширяем хит-зону мыши, чтобы клик по краю кружка
+                // не промахивался.
+                sizeX: 26,
+                sizeY: 26,
+                cursorStyle: 'pointer',
+                mouseDownHandler: function (eventData) {
+                    const x = eventData ? eventData.clientX : 0;
+                    const y = eventData ? eventData.clientY : 0;
+                    showContextMenu(x, y);
+                },
+                mouseUpHandler: function () { return true; },
+                render: function (ctx, left, top) {
+                    renderActionIcon(ctx, left, top, drawMenuGlyph);
+                }
+            });
+
+            tb.setControlsVisibility({
+                tl: true, tr: true, bl: true, br: true,
+                ml: true, mr: true, mt: true, mb: true,
+                mtr: true,
+                delete: isActionVisible,
+                menu: isActionVisible
+            });
+        }
+
+        // Совпадает с matchMedia-условием, которое уже используется в проекте
+        // для скрытия десктопного тоггла при узком вьюпорте.
+
+        function renderActionIcon(ctx, left, top, drawGlyph) {
+            const size = ROTATE_ICON_SIZE;
+            ctx.save();
+            ctx.translate(left, top);
+            ctx.beginPath();
+            ctx.arc(0, 0, size / 2 + 3, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.95)';
+            ctx.shadowColor = 'rgba(0,0,0,0.35)';
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetY = 1;
+            ctx.fill();
+            ctx.shadowColor = 'transparent';
+            ctx.strokeStyle = SELECTION_BLUE;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            // Кружок-фон под иконкой — единый стиль с mtr.
+            ctx.beginPath();
+            ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
+            const grad = ctx.createRadialGradient(-size/6, -size/6, size/8, 0, 0, size/2);
+            grad.addColorStop(0, '#93c5fd');
+            grad.addColorStop(1, '#2563eb');
+            ctx.fillStyle = grad;
+            ctx.fill();
+            ctx.strokeStyle = '#1e3a8a';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            drawGlyph(ctx, size);
+            ctx.restore();
+        }
+
+        function drawDeleteGlyph(ctx, size) {
+            // Крестик по центру кружка. Длина «плеча» — size*0.28.
+            const r = size * 0.28;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(-r, -r); ctx.lineTo(r, r);
+            ctx.moveTo(r, -r); ctx.lineTo(-r, r);
+            ctx.stroke();
+        }
+
+        function drawMenuGlyph(ctx, size) {
+            // Три точки по вертикали.
+            const r = 1.8;
+            const step = size * 0.22;
+            ctx.fillStyle = '#ffffff';
+            for (let i = -1; i <= 1; i++) {
+                ctx.beginPath();
+                ctx.arc(0, i * step, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
         // Меняем origin на центр без визуального смещения (поворот вокруг центра bounding box)
         function applyCenterOrigin(tb) {
             if (tb.originX === 'center' && tb.originY === 'center') return;
@@ -2607,6 +2827,7 @@
             if (!obj) return;
             applySelectionStyle(obj);
             replaceRotateControl(obj);
+            addSelectionActions(obj);
             applyCenterOrigin(obj);
 
             obj.on('rotating', () => {
@@ -3162,9 +3383,42 @@
                     scaleY: scale
                 });
                 canvas.add(img);
+                // Логотипы остаются ниже текстбоксов, чтобы текст никогда
+                // не перекрывался картинкой.
+                stackLogosBelowTextboxes();
                 canvas.setActiveObject(img);
                 canvas.requestRenderAll();
             }, { crossOrigin: 'anonymous' });
+        }
+
+        // Гарантирует, что fabric.Textbox лежит в z-стеке выше всех
+        // логотипов, а белый фон плиты (frontRect) — ниже всего остального.
+        // Fabric рисует canvas._objects в порядке индекса.
+        //
+        //   [0] frontRect (белый фон плиты, selectable:false)
+        //   ... логотипы (fabric.Image) и прочие объекты ...
+        //   [N-1] все текстбоксы (fabric.Textbox)
+        //
+        // Раньше я опускал логотипы ниже frontRect — отсюда «белый экран»
+        // вместо лого. Теперь frontRect явно фиксируется в самом низу,
+        // а текстбоксы — в самом верху; всё остальное остаётся между ними
+        // (порядок внутри средней группы определяется порядком добавления).
+        function stackLogosBelowTextboxes() {
+            const objs = canvas.getObjects().slice();
+            const isTextbox = (o) => o && o.type === 'textbox';
+
+            // Текстбоксы — наверх (порядок между ними сохраняем).
+            const textboxes = objs.filter(isTextbox);
+            // Логотипы и прочие объекты — между фоном и текстбоксами.
+            const middle = objs.filter((o) => !isTextbox(o) && o !== frontRect);
+            // frontRect (белый фон плиты) — всегда в самом низу стека.
+            const bottom = frontRect && objs.includes(frontRect) ? [frontRect] : [];
+
+            const ordered = [...bottom, ...middle, ...textboxes];
+            ordered.forEach((o, i) => {
+                canvas.moveTo(o, i);
+            });
+            canvas.requestRenderAll();
         }
 
         async function initLogoPanel() {
@@ -3383,6 +3637,9 @@
                 textAlign: 'center'
             });
             canvas.add(textbox);
+            // Текстбокс всегда выше логотипов, чтобы текст не
+            // перекрывался картинкой при наложении.
+            stackLogosBelowTextboxes();
             canvas.setActiveObject(textbox);
             canvas.requestRenderAll();
         }
