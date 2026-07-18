@@ -157,9 +157,11 @@ export async function downloadBothSides(canvas, getNumber, getRegion, getRearDat
  *   не рендерит вложенные <image> в большинстве случаев (same-origin / CORS /
  *   безопасность SVG-as-image), и в canvas попадает пустой белый фон.
  *
- * Поэтому собираем макет сразу на canvas: два скруглённых чёрных прямоугольника
- * + два PNG-снимка внутри, как в исходной SVG-разметке. Это даёт идентичный
- * визуальный результат, который реле/оператор видит в Telegram.
+ * Поэтому собираем макет сразу на canvas: два чёрных прямоугольника (острые
+ * углы) + два PNG-снимка внутри, как в исходной SVG-разметке. Это даёт
+ * идентичный визуальный результат, который реле/оператор видит в Telegram.
+ * Внутренние скругления подложки плашки рисуются в drawing-front/back через
+ * <rect rx=…> внутри SVG и не выходят за пределы PNG-снимков.
  *
  * @param {string} frontDataURL - data:image/png;... с передней стороной
  * @param {string} backDataURL  - data:image/png;... с задней стороной
@@ -177,7 +179,6 @@ export async function composeMaketPngDataURL(frontDataURL, backDataURL) {
     const dpr = 1;
     const outW = (CANVAS_WIDTH * 2 + interval) * dpr;
     const outH = CANVAS_HEIGHT * dpr;
-    const radius = getMainBorderRadius() * (CONFIG.SCALE_FACTOR || 1) * dpr;
 
     // Грузим оба PNG-снимка параллельно (оба — same-origin data URL).
     const [frontImg, backImg] = await Promise.all([
@@ -196,27 +197,19 @@ export async function composeMaketPngDataURL(frontDataURL, backDataURL) {
     const sideH = CANVAS_HEIGHT * dpr;
     const backX = (CANVAS_WIDTH + interval) * dpr;
 
-    // ЛЕВАЯ СТОРОНА: чёрная скруглённая подложка + PNG внутри скруглённой
-    // маски. PNG-снимки приходят ПРЯМОУГОЛЬНЫЕ (canvas.toDataURL не применяет
-    // CSS border-radius), поэтому без clip() они затирают скругление
-    // подложки. Решение — после roundRect вызываем ctx.clip(), и тогда
-    // drawImage обрезается по скруглённой форме (как clip-path в SVG).
-    ctx.save();
-    roundRect(ctx, 0, 0, sideW, sideH, radius);
+    // ЛЕВАЯ СТОРОНА: чёрный прямоугольник-подложка + PNG поверх без маски.
+    // Внешние углы композитного PNG — острые (как до введения скруглений
+    // в composeMaketPngDataURL). Внутренние углы самих сторон управляются
+    // через settings.innerBorderRadius и рисуются в drawing-front/back —
+    // см. <rect> с rx=… в SVG-версии buildMaketSvg().
     ctx.fillStyle = '#000000';
-    ctx.fill();
-    ctx.clip();
+    ctx.fillRect(0, 0, sideW, sideH);
     ctx.drawImage(frontImg, 0, 0, sideW, sideH);
-    ctx.restore();
 
     // ПРАВАЯ СТОРОНА — то же самое.
-    ctx.save();
-    roundRect(ctx, backX, 0, sideW, sideH, radius);
     ctx.fillStyle = '#000000';
-    ctx.fill();
-    ctx.clip();
+    ctx.fillRect(backX, 0, sideW, sideH);
     ctx.drawImage(backImg, backX, 0, sideW, sideH);
-    ctx.restore();
 
     return canvas.toDataURL('image/png');
 }
@@ -228,21 +221,6 @@ function loadImage(src) {
         img.onerror = () => reject(new Error('Не удалось загрузить PNG-снимок стороны'));
         img.src = src;
     });
-}
-
-function roundRect(ctx, x, y, w, h, r) {
-    r = Math.min(r, w / 2, h / 2);
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.arcTo(x + w, y, x + w, y + r, r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
-    ctx.lineTo(x + r, y + h);
-    ctx.arcTo(x, y + h, x, y + h - r, r);
-    ctx.lineTo(x, y + r);
-    ctx.arcTo(x, y, x + r, y, r);
-    ctx.closePath();
 }
 
 /**
