@@ -658,6 +658,12 @@ export function initSideToggle(deps) {
         getFrontRect,
         fitCanvasToViewport
     } = deps;
+    // Размеры виртуальной сцены fabric-канвы (для снимков). По
+    // умолчанию 1224×252 — это размеры задней стороны брелка в
+    // back.html. Если передано явно (например, в js/main.js для
+    // legacy editor.html) — используется переданное.
+    const PLATE_WIDTH = deps.PLATE_WIDTH || 1224;
+    const PLATE_HEIGHT = deps.PLATE_HEIGHT || 252;
 
     const frontCtx = frontCanvas?.getContext('2d');
 
@@ -665,6 +671,66 @@ export function initSideToggle(deps) {
         if (frontCtx) {
             renderFrontOnNativeCanvas(frontCtx, currentNumber, currentRegion);
         }
+    }
+
+    // Снимок задней стороны в ПОЛНОМ scene-размере (1224×252 по умолчанию).
+    // Без этой обёртки canvas.toDataURL() снимает DOM-канвас, у которого
+    // backing-store уменьшен через setDimensions({cssOnly:false}) и
+    // setZoom(fitCanvasToViewport) под размер viewport'а — на мобиле в
+    // portrait-ориентации это крошечные ~360×74 пикселя, и итоговый PNG
+    // мыльный. Эта функция временно возвращает fabric.Canvas в
+    // полноразмерный режим, снимает снимок, восстанавливает обратно,
+    // чтобы экран не мигнул.
+    //
+    // Используется в getRearSnapshot и доступно через window.__sideToggle
+    // (см. ниже) — back.html через BroadcastChannel('brelok-rear') тоже
+    // вызывает, чтобы картинка была резкой при отправке в «Посмотреть результат».
+    async function takeHighResRearSnapshot() {
+        // Сохраняем текущее визуальное состояние, чтобы после снимка
+        // вернуть канвас в точно тот же вид (тот же zoom, те же
+        // DOM-размеры) — если этого не сделать, экран прыгнет в
+        // scene-размер и пользователь увидит мигание.
+        const prevW = canvas.getWidth();
+        const prevH = canvas.getHeight();
+        const prevZoom = canvas.getZoom();
+
+        // Переключаем канвас в полноразмерный режим сцены.
+        // setDimensions с cssOnly:false пересоздаёт backing-store под
+        // новый размер — это критично, иначе toDataURL вернёт
+        // сохранённый прежний (маленький) буфер. setZoom(1) — без
+        // масштабирования; 1 unit сцены = 1 пиксель канвы.
+        canvas.setZoom(1);
+        canvas.setDimensions(
+            {width: PLATE_WIDTH, height: PLATE_HEIGHT},
+            {cssOnly: false}
+        );
+        canvas.renderAll();
+
+        // requestAnimationFrame — между изменением размеров и toDataURL
+        // нужен гот-кадр, иначе на некоторых браузерах (iOS Safari)
+        // toDataURL может снять пустой буфер, потому что растровый
+        // backing-store рисуется асинхронно после setDimensions.
+        await new Promise((r) => requestAnimationFrame(r));
+
+        const lower = canvas.lowerCanvasEl;
+        const dataURL = lower
+            ? lower.toDataURL('image/png')
+            : canvas.toDataURL('image/png');
+
+        // Восстанавливаем прежние DOM-размеры и zoom. cssOnly:false,
+        // чтобы backing-store тоже схлопнулся обратно к displayW×displayH
+        // (иначе CSS-канвас останется 1224×252 и растянется до
+        // aspect-ratio своего DOM).
+        canvas.setDimensions(
+            {width: prevW, height: prevH},
+            {cssOnly: false}
+        );
+        if (prevZoom !== 1) {
+            canvas.setZoom(prevZoom);
+        }
+        canvas.requestRenderAll();
+
+        return dataURL;
     }
 
     function onPlateChange() {
@@ -848,6 +914,10 @@ export function initSideToggle(deps) {
     if (typeof window !== 'undefined') {
         window.__sideToggle = {
             getCurrentSide,
+            // Снимок задней стороны в полноразмерном виде (1224×252).
+            // Используется из back.html через BroadcastChannel('brelok-rear')
+            // и из getRearSnapshot внутри модуля. Возвращает data:URL PNG.
+            takeHighResRearSnapshot,
             // Программное переключение стороны — нужно, например, чтобы
             // модалка предпросмотра открывала редактор нужной стороны
             // по клику на карман плашки, а не через тоггл #canvas-label.
@@ -877,38 +947,21 @@ export function initSideToggle(deps) {
                 // нижний канвас поверх самих объектов).
                 const wasActive = canvas.getActiveObject();
                 canvas.discardActiveObject();
-                if (currentSide === 'back') {
-                    canvas.renderAll();
-                    let url;
-                    try {
-                        url = canvas.lowerCanvasEl
-                            ? canvas.lowerCanvasEl.toDataURL('image/png')
-                            : canvas.toDataURL('image/png');
-                    } finally {
-                        // Возвращаем выделение, чтобы UI не мигнул, если
-                        // модалка будет закрыта без переключения стороны.
-                        if (wasActive) {
-                            canvas.setActiveObject(wasActive);
-                            canvas.requestRenderAll();
-                        }
-                    }
-                    return url;
-                }
-                // currentSide === 'front': временно показываем user-объекты.
-                // ВАЖНО: requestRenderAll() планирует рендер через rAF, поэтому
-                // toDataURL сразу после него снимет старый кадр (на котором
-                // user-объекты ещё невидимы) → пустая плашка в модалке.
-                // Нужен синхронный renderAll() между включением видимости
-                // и снятием снимка.
-                setUserObjectsVisible(canvas, getFrontRect, true);
-                canvas.renderAll();
                 let url;
                 try {
-                    url = canvas.lowerCanvasEl
-                        ? canvas.lowerCanvasEl.toDataURL('image/png')
-                        : canvas.toDataURL('image/png');
+                    if (currentSide === 'back') {
+                        canvas.renderAll();
+                        url = takeHighResRearSnapshot();
+                    } else {
+                        // currentSide === 'front': временно показываем user-объекты.
+                        setUserObjectsVisible(canvas, getFrontRect, true);
+                        canvas.renderAll();
+                        url = takeHighResRearSnapshot();
+                    }
                 } finally {
-                    setUserObjectsVisible(canvas, getFrontRect, false);
+                    if (currentSide !== 'back') {
+                        setUserObjectsVisible(canvas, getFrontRect, false);
+                    }
                     if (wasActive) {
                         canvas.setActiveObject(wasActive);
                         canvas.requestRenderAll();
