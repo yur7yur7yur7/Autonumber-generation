@@ -113,6 +113,19 @@
     color: var(--landing-title);
 }
 
+/* === SVG-плейсхолдер на карточке «Загрузить макет» использует те же
+   стили рамки/тени, что и PNG-карточка (.format-card__plate выше).
+   Здесь только корректировки, специфичные для inline-SVG.
+   viewBox намеренно 486×110 — ровно как у plate-ru.png — соотношение
+   сторон совпадает с настоящим номером (≈4.42:1). === */
+.format-card--config:hover .format-card__plate--config,
+.format-card--config:focus-visible .format-card__plate--config {
+    box-shadow: var(--landing-card-frame-shadow-hover);
+}
+.format-card--config:active .format-card__plate--config {
+    box-shadow: var(--landing-card-frame-shadow-active);
+}
+
 .landing__title {
     font-size: clamp(1.5rem, 4vw, 2.25rem);
     font-weight: 700;
@@ -140,6 +153,11 @@
     border: 2px solid transparent;
     color: inherit;
     text-decoration: none;
+    /* Карточка — это и <a> («Номер РФ»), и <button> («Загрузить макет»).
+       Для <button> нужны сброс font-family и явный cursor, чтобы дефолтные
+       стили UA-кнопки не перебивали стили карточки. */
+    font: inherit;
+    cursor: pointer;
     transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;
     max-width: 100%;
     -webkit-tap-highlight-color: transparent;
@@ -195,6 +213,17 @@
     font-size: clamp(1rem, 3vw, 1.15rem);
     font-weight: 600;
     color: var(--landing-title);
+}
+
+/* Подсказка под лейблом карточки — два-три предложения с пояснением,
+   что именно делает эта опция и в каких случаях подходит (или нет). */
+.format-card__hint {
+    font-size: 0.82rem;
+    line-height: 1.4;
+    font-weight: 400;
+    color: var(--landing-hint);
+    max-width: 36ch;
+    text-align: center;
 }
 
 @media (max-width: 480px) {

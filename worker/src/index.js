@@ -22,6 +22,11 @@
 //     "region":        "21",                         // optional, в caption
 //     "front_png":     "data:image/png;base64,..."   // optional, превью
 //     "back_png":      "data:image/png;base64,..."   // optional, превью
+//     "config":        "{...}"                       // optional, конфиг брелка
+//                                                      из js/brelok-config.js;
+//                                                      если есть — отправляется
+//                                                      вторым sendDocument с
+//                                                      именем `<file>.config.json`.
 //     "order_name":    "Иван",                       // optional, форма заказа
 //     "order_contact": "@dukas",                     // optional, форма заказа
 //     "order_comment": "Хочу шрифт покрупнее"        // optional, форма заказа
@@ -146,7 +151,9 @@ export default {
 
         // Fan out to every chat in TG_CHAT_IDS. Per recipient we do:
         //   1. sendMediaGroup with 1–2 photos + caption (one HTTP call to Telegram)
-        //   2. sendDocument with the SVG file
+        //   2. sendDocument with the SVG file (или PNG, если есть в payload)
+        //   3. sendDocument с config-файлом — только если в payload есть body.config
+        //      (прислано из js/brelok-config.js через sendMaketToTelegram).
         // Sequential, with a 1.1s gap between recipients — Telegram's
         // 1 msg/s/chat flood control. For 2 recipients this is ~2.2s total,
         // acceptable for an operator-facing UX.
@@ -216,6 +223,44 @@ export default {
                     message_id: msg && msg.message_id,
                     file_id: msg && msg.document && msg.document.file_id,
                 };
+            }
+
+            // 3) Config — второй sendDocument, только если в payload есть
+            //    строка `config` (прислана из js/brelok-config.js). Имя файла
+            //    привязано к номеру/региону, чтобы оператору было понятно,
+            //    к какому макету относится этот JSON. Не валим весь результат
+            //    из-за ошибки отправки config (он — справочный документ).
+            if (body.config && typeof body.config === 'string' && body.config.trim()) {
+                const cfgName = `brelok-${(String(body.number || '').trim())}${(String(body.region || '').trim())}.config.json`
+                    .replace(/brelok-\.config\.json$/, 'brelok.config.json');
+                const cfgBytes = new TextEncoder().encode(body.config);
+                const cfgBoundary = '----BrelokCfgBoundary' + crypto.randomUUID().replace(/-/g, '');
+                const cfgMultipart = buildDocumentMultipart(
+                    cfgBoundary, chatId, cfgBytes, cfgName, 'application/json'
+                );
+                const cfgResp = await fetch(
+                    'https://api.telegram.org/bot' + botToken + '/sendDocument',
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'multipart/form-data; boundary=' + cfgBoundary },
+                        body: cfgMultipart,
+                    }
+                );
+                const cfgJson = await cfgResp.json().catch(() => null);
+                if (!cfgResp.ok || !cfgJson || !cfgJson.ok) {
+                    chatResult.config_document = {
+                        ok: false,
+                        error: (cfgJson && cfgJson.description) || ('HTTP ' + cfgResp.status),
+                    };
+                    console.warn('config sendDocument failed for', chatId, cfgJson && cfgJson.description);
+                } else {
+                    const cmsg = cfgJson.result;
+                    chatResult.config_document = {
+                        ok: true,
+                        message_id: cmsg && cmsg.message_id,
+                        file_id: cmsg && cmsg.document && cmsg.document.file_id,
+                    };
+                }
             }
 
             results.push(chatResult);

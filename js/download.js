@@ -258,8 +258,13 @@ function roundRect(ctx, x, y, w, h, r) {
  *                                 { name, contact, comment } — идут в payload как
  *                                 order_name / order_contact / order_comment
  *                                 и попадают в caption в воркере.
+ * @param {Object} [config]     — конфиг брелка из serializeBrelokConfig
+ *                                 (js/brelok-config.js). Если передан — кладётся
+ *                                 в payload как `config: JSON.stringify(cfg)`,
+ *                                 и worker шлёт его в Telegram вторым
+ *                                 sendDocument с именем `<file>.config.json`.
  */
-export async function sendMaketToTelegram(result, order) {
+export async function sendMaketToTelegram(result, order, config) {
     if (!result) return false;
     const endpoint = (CONFIG.TELEGRAM_RELAY_URL || '').trim();
     if (!endpoint) {
@@ -295,6 +300,10 @@ export async function sendMaketToTelegram(result, order) {
             front_png: result.frontPng,
             back_png: result.backPng,
             ...orderFields,
+            // Конфиг брелка — отдельным файлом в Telegram (см. worker/src/index.js).
+            // Ставится ТОЛЬКО если передан; при отсутствии поля — реле ничего
+            // дополнительного не делает.
+            ...(config ? { config: JSON.stringify(config) } : {}),
         });
         showTemporaryMessage('✅ Готово! Отправлено в Telegram', 'success');
         return true;

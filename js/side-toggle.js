@@ -928,7 +928,78 @@ export function initSideToggle(deps) {
             // чтобы оператор видел, что именно заказал клиент.
             getPlate() {
                 return { number: currentNumber, region: currentRegion };
-            }
+            },
+            // Снимок front-настроек (без frontSettings.number/region — те берутся
+            // через getPlate). Нужен для сериализации брелка в .brelok-config.json.
+            getFrontSnapshot() {
+                return {
+                    number: currentNumber,
+                    region: currentRegion,
+                    showFlag: frontSettings.showFlag,
+                    showSideDots: frontSettings.showSideDots,
+                    rusX: frontSettings.rusX,
+                    rusY: frontSettings.rusY,
+                    flagX: frontSettings.flagX,
+                    flagY: frontSettings.flagY,
+                    numberX: frontSettings.numberX,
+                    numberY: frontSettings.numberY,
+                    numberAreaWidth: frontSettings.numberAreaWidth,
+                    numberPadding: frontSettings.numberPadding,
+                    regionX: frontSettings.regionX,
+                    regionY: frontSettings.regionY,
+                    regionAreaWidth: frontSettings.regionAreaWidth,
+                };
+            },
+            // Применить front-снимок: записать во frontSettings, обновить DOM
+            // (тоглы, слайдеры расширенных настроек), вписать номер/регион,
+            // перерисовать обе стороны. Используется applyBrelokConfig.
+            applyFrontSnapshot(snapshot) {
+                if (!snapshot || typeof snapshot !== 'object') return;
+                // Тоглы: showFlag, showSideDots
+                ['showFlag', 'showSideDots'].forEach((k) => {
+                    if (k in snapshot) {
+                        frontSettings[k] = !!snapshot[k];
+                        const el = document.getElementById(`front-${k}`);
+                        if (el) el.checked = frontSettings[k];
+                    }
+                });
+                // Слайдеры расширенных настроек: ищем по data-slider-key
+                const advPanel = document.getElementById('front-advanced-panel');
+                if (advPanel) {
+                    advPanel.querySelectorAll('[data-slider-key]').forEach((input) => {
+                        const key = input.dataset.sliderKey;
+                        if (key in snapshot && key in frontSettings) {
+                            const v = Number(snapshot[key]);
+                            if (!Number.isFinite(v)) return;
+                            frontSettings[key] = v;
+                            input.value = String(v);
+                            const valueEl = advPanel.querySelector(
+                                `.sp-slider-value[data-value-for="${key}"]`
+                            );
+                            if (valueEl) valueEl.textContent = String(v);
+                        }
+                    });
+                }
+                // Номер/регион — пишем в frontPlateInput, вызывая его input-обработчик,
+                // чтобы parsePlateInput обновил currentNumber/currentRegion.
+                if (typeof snapshot.number === 'string' || typeof snapshot.region === 'string') {
+                    const inp = document.getElementById('frontPlateInput');
+                    if (inp) {
+                        const num = (typeof snapshot.number === 'string')
+                            ? snapshot.number.slice(0, 6) : '';
+                        const reg = (typeof snapshot.region === 'string')
+                            ? snapshot.region.replace(/\D/g, '').slice(0, 3) : '';
+                        const composed = (num + (reg ? ' ' + reg : '')).slice(0, 10);
+                        inp.value = composed;
+                        inp.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }
+                // Перерисовка обеих сторон (как при ручном изменении слайдера).
+                if (typeof redrawFront === 'function') redrawFront();
+                if (canvas && typeof canvas.requestRenderAll === 'function') {
+                    canvas.requestRenderAll();
+                }
+            },
         };
     }
 

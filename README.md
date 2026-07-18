@@ -175,6 +175,21 @@ and verify a shared secret in the request body.
 
 ---
 
+## 🧩 Config import/export (для производителей)
+
+Производитель может править мелочи в дизайне брелка без пересборки макета с нуля:
+
+1. На `index.html` нажать «**Загрузить макет**», выбрать `.brelok-config.json` в диалоге. index.html кладёт JSON в `sessionStorage`, перенаправляет на `back.html?config=<key>&type=ru`, где содержимое сразу подхватывается и применяется.
+2. Выбрать `.brelok-config.json` (версия схемы `1`).
+3. В `back.html` подтянутся слайдеры расширенных настроек, тоглы, номер/регион, текст и логотипы задней стороны.
+4. Нажать «📦 Макет» — оператору в Telegram прилетит **PNG + `.config.json`** вторым вложением.
+
+Для отладки: набрать `debug` в консоли `back.html` — появится кнопка «⬇ Скачать конфиг», сохраняющая текущий дизайн в JSON. Удобно для воспроизводимой отладки (правка одной координаты в JSON вместо пересборки в UI).
+
+Схема файла — см. `docs/compose/specs/2026-07-18-brelok-config-import-export-design.md` (раздел §S4).
+
+---
+
 ## 📩 Order / contact
 
 To order a finished keychain, download the SVG from the generator and send it to:

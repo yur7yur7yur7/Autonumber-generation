@@ -58,6 +58,7 @@
         body:not(.ready) #front-advanced-panel,
         body:not(.ready) #create-maket,
         body:not(.ready) #debug-download-png,
+        body:not(.ready) #download-config-btn,
         body:not(.ready) #maket-toast,
         body:not(.ready) #ctx-menu,
         body:not(.ready) #rotate-hint,
@@ -1751,6 +1752,81 @@
             #debug-download-png { transition: none; }
         }
 
+        /* ============================================================
+           КНОПКА «Скачать конфиг» — появляется только при body.debug,
+           рядом с «🧪 Скачать PNG». Импорт конфига в back.html явной
+           UI-кнопки не имеет — загрузка срабатывает автоматически при
+           открытии страницы с `?config=<key>&type=<brelokType>`
+           (см. <script type="module"> в самом низу файла). Ключ
+           соответствует записи в sessionStorage, которую положил
+           index.html после выбора файла.
+           ============================================================ */
+        #download-config-btn {
+            position: fixed;
+            z-index: 11;
+            bottom: 200px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: #ffffff;
+            color: #1f2937;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 9px 14px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+            cursor: pointer;
+            touch-action: manipulation;
+            white-space: nowrap;
+            transition: background-color 0.15s ease, transform 0.1s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #download-config-btn:hover { background: #f1f5f9; }
+        #download-config-btn:active { transform: translateX(-50%) scale(0.97); }
+        #download-config-btn:focus-visible {
+            outline: 2px solid #93c5fd;
+            outline-offset: 2px;
+        }
+        /* «Скачать конфиг» — только в debug-режиме. */
+        body:not(.debug) #download-config-btn { display: none !important; }
+
+        @media (prefers-reduced-motion: reduce) {
+            #download-config-btn:active { transform: translateX(-50%); }
+            #download-config-btn { transition: none; }
+        }
+
+        /* На мобильном устройстве — уезжает в верх-правый угол,
+           чтобы не пересекаться с гамбургером/тогглами у нижней кромки. */
+        @media (max-width: 768px), (orientation: landscape) and (max-height: 600px) {
+            #download-config-btn {
+                bottom: auto;
+                top: 8px;
+                right: 8px;
+                left: auto;
+                transform: none;
+                padding: 7px 11px;
+                font-size: 12px;
+                z-index: 55;
+            }
+            #download-config-btn:active { transform: scale(0.97); }
+        }
+
+        /* Подсветка кнопки «📦 Макет» после успешного импорта конфига —
+           зелёный пульс 1.5 секунды, чтобы пользователь увидел affordance. */
+        .btn-attention {
+            animation: btn-attention-pulse 0.45s ease-out 2 alternate;
+        }
+        @keyframes btn-attention-pulse {
+            from { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
+            to   { box-shadow: 0 0 0 12px rgba(34, 197, 94, 0); }
+        }
+
         /* Всплывающая подсказка после отправки макета */
         #maket-toast {
             position: fixed;
@@ -2195,6 +2271,7 @@
     </div>
     <button id="create-maket" type="button" aria-label="Посмотреть результат" data-tooltip="Создаёт и отправляет макет">Посмотреть результат</button>
     <button id="debug-download-png" type="button" aria-label="Скачать PNG макета (отладка)" data-tooltip="Скачивает PNG-файл, который уходит в Telegram">🧪 Скачать PNG</button>
+    <button id="download-config-btn" type="button" aria-label="Скачать конфиг (отладка)" data-tooltip="Сохраняет текущий дизайн брелка в .json">⬇ Скачать конфиг</button>
     <div id="emoji-hint" role="tooltip" aria-live="polite">
         <span class="eh-icon" aria-hidden="true">😀</span>
         <span>Чтобы написать эмодзи, нажмите</span>
@@ -2318,6 +2395,8 @@
                 absolutePositioned: true
             })
         });
+        // Глобальная ссылка для js/brelok-config.js (импорт/экспорт брелка).
+        window.__backCanvas = canvas;
 
         // ============================================================
         // Контекстное меню долгого нажатия (только мобильные).
@@ -2645,7 +2724,11 @@
             rx: scaledInnerRadius,
             ry: scaledInnerRadius,
             selectable: false,
-            evented: false
+            evented: false,
+            // Метка для сериализации брелка: js/brelok-config.js фильтрует
+            // этот rect при экспорте/импорте, чтобы при apply-конфиге
+            // подложка оставалась на месте, а текст/лого/линии наложились сверху.
+            __isFrontRect: true
         });
         canvas.add(frontRect);
 
@@ -4166,6 +4249,10 @@
         import { openOrderForm } from './js/order-form.js';
         import { openThanksModal } from './js/thanks-modal.js';
         import { buildMaketSvg, sendMaketToTelegram, composeMaketPngDataURL } from './js/download.js';
+        import {
+            serializeBrelokConfig, applyBrelokConfig,
+            downloadConfig, parseConfigFile, buildConfigFilename,
+        } from './js/brelok-config.js';
 
         const btn = document.getElementById('create-maket');
         if (!btn) {
@@ -4227,6 +4314,18 @@
                                 number: number || '',
                                 region: region || '',
                             });
+                            // Снимаем снимок дизайна брелка (если был загружен
+                            // конфиг — он уже применён, сериализация отразит его).
+                            // Если fabric.Canvas ещё не инициализирован (юзер
+                            // ни разу не был на back) — шлём без config.
+                            let brelokCfg = null;
+                            try {
+                                if (window.__backCanvas) {
+                                    brelokCfg = serializeBrelokConfig(window.__backCanvas);
+                                }
+                            } catch (e) {
+                                console.warn('serializeBrelokConfig:', e);
+                            }
                             // Тестовая кнопка-заглушка в order-form.js помечает
                             // payload флагом __test. В этом режиме мы НЕ шлём
                             // данные в Telegram-бота (чтобы не засорять прод),
@@ -4236,7 +4335,7 @@
                             const isTest = order.__test === true;
                             const ok = isTest
                                 ? true
-                                : await sendMaketToTelegram(result, order);
+                                : await sendMaketToTelegram(result, order, brelokCfg);
                             showToast(
                                 isTest
                                     ? '🧪 Тестовая отправка (в Telegram не отправлено)'
@@ -4319,6 +4418,164 @@
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
+            }
+
+            // ============================================================
+            // ИМПОРТ / ЭКСПОРТ КОНФИГА БРЕЛКА
+            // (js/brelok-config.js + window.__sideToggle.getFrontSnapshot).
+            //
+            // В back.html нет UI-кнопки «Загрузить макет». Импорт срабатывает
+            // автоматически, когда страница открыта с `?config=<key>&type=<brelokType>`
+            // на URL. Ключ — это sessionStorage-запись с JSON-текстом,
+            // которую положил скрипт на index.html после выбора файла.
+            // Тип брелка (сейчас «ru») сверяется с полем cfg.brelokType
+            // в applyBrelokConfig — если не совпадает, импорт отклоняется
+            // с понятным сообщением.
+            //
+            // «⬇ Скачать конфиг» — видна только при body.debug, рядом с
+            // «🧪 Скачать PNG». Сохраняет текущий дизайн в .json.
+            // ============================================================
+            const dumpBtn = document.getElementById('download-config-btn');
+
+            function showConfigToast(text, isError = false) {
+                // Переиспользуем существующий тост #maket-toast — он уже
+                // есть в back.html и обрабатывается CSS (mt-show/mt-error).
+                const toast = document.getElementById('maket-toast');
+                if (!toast) return;
+                toast.textContent = text;
+                toast.classList.toggle('mt-error', Boolean(isError));
+                toast.classList.add('mt-show');
+                const prev = toast._timer;
+                if (prev) clearTimeout(prev);
+                toast._timer = setTimeout(() => {
+                    toast.classList.remove('mt-show');
+                }, 2200);
+            }
+
+            // Утилита: применяет конфиг из File (parse + apply). Оставлена
+            // как переиспользуемая функция на случай, если UI-кнопка загрузки
+            // когда-нибудь вернётся в back.html. Сейчас основной поток идёт
+            // через ?config=<key>&type=<brelokType> (см. ниже) и использует
+            // applyBrelokConfig напрямую.
+            async function importConfigFile(file) {
+                if (!file) return;
+                try {
+                    const cfg = await parseConfigFile(file);
+                    const canvas = window.__backCanvas;
+                    if (!canvas) throw new Error('fabric.Canvas не найден');
+                    await applyBrelokConfig(canvas, cfg);
+                    showConfigToast('✅ Конфиг загружен');
+                    // Подсвечиваем кнопку «📦 Макет» 1.5с, чтобы было видно
+                    // affordance: «теперь можно сразу отправить».
+                    const maket = document.getElementById('create-maket');
+                    if (maket) {
+                        maket.classList.add('btn-attention');
+                        setTimeout(() => maket.classList.remove('btn-attention'), 1500);
+                    }
+                } catch (err) {
+                    console.error('config import:', err);
+                    showConfigToast(`⚠️ Не получилось: ${err.message}`, true);
+                }
+            }
+
+            if (dumpBtn) {
+                dumpBtn.addEventListener('click', () => {
+                    try {
+                        const canvas = window.__backCanvas;
+                        if (!canvas) throw new Error('fabric.Canvas не найден');
+                        const cfg = serializeBrelokConfig(canvas);
+                        const filename = buildConfigFilename(cfg.frontSide);
+                        downloadConfig(cfg, filename);
+                        showConfigToast('✅ Конфиг скачан');
+                    } catch (err) {
+                        console.error('config export:', err);
+                        showConfigToast(`⚠️ Ошибка экспорта: ${err.message}`, true);
+                    }
+                });
+            }
+
+            // ===== ?config=<key>&type=<brelokType> — поток с index.html =====
+            // Сценарий: пользователь на index нажал «Загрузить макет», выбрал
+            // .json-файл, скрипт на index положил JSON-текст в sessionStorage
+            // под уникальным ключом и перенаправил сюда. Мы после init читаем
+            // JSON, применяем, удаляем ключ.
+            //
+            // Этот же ключ передаётся через encodeURIComponent, поэтому URI-
+            // небезопасных символов в имени ключа (их нет, но всё же) не будет.
+            const params = new URLSearchParams(location.search);
+            const configKey = params.get('config');
+            const incomingType = params.get('type'); // 'ru' сейчас
+            if (configKey) {
+                const rawText = (function () {
+                    try {
+                        return sessionStorage.getItem(configKey);
+                    } catch (_e) {
+                        return null;
+                    }
+                })();
+                // Удаляем ключ СРАЗУ, до init — независимо от результата
+                // (успех/ошибка/битый JSON). Хранить его в sessionStorage
+                // дольше, чем нужно, смысла нет.
+                try { sessionStorage.removeItem(configKey); } catch (_e) { /* no-op */ }
+
+                if (rawText == null) {
+                    console.warn('config key missing in sessionStorage:', configKey);
+                } else {
+                    // Парсинг JSON — чуть раньше, чем дойдём до canvas:
+                    // если файл битый, лучше упасть заранее с понятной ошибкой.
+                    let cfg;
+                    try {
+                        cfg = JSON.parse(rawText);
+                    } catch (e) {
+                        console.error('config parse failed:', e);
+                        showConfigToast('⚠️ Файл конфига повреждён', true);
+                    }
+                    if (cfg && typeof cfg === 'object') {
+                        // Проверим тип. Если прислали type=ru, а в JSON
+                        // brelokType=moto — applyBrelokConfig в любом случае
+                        // бросит. Дополнительно мы уже знаем, что открыли
+                        // страницу с type=ru, поэтому шлём это как
+                        // expectedType, чтобы несоответствующие конфиги
+                        // отклонялись с понятным тостом.
+                        // Если incomingType не задан — applyBrelokConfig
+                        // использует дефолт 'ru' (см. config.js).
+                        function waitFor(predicate, cb, attempts = 60) {
+                            if (predicate()) return cb();
+                            if (attempts <= 0) return;
+                            setTimeout(() => waitFor(predicate, cb, attempts - 1), 100);
+                        }
+                        waitFor(
+                            () => window.__sideToggle && window.__backCanvas,
+                            () => {
+                                // Оборачиваем в JSON-объект с полем text, потому
+                                // что importConfigFile ожидает File. Здесь у нас
+                                // не File, а уже распарсенный объект — обходим
+                                // importConfigFile и применяем напрямую.
+                                (async () => {
+                                    try {
+                                        await applyBrelokConfig(
+                                            window.__backCanvas, cfg, incomingType
+                                        );
+                                        showConfigToast('✅ Макет загружен');
+                                        const maket = document.getElementById('create-maket');
+                                        if (maket) {
+                                            maket.classList.add('btn-attention');
+                                            setTimeout(
+                                                () => maket.classList.remove('btn-attention'),
+                                                1500
+                                            );
+                                        }
+                                    } catch (err) {
+                                        console.error('config apply:', err);
+                                        showConfigToast(
+                                            `⚠️ Не получилось: ${err.message}`, true
+                                        );
+                                    }
+                                })();
+                            }
+                        );
+                    }
+                }
             }
         }
 

@@ -21,7 +21,124 @@
                  alt="Российский номер М 123 ММ, регион 777"
                  draggable="false">
             <span class="format-card__label">Номер РФ</span>
+            <span class="format-card__hint">Личные легковые, грузовики и прицепы. Не для спецсерий и мото.</span>
         </a>
+        <button type="button" class="format-card format-card--config"
+                id="load-config-card"
+                aria-label="Загрузить свой конфиг">
+            <svg class="format-card__plate format-card__plate--config"
+                 viewBox="0 0 486 110" xmlns="http://www.w3.org/2000/svg"
+                 role="img"
+                 aria-label="Загрузить макет брелка">
+                <!-- Чёрная плашка-табло, как у настоящего номера РФ.
+                     rx=8 совпадает с border-radius .format-card__plate,
+                     чтобы внутренний угол идеально прилегал к рамке. -->
+                <rect x="0" y="0" width="486" height="110" rx="8" fill="#0a0a0a"/>
+
+                <!-- Иконка: круг со стрелкой вверх. Стрелка — загрузка файла. -->
+                <g transform="translate(56 55)">
+                    <circle r="30" fill="#1f2937" stroke="#a0b0ff" stroke-width="2"/>
+                    <!-- стрелка: вертикальная линия вверх + наконечник -->
+                    <path d="M0 12 L0 -16 M-10 -6 L0 -16 L10 -6"
+                          stroke="#a0b0ff" stroke-width="4" fill="none"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+
+                <!-- Текст «Загрузить макет брелка» — справа от иконки.
+                     Шрифт Inter (LandingFont), белый, тот же акцентный голубой
+                     для визуального параллелизма с hover-эффектом карточки. -->
+                <text x="110" y="51"
+                      font-family="'LandingFont', 'Segoe UI', Arial, sans-serif"
+                      font-size="26" font-weight="700" fill="#ffffff">
+                    Загрузить макет брелка
+                </text>
+                <!-- Подпись под текстом, мелко и приглушённо. -->
+                <text x="110" y="78"
+                      font-family="'LandingFont', 'Segoe UI', Arial, sans-serif"
+                      font-size="13" font-weight="500" fill="#9ca3af">
+                    файл .brelok-config.json
+                </text>
+            </svg>
+            <span class="format-card__label">Загрузить макет</span>
+            <span class="format-card__hint">Ранее сохранённый в этом же редакторе брелок.</span>
+        </button>
+        <input type="file" id="config-file-input" accept=".json,application/json" hidden>
     </div>
+    <script>
+        // ============================================================
+        // «Загрузить макет» на index.html → back.html.
+        // Поток: клик по карточке → диалог выбора файла → JSON кладётся
+        // в sessionStorage под уникальным ключом → window.location переходит
+        // на back.html?config=<uuid>&type=ru. Там содержимое подхватывается
+        // и применяется сразу после инициализации (без повторного диалога).
+        //
+        // Используем sessionStorage, а не localStorage: по закрытии вкладки
+        // ключ автоматически уходит, ничего не мусорится, нет риска
+        // конфликта с долгосрочными пользовательскими данными.
+        // ============================================================
+        (function () {
+            const card = document.getElementById('load-config-card');
+            const fileInput = document.getElementById('config-file-input');
+            if (!card || !fileInput) return;
+
+            // Тип брелка жёстко зашит в код: на данный момент в проекте
+            // существует только один редактор (back.html) и один тип
+            // («ru»). Если в будущем появятся другие — каждая карточка
+            // index.html будет указывать свой type в href карточки,
+            // а здесь читать его из data-type.
+            const BRELOK_TYPE = 'ru';
+
+            function uuid() {
+                // RFC-4122 совместимо не нужно — криптостойкость не требуется,
+                // нужен лишь уникальный ключ в текущей вкладке.
+                if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+                    return window.crypto.randomUUID();
+                }
+                return 'b-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+            }
+
+            async function handleFile(file) {
+                if (!file) return;
+                let text;
+                try {
+                    text = await file.text();
+                } catch (e) {
+                    alert('⚠️ Не удалось прочитать файл: ' + e.message);
+                    return;
+                }
+                // Проверим, что это валидный JSON — переход на back.html без
+                // валидации выглядел бы непонятно, если пользователь возьмёт
+                // не тот файл.
+                try {
+                    JSON.parse(text);
+                } catch (_e) {
+                    alert('⚠️ Файл не похож на JSON. Проверьте, что выбран .brelok-config.json.');
+                    return;
+                }
+                const key = 'brelok-pending-' + uuid();
+                try {
+                    sessionStorage.setItem(key, text);
+                } catch (e) {
+                    alert('⚠️ Браузер не позволяет сохранить файл. Попробуйте обновить страницу.');
+                    console.error('sessionStorage setItem:', e);
+                    return;
+                }
+                // Передаём через query-параметры. ВАЖНО: после успешной загрузки
+                // back.html удалит ключ из sessionStorage, чтобы он не висел.
+                const url = 'back.html?config=' + encodeURIComponent(key)
+                    + '&type=' + encodeURIComponent(BRELOK_TYPE);
+                window.location.href = url;
+            }
+
+            card.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', async (e) => {
+                const file = e.target.files && e.target.files[0];
+                // Сбрасываем value, чтобы пользователь мог выбрать тот же
+                // файл повторно (change срабатывает только при изменении).
+                e.target.value = '';
+                await handleFile(file);
+            });
+        })();
+    </script>
 </body>
 </html>
