@@ -2413,6 +2413,27 @@
             #guide-toggle:active { transform: translateX(-50%); }
             #guide-toggle { transition: none; }
         }
+
+        /* ============================================================
+           МОБИЛЬНАЯ ВЕРСИЯ — кнопка «?» на одном уровне с тоглом
+           «🚗 Передняя сторона» (он находится внутри #canvas-wrap у
+           самого верха рабочей области). На мобильном она не должна
+           плавать посередине экрана как на десктопе — крепим в правый
+           верхний угол, через z-index выше хедера и панелей, чтобы
+           сразу была под рукой.
+           ============================================================ */
+        @media (max-width: 768px), (orientation: landscape) and (max-height: 600px) {
+            #guide-toggle {
+                bottom: auto;
+                top: 10px;
+                right: 10px;
+                left: auto;
+                transform: none;
+                /* Без translateX(-50%), как на десктопе — мы больше
+                   не прижаты к центру. */
+            }
+            #guide-toggle:active { transform: scale(0.94); }
+        }
     </style>
     <link rel="stylesheet" href="css/result-preview.css">
 </head>
@@ -4827,45 +4848,59 @@
     </script>
 
     <!-- ============================================================
-         ONBOARDING GUIDE: ручной запуск и автопоказ при первом заходе.
-         Сам модуль (js/onboarding.js) определяет STEPS и повесит
-         startGuide()/closeGuide() на window. Здесь — кнопка «?» и
-         логика «seen» в localStorage. CSS для overlay живёт в
-         <style> выше — Task 3 его добавляет.
+         ИНСТРУКЦИЯ ПОЛЬЗОВАТЕЛЯ. Три набора шагов — для лендинга,
+         передней стороны и задней. Кнопка «?» в header'е открывает
+         инструкцию для текущей стороны (которую определяем через
+         window.__sideToggle.getCurrentSide()). Автопоказ при первом
+         заходе — отдельные флаги для каждой стороны в localStorage.
          ============================================================ -->
     <script type="module">
         import './js/onboarding.js';
 
-        // Ручной запуск — клик по «?» в header'е.
-        document.getElementById('guide-toggle')?.addEventListener('click', () => {
-            window.startGuide();
-        });
-
-        // Автопоказ при первом заходе. После первого закрытия (любым
-        // путём: Esc, мимо, «Пропустить», «Готово») флаг в localStorage
-        // не даст показывать снова при обычной загрузке. Повторное
-        // ручное открытие через «?» — безусловное.
-        const SEEN_KEY = 'brelok-onboarding-seen';
-        let seen = false;
-        try {
-            seen = localStorage.getItem(SEEN_KEY) === '1';
-        } catch (e) {
-            // localStorage недоступен (privacy-mode) — пропускаем автопоказ.
-        }
-        if (!seen) {
-            // Небольшая задержка, чтобы канва успела отрисоваться и шаги с
-            // таргетами реально что-то подсветили.
-            setTimeout(() => {
-                window.startGuide();
-            }, 600);
+        const guideBtn = document.getElementById('guide-toggle');
+        if (guideBtn) {
+            guideBtn.addEventListener('click', () => {
+                // На момент клика определяем текущую сторону.
+                // По умолчанию — передняя.
+                const side =
+                    (window.__sideToggle &&
+                     typeof window.__sideToggle.getCurrentSide === 'function' &&
+                     window.__sideToggle.getCurrentSide()) || 'front';
+                window.startGuide(side);
+            });
         }
 
-        // Обёртка над closeGuide — ставит флаг «seen» при первом закрытии.
-        const originalClose = window.closeGuide;
-        window.closeGuide = function () {
-            try { localStorage.setItem(SEEN_KEY, '1'); } catch (_e) {}
-            originalClose();
-        };
+        // Автопоказ при первом заходе. Узнаём стартовую сторону (по
+        // исходному состоянию это 'front'). Ждём 600мс, чтобы страница
+        // полностью отрисовалась — иначе spotlight может не найти
+        // динамически создаваемые панели (например, #front-panel).
+        const initialSide =
+            (window.__sideToggle &&
+             typeof window.__sideToggle.getCurrentSide === 'function' &&
+             window.__sideToggle.getCurrentSide()) || 'front';
+        if (window.shouldAutoShowGuide &&
+            window.shouldAutoShowGuide(initialSide)) {
+            setTimeout(() => window.startGuide(initialSide), 600);
+        }
+
+        // При смене стороны во время открытого гайда — закрыть и открыть
+        // соответствующий набор шагов (если пользователь ещё не видел
+        // этот набор). Следим за изменением атрибута data-side у
+        // #canvas-label — он переключается между 'front' и 'back'.
+        const label = document.getElementById('canvas-label');
+        if (label && window.MutationObserver) {
+            const sideObserver = new MutationObserver(() => {
+                const newSide = label.dataset.side === 'back' ? 'back' : 'front';
+                if (window.shouldAutoShowGuide &&
+                    window.shouldAutoShowGuide(newSide)) {
+                    window.startGuide(newSide);
+                }
+            });
+            sideObserver.observe(label, {
+                attributes: true,
+                attributeFilter: ['data-side'],
+            });
+        }
     </script>
 </body>
 </html>

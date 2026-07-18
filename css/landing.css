@@ -141,6 +141,33 @@
     margin: 0;
 }
 
+/* === Кнопка «?» для открытия инструкции ===
+   На лендинге нет других управляющих элементов, поэтому ставим её
+   прямо в правый верхний угол карточки .landing__inner. */
+.landing-guide-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 5;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--landing-card-frame);
+    background: var(--landing-card-frame-shadow);
+    color: #f1f5f9;
+    font: 700 16px/1 "LandingFont", -apple-system, sans-serif;
+    cursor: pointer;
+    box-shadow: var(--landing-card-frame-shadow);
+    transition: transform 0.1s ease, background-color 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.landing-guide-btn:hover { background: rgba(40, 50, 70, 0.6); }
+.landing-guide-btn:active { transform: scale(0.94); }
+.landing-guide-btn:focus-visible {
+    outline: 2px solid var(--landing-card-accent);
+    outline-offset: 3px;
+}
+
 /* === Карточка-кнопка === */
 .format-card {
     display: flex;

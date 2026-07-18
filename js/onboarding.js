@@ -1,66 +1,180 @@
 // js/onboarding.js
 //
-// In-app onboarding guide для back.html. In-app overlay со списком шагов
-// по работе с редактором: ввод номера → тоглы → расширенные настройки →
-// side-toggle → задняя сторона → конфиг → отправка.
+// Простая пошаговая инструкция для пользователя — без жаргона.
+// Три набора шагов: index (лендинг), front (передняя сторона),
+// back (задняя сторона). API:
+//   startGuide('index' | 'front' | 'back')  — открыть инструкцию
+//   closeGuide()                            — закрыть текущую
 //
-// Глобального экспорта не делаем — повесим startGuide() на window,
-// чтобы back.html мог запускать его из inline-модуля.
+// Файл — ES-модуль, подключается inline-импортом из index.html и
+// back.html. После import'а window.startGuide / window.closeGuide
+// доступны обоим страницам.
 
-const STEPS = [
-    {
-        target: null,
-        title: 'Введите номер и регион',
-        body: 'Вверху над плашкой — поле ввода. ' +
-              'Первые 6 символов — буквы и цифры номера (кириллица ' +
-              'транслитерируется автоматически), после них — код региона, ' +
-              '2–3 цифры. Можно копировать и вставлять целиком.',
-    },
-    {
-        target: '#front-panel',
-        title: 'Показ флага и точки по бокам',
-        body: 'Здесь два тогла: «Показывать флаг» — триколор в правой части ' +
-              'номера; «Точки по бокам» — точечки как на настоящем номере. ' +
-              'Оба можно включать и выключать.',
-    },
-    {
-        target: '#front-advanced-panel',
-        title: 'Расширенные настройки',
-        body: 'Слайдеры «Расширенных настроек» позволяют двигать RUS-надпись, ' +
-              'флаг, цифры номера и региона по X/Y, менять ширины зон. ' +
-              'Меняйте до аккуратного вида.',
-    },
-    {
-        target: '#canvas-label',
-        title: 'Переключение на заднюю сторону',
-        body: 'Кликните по «🚗 Передняя сторона» вверху — тогл переключит ' +
-              'редактор на заднюю (там ткань-канвас fabric для текста и ' +
-              'логотипов).',
-    },
-    {
-        target: '.back-canvas-wrap',
-        title: 'Задняя сторона: текст и логотипы',
-        body: 'Сюда добавляются эмодзи, текст и логотипы брендов. Над canvas — ' +
-              'кнопки шрифтов, лого и выравнивания. Тащите объекты ' +
-              'пальцем/мышью.',
-    },
-    {
-        target: null,
-        title: 'Импорт и экспорт конфига',
-        body: 'На index.html нажмите «Загрузить макет», выберите файл ' +
-              '.brelok-config.json — все настройки подтянутся автоматически. ' +
-              'Для отладки: наберите `debug` в консоли — появится кнопка ' +
-              '«⬇ Скачать конфиг».',
-    },
-    {
-        target: '#create-maket',
-        title: 'Отправка в Telegram',
-        body: '«📦 Макет» собирает PNG + конфиг (если есть) и шлёт оператору в ' +
-              'Telegram. Откроется модалка предпросмотра, после ' +
-              'подтверждения заказ уйдёт. Заказ оформляется в форме ' +
-              '«Имя / контакт / комментарий».',
-    },
-];
+const STEPS = {
+    // ====================================================================
+    // ИНСТРУКЦИЯ ДЛЯ ЛЕНДИНГА (index.html)
+    // ====================================================================
+    index: [
+        {
+            target: null,
+            title: 'Здесь две кнопки',
+            body: '«Номер РФ» — открыть редактор и сделать брелок ' +
+                  'с нуля. «Загрузить макет» — если у вас уже есть ' +
+                  'готовый файл, брелок сразу откроется с вашими ' +
+                  'настройками.',
+        },
+        {
+            target: '[href$="back.html"]:not([href*="autoload"])',
+            title: 'Сделать брелок с нуля',
+            body: 'Нажмите «Номер РФ» — откроется редактор: ' +
+                  'номер, регион, задняя сторона брелка с подписью. ' +
+                  'Когда будете готовы — нажмите «Посмотреть результат».',
+        },
+        {
+            target: '[href*="autoload"]',
+            title: 'Загрузить готовый макет',
+            body: 'Если у вас уже есть готовый брелок — нажмите ' +
+                  '«Загрузить макет», выберите файл. Редактор ' +
+                  'откроется сразу с вашими настройками.',
+        },
+    ],
+
+    // ====================================================================
+    // ИНСТРУКЦИЯ ДЛЯ ПЕРЕДНЕЙ СТОРОНЫ (back.html, активна сторона «front»)
+    // ====================================================================
+    front: [
+        {
+            target: '#frontPlateInput',
+            title: 'Введите номер и регион',
+            body: 'Вверху — поле ввода. Сначала напишите номер ' +
+                  '(до 6 символов: буквы или цифры), потом — ' +
+                  'код региона 2–3 цифры. Можно вставить всё ' +
+                  'сразу через «копировать — вставить».',
+        },
+        {
+            target: '#front-panel',
+            title: 'Флажок и точки по бокам',
+            body: 'В этой панели две кнопки-тумблера. «Российский ' +
+                  'флаг» — добавляет маленький триколор на номер. ' +
+                  '«Точки по бокам» — добавляет круглые точки, ' +
+                  'как на настоящем номере. Включайте и выключайте ' +
+                  'как вам нравится.',
+        },
+        {
+            target: '#front-advanced-panel',
+            title: 'Точная подстройка',
+            body: 'Эти ползунки двигают надпись RUS, флаг, цифры ' +
+                  'номера и региона и меняют ширину зон. Пользоваться ' +
+                  'не обязательно — только если расположение по ' +
+                  'умолчанию вас не устраивает.',
+        },
+        {
+            target: '#canvas-label',
+            title: 'Перейти к задней стороне',
+            body: 'Нажмите «🚗 Передняя сторона» вверху — ' +
+                  'откроется задняя сторона брелка. Здесь можно ' +
+                  'поменять подпись и добавить логотип.',
+        },
+        {
+            target: '#create-maket',
+            title: 'Отправить брелок',
+            body: 'Когда всё будет готово, нажмите «Посмотреть ' +
+                  'результат». Откроется окно предпросмотра: ' +
+                  'если всё хорошо — нажмите «Отправить на печать», ' +
+                  'заполните имя и контакт, нажмите «Подтвердить». ' +
+                  'Готовый брелок уйдёт производителю.',
+        },
+    ],
+
+    // ====================================================================
+    // ИНСТРУКЦИЯ ДЛЯ ЗАДНЕЙ СТОРОНЫ (back.html, активна сторона «back»)
+    // ====================================================================
+    back: [
+        {
+            target: null,
+            title: 'Задняя сторона',
+            body: 'Здесь — подпись и логотипы. Надпись по центру ' +
+                  'уже добавлена — это пример. Можно её оставить, ' +
+                  'отредактировать или добавить новые надписи ' +
+                  'другим шрифтом.',
+        },
+        {
+            target: '#font-toggle',
+            title: 'Изменить шрифт',
+            body: 'Кнопка «✎ Текст» на экране открывает панель ' +
+                  'со шрифтами. Нажмите на понравившийся — ' +
+                  'по центру появится новая надпись этим шрифтом. ' +
+                  'Старые надписи при этом не меняются — их можно ' +
+                  'удалить отдельно.',
+        },
+        {
+            target: '#logo-toggle',
+            title: 'Добавить логотип',
+            body: 'Кнопка «☰ Логотипы» открывает каталог значков ' +
+                  'марок. Можно искать через строку поиска. ' +
+                  'Выберите картинку — она появится на брелке ' +
+                  'и её можно поставить в любое место.',
+        },
+        {
+            target: null,
+            title: 'Перетащить, покрутить, изменить размер',
+            body: 'Любой объект на брелке можно тащить мышкой или ' +
+                  'пальцем. Чтобы покрутить — потяните за маленькую ' +
+                  'круглую иконку над объектом (поворот шагом 15°). ' +
+                  'Чтобы изменить размер — потяните за углы ' +
+                  'синей рамки вокруг объекта.',
+        },
+        {
+            target: null,
+            title: 'Привязка к центру и краям',
+            body: 'Когда двигаете объект — появляются розовые ' +
+                  'линии, которые показывают, где сейчас края или ' +
+                  'центры относительно других объектов и самого ' +
+                  'брелка. Это удобно для выравнивания. Отключить ' +
+                  'можно в «⚙ Настройки» — тумблер «Положение».',
+        },
+        {
+            target: null,
+            title: 'Удалить, поменять цвет или поворот',
+            body: 'Кликните по любому объекту на брелке — вокруг ' +
+                  'него появится синяя рамка. На ней будут три ' +
+                  'иконки: крестик справа (удалить), кружок ' +
+                  'сверху (покрутить), три точки слева (меню). ' +
+                  'Меню открывает «Удалить», «Выровнять поворот ' +
+                  '(0°)» и — только для надписей — выбор цвета ' +
+                  'текста. Углы рамки — растянуть или сжать объект.',
+        },
+        {
+            target: '#snap-toggle',
+            title: 'Настройки и удаление',
+            body: 'Кнопка «⚙ Настройки» открывает панель: там ' +
+                  'можно включить и выключить привязку к ' +
+                  'положению, повороту и подсказки, а ниже ' +
+                  'есть кнопка «🗑 Удалить выделенное» — ' +
+                  'сначала кликните по объекту, потом по этой кнопке.',
+        },
+        {
+            target: '#canvas-label',
+            title: 'Вернуться на переднюю сторону',
+            body: 'Нажмите «🎨 Задняя сторона» вверху — откроется ' +
+                  'передняя. Все изменения задней стороны сохранятся.',
+        },
+        {
+            target: '#create-maket',
+            title: 'Отправить брелок',
+            body: 'Когда задняя сторона готова, нажмите «Посмотреть ' +
+                  'результат» внизу экрана. В окне предпросмотра — ' +
+                  'если всё хорошо — «Отправить на печать», заполните ' +
+                  'имя и контакт, нажмите «Подтвердить». Готовый ' +
+                  'брелок уйдёт производителю.',
+        },
+    ],
+};
+
+// ────── состояние текущей инструкции ────────────────────────────
+let currentSide = null;
+let currentStep = 0;
+let open = false;
 
 function buildOverlay() {
     const overlay = document.createElement('div');
@@ -88,12 +202,9 @@ function buildOverlay() {
     return overlay;
 }
 
-// Текущий индекс шага — глобальная переменная модуля.
-let currentStep = 0;
-let open = false;
-
 function setSpotlight(target) {
-    // Удаляем старую подсветку.
+    const currentlyLit = document.querySelector('.ob-spotlight');
+    if (currentlyLit === target) return;
     document.querySelectorAll('.ob-spotlight').forEach((el) => {
         el.classList.remove('ob-spotlight');
     });
@@ -102,19 +213,23 @@ function setSpotlight(target) {
 
 function renderStep() {
     const overlay = document.getElementById('onboarding-overlay');
-    const step = STEPS[currentStep];
+    const steps = STEPS[currentSide];
+    if (!steps || steps.length === 0) {
+        closeGuide();
+        return;
+    }
+    const step = steps[currentStep];
     overlay.querySelector('.ob-step-indicator').textContent =
-        `Шаг ${currentStep + 1} из ${STEPS.length}`;
+        `Шаг ${currentStep + 1} из ${steps.length}`;
     overlay.querySelector('.ob-title').textContent = step.title;
     overlay.querySelector('.ob-body').textContent = step.body;
     const target = step.target
         ? document.querySelector(step.target)
         : null;
     setSpotlight(target);
-    // Скрываем «Назад» на первом шаге и «Дальше» на последнем.
     overlay.querySelector('.ob-prev').disabled = currentStep === 0;
     const nextBtn = overlay.querySelector('.ob-next');
-    if (currentStep === STEPS.length - 1) {
+    if (currentStep === steps.length - 1) {
         nextBtn.textContent = 'Готово';
     } else {
         nextBtn.textContent = 'Дальше →';
@@ -125,27 +240,31 @@ function closeGuide() {
     const overlay = document.getElementById('onboarding-overlay');
     if (overlay) overlay.remove();
     setSpotlight(null);
-    // Если был observer — отключаем.
     if (typeof currentObserver === 'function') {
         try { currentObserver(); } catch (_e) {}
         currentObserver = null;
     }
     open = false;
-    currentStep = 0;
 }
 
-// Текущий observer для динамического spotlight. Cleanup-функция,
-// потому что MutationObserver.disconnect() не возвращает удобного ref'а.
 let currentObserver = null;
 
-function startGuide() {
-    if (open) return;
+function startGuide(side) {
+    if (!STEPS[side] || STEPS[side].length === 0) return;
+    if (open && currentSide === side) {
+        currentStep = 0;
+        renderStep();
+        return;
+    }
+    if (open) closeGuide();
+
     open = true;
+    currentSide = side;
     currentStep = 0;
+
     const overlay = buildOverlay();
     document.body.appendChild(overlay);
-    // Навешиваем обработчики ОДИН раз, чтобы не плодить listener'ы при
-    // повторном открытии/закрытии.
+
     overlay.addEventListener('click', (e) => {
         if (e.target.classList.contains('ob-backdrop')) closeGuide();
         if (e.target.classList.contains('ob-close')) closeGuide();
@@ -155,7 +274,8 @@ function startGuide() {
             renderStep();
         }
         if (e.target.classList.contains('ob-next')) {
-            if (currentStep === STEPS.length - 1) {
+            const steps = STEPS[currentSide];
+            if (currentStep === steps.length - 1) {
                 closeGuide();
             } else {
                 currentStep += 1;
@@ -167,7 +287,6 @@ function startGuide() {
         if (e.key === 'Escape' && open) closeGuide();
     });
 
-    // Фокус-ловушка: Tab/Shift+Tab не выходят за пределы карточки.
     overlay.addEventListener('keydown', (e) => {
         if (e.key !== 'Tab') return;
         const focusables = Array.from(overlay.querySelectorAll(
@@ -184,23 +303,24 @@ function startGuide() {
             first.focus();
         }
     });
-    // Ставим фокус на первую интерактивную кнопку карточки,
-    // чтобы клавиатурные шорткаты работали сразу.
     const firstFocusable = overlay.querySelector('button:not(:disabled)');
     if (firstFocusable) firstFocusable.focus();
 
-    // Динамический spotlight: если таргет текущего шага внезапно стал
-    // невидим (например, #front-advanced-panel при переключении на back),
-    // просто снимаем подсветку. Когда вернётся — снова подсветится.
     const observer = new MutationObserver(() => {
-        const step = STEPS[currentStep];
-        if (!step || !step.target) return;
-        const el = document.querySelector(step.target);
-        if (!el || el.offsetParent === null) {
-            setSpotlight(null);
+        const steps = STEPS[currentSide];
+        if (!steps) return;
+        const step = steps[currentStep];
+        const currentlyLit = document.querySelector('.ob-spotlight');
+        if (!step || !step.target) {
+            if (currentlyLit) setSpotlight(null);
             return;
         }
-        setSpotlight(el);
+        const el = document.querySelector(step.target);
+        if (el && el.offsetParent !== null) {
+            if (currentlyLit !== el) setSpotlight(el);
+        } else {
+            if (currentlyLit) setSpotlight(null);
+        }
     });
     observer.observe(document.body, {
         attributes: true,
@@ -212,5 +332,26 @@ function startGuide() {
     renderStep();
 }
 
+function shouldAutoShow(side) {
+    const key = `brelok-onboarding-${side}-seen`;
+    try {
+        return localStorage.getItem(key) !== '1';
+    } catch (_e) {
+        return false;
+    }
+}
+
+function markSeen(side) {
+    const key = `brelok-onboarding-${side}-seen`;
+    try { localStorage.setItem(key, '1'); } catch (_e) {}
+}
+
+const originalClose = closeGuide;
+closeGuide = function () {
+    if (currentSide) markSeen(currentSide);
+    originalClose();
+};
+
 window.startGuide = startGuide;
 window.closeGuide = closeGuide;
+window.shouldAutoShowGuide = shouldAutoShow;
