@@ -2383,9 +2383,14 @@
         #guide-toggle {
             position: fixed;
             z-index: 12;
-            bottom: 200px;
-            left: 50%;
-            transform: translateX(-50%);
+            /* Сверху-справа — на одном уровне с тоглом «🚗 Передняя сторона»
+               (он тоже у верха рабочей области). Виджет всегда под рукой
+               и не наезжает на канву. */
+            top: 12px;
+            right: 12px;
+            bottom: auto;
+            left: auto;
+            transform: none;
             width: 36px;
             height: 36px;
             display: inline-flex;
@@ -2404,35 +2409,14 @@
             -webkit-tap-highlight-color: transparent;
         }
         #guide-toggle:hover { background: #1f2937; }
-        #guide-toggle:active { transform: translateX(-50%) scale(0.94); }
+        #guide-toggle:active { transform: scale(0.94); }
         #guide-toggle:focus-visible {
             outline: 2px solid #93c5fd;
             outline-offset: 2px;
         }
         @media (prefers-reduced-motion: reduce) {
-            #guide-toggle:active { transform: translateX(-50%); }
+            #guide-toggle:active { transform: none; }
             #guide-toggle { transition: none; }
-        }
-
-        /* ============================================================
-           МОБИЛЬНАЯ ВЕРСИЯ — кнопка «?» на одном уровне с тоглом
-           «🚗 Передняя сторона» (он находится внутри #canvas-wrap у
-           самого верха рабочей области). На мобильном она не должна
-           плавать посередине экрана как на десктопе — крепим в правый
-           верхний угол, через z-index выше хедера и панелей, чтобы
-           сразу была под рукой.
-           ============================================================ */
-        @media (max-width: 768px), (orientation: landscape) and (max-height: 600px) {
-            #guide-toggle {
-                bottom: auto;
-                top: 10px;
-                right: 10px;
-                left: auto;
-                transform: none;
-                /* Без translateX(-50%), как на десктопе — мы больше
-                   не прижаты к центру. */
-            }
-            #guide-toggle:active { transform: scale(0.94); }
         }
     </style>
     <link rel="stylesheet" href="css/result-preview.css">
@@ -4418,7 +4402,7 @@
         (function attachRearChannel() {
             if (typeof BroadcastChannel === 'undefined') return;
             const channel = new BroadcastChannel('brelok-rear');
-            channel.addEventListener('message', (event) => {
+            channel.addEventListener('message', async (event) => {
                 const data = event.data;
                 if (!data || data.type !== 'rear-snapshot-request') return;
                 // Не отдаём снимок как «заднюю сторону», если сейчас активна передняя.
@@ -4426,9 +4410,13 @@
                 const currentSide = window.__sideToggle?.getCurrentSide?.();
                 if (currentSide && currentSide !== 'back') return;
                 try {
-                    const lower = canvas.lowerCanvasEl;
-                    canvas.renderAll();
-                    const dataURL = lower ? lower.toDataURL('image/png') : canvas.toDataURL('image/png');
+                    // Снимок в ПОЛНОРАЗМЕРНОМ виде (1224×252) через helper —
+                    // без него fabric.Canvas.toDataURL() сохранял бы DOM-размер
+                    // (~360×74 на мобиле в портретной ориентации), и итоговый PNG
+                    // был мыльный, хотя размер файла был даже больше.
+                    const dataURL =
+                        await window.__sideToggle?.takeHighResRearSnapshot?.();
+                    if (!dataURL) return;
                     channel.postMessage({ type: 'rear-snapshot', dataURL });
                 } catch (e) {
                     console.warn('Не удалось отдать снимок канвы:', e);
@@ -4513,7 +4501,12 @@
                 btn.disabled = true;
                 try {
                     const frontDataURL = getFrontDataURL();
-                    const backDataURL = window.__sideToggle?.getRearSnapshot?.() ?? null;
+                    // getRearSnapshot() — async (после починки качества снимка
+                    // канвас временно возвращается в scene-размер). Без await
+                    // мы передали бы Promise в openResultPreview, который
+                    // упал бы в 404 в консоли при подстановке в <img src=...>.
+                    const backDataURL =
+                        (await window.__sideToggle?.getRearSnapshot?.()) ?? null;
 
                     await openResultPreview({
                         frontDataURL,
@@ -4609,7 +4602,12 @@
                     dbgBtn.disabled = true;
                     try {
                         const frontDataURL = getFrontDataURL();
-                        const backDataURL = window.__sideToggle?.getRearSnapshot?.() ?? null;
+                        // getRearSnapshot() — async после починки качества
+                        // снимка. Без await мы бы передали Promise в
+                        // composeMaketPngDataURL, и задняя сторона в PNG
+                        // ушла бы пустой.
+                        const backDataURL =
+                            (await window.__sideToggle?.getRearSnapshot?.()) ?? null;
                         const png = await composeMaketPngDataURL(frontDataURL, backDataURL);
                         if (!png) {
                             showToast('⚠️ Не удалось собрать PNG', true);
