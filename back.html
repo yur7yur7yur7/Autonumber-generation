@@ -2215,6 +2215,204 @@
                             0 0 0 1px rgba(96, 165, 250, 0.5);
             }
         }
+
+        /* ============================================================
+           ONBOARDING GUIDE
+           ============================================================ */
+        #onboarding-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+        #onboarding-overlay .ob-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(8, 10, 18, 0.78);
+            pointer-events: auto;
+        }
+        #onboarding-overlay .ob-card {
+            position: relative;
+            z-index: 1;
+            pointer-events: auto;
+            background: #ffffff;
+            color: #1f2937;
+            border-radius: 16px;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+            max-width: 480px;
+            width: calc(100% - 32px);
+            padding: 24px 28px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        #onboarding-overlay .ob-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        #onboarding-overlay .ob-step-indicator {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #6b7280;
+        }
+        #onboarding-overlay .ob-close {
+            background: transparent;
+            border: 0;
+            font-size: 28px;
+            line-height: 1;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0 4px;
+            border-radius: 6px;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+        #onboarding-overlay .ob-close:hover {
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+        #onboarding-overlay .ob-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0 0 12px;
+            line-height: 1.25;
+            color: #0f172a;
+        }
+        #onboarding-overlay .ob-body {
+            font-size: 14px;
+            line-height: 1.55;
+            color: #374151;
+            margin: 0 0 20px;
+        }
+        #onboarding-overlay .ob-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        #onboarding-overlay .ob-skip {
+            background: transparent;
+            border: 0;
+            color: #6b7280;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+        #onboarding-overlay .ob-skip:hover { background: #f3f4f6; color: #374151; }
+        #onboarding-overlay .ob-nav {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+        }
+        #onboarding-overlay .ob-prev,
+        #onboarding-overlay .ob-next {
+            background: #1f2937;
+            border: 0;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 9px 14px;
+            border-radius: 8px;
+            transition: background-color 0.15s ease, transform 0.05s ease;
+        }
+        #onboarding-overlay .ob-prev:disabled {
+            background: #cbd5e1;
+            color: #ffffff;
+            cursor: not-allowed;
+        }
+        #onboarding-overlay .ob-next:hover { background: #0f172a; }
+        #onboarding-overlay .ob-prev:not(:disabled):hover { background: #374151; }
+        #onboarding-overlay .ob-prev:active,
+        #onboarding-overlay .ob-next:active { transform: scale(0.97); }
+
+        .ob-spotlight {
+            position: relative;
+            z-index: 999;
+            outline: 3px solid #667eea !important;
+            outline-offset: 4px;
+            border-radius: 12px;
+            box-shadow: 0 0 0 6px rgba(102, 126, 234, 0.18);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            #onboarding-overlay .ob-card {
+                background: #1f2433;
+                color: #e5e7eb;
+                box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+            }
+            #onboarding-overlay .ob-step-indicator { color: #9ca3af; }
+            #onboarding-overlay .ob-close { color: #9ca3af; }
+            #onboarding-overlay .ob-close:hover { background: #2d3548; color: #e5e7eb; }
+            #onboarding-overlay .ob-title { color: #f3f4f6; }
+            #onboarding-overlay .ob-body { color: #d1d5db; }
+            #onboarding-overlay .ob-skip { color: #9ca3af; }
+            #onboarding-overlay .ob-skip:hover { background: #2d3548; color: #e5e7eb; }
+            #onboarding-overlay .ob-prev:disabled { background: #475569; }
+        }
+
+        @media (max-width: 480px) {
+            #onboarding-overlay .ob-card {
+                padding: 18px 18px;
+            }
+            #onboarding-overlay .ob-title { font-size: 18px; }
+            #onboarding-overlay .ob-body { font-size: 13px; }
+            #onboarding-overlay .ob-footer {
+                flex-wrap: wrap;
+            }
+            #onboarding-overlay .ob-nav { width: 100%; }
+            #onboarding-overlay .ob-prev,
+            #onboarding-overlay .ob-next { flex: 1; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #onboarding-overlay .ob-prev,
+            #onboarding-overlay .ob-next,
+            #onboarding-overlay .ob-close,
+            #onboarding-overlay .ob-skip { transition: none; }
+            .ob-spotlight { transition: none; }
+        }
+
+        /* Кнопка «?» в header — компактная, по умолчанию. */
+        #guide-toggle {
+            position: fixed;
+            z-index: 12;
+            bottom: 200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(17, 24, 39, 0.92);
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 50%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+            transition: background-color 0.15s ease, transform 0.1s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #guide-toggle:hover { background: #1f2937; }
+        #guide-toggle:active { transform: translateX(-50%) scale(0.94); }
+        #guide-toggle:focus-visible {
+            outline: 2px solid #93c5fd;
+            outline-offset: 2px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #guide-toggle:active { transform: translateX(-50%); }
+            #guide-toggle { transition: none; }
+        }
     </style>
     <link rel="stylesheet" href="css/result-preview.css">
 </head>
