@@ -63,8 +63,14 @@ export function openThanksModal({ contacts = PRODUCER_CONTACTS, contactsIcons = 
             telegram: 'Telegram',
             whatsapp: 'WhatsApp',
             instagram: 'Instagram',
+            tiktok: 'TikTok',
             vk: 'ВКонтакте',
         };
+        // Контурные (stroke) иконки — отличаются от solid-fill (telegram,
+        // instagram, whatsapp, vk) тем, что рисуются линиями. Для них `fill`
+        // отключаем, иначе SVG не отрисует. Здесь перечисляем только те,
+        // чьи пути в CONTACT_ICONS приходят из outline-наборов (Tabler).
+        const STROKE_ICON_KEYS = new Set(['tiktok']);
         let hasAny = false;
         for (const [key, info] of Object.entries(contacts)) {
             if (!info) continue;
@@ -80,7 +86,20 @@ export function openThanksModal({ contacts = PRODUCER_CONTACTS, contactsIcons = 
             svg.setAttribute('viewBox', '0 0 24 24');
             svg.setAttribute('aria-hidden', 'true');
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('fill', 'currentColor');
+            // Tabler-icons бывают solid-fill (как telegram/instagram/whatsapp/vk) и outline
+            // (как brand-tiktok). Для outline на «fill» не остаётся заливки — нужно
+            // переключиться на «stroke», иначе иконка не отрисуется. Какие именно
+            // ключи outline — перечислим точечно через STROKE_ICON_KEYS.
+            const isOutline = STROKE_ICON_KEYS.has(key);
+            if (isOutline) {
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke', 'currentColor');
+                path.setAttribute('stroke-width', '2');
+                path.setAttribute('stroke-linecap', 'round');
+                path.setAttribute('stroke-linejoin', 'round');
+            } else {
+                path.setAttribute('fill', 'currentColor');
+            }
             path.setAttribute('d', contactsIcons[key] || '');
             svg.appendChild(path);
             a.appendChild(svg);
