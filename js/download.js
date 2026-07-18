@@ -165,10 +165,16 @@ export async function downloadBothSides(canvas, getNumber, getRegion, getRearDat
  * @param {string} backDataURL  - data:image/png;... с задней стороной
  * @returns {Promise<string|null>} data:image/png;base64,... или null при ошибке
  */
-async function composeMaketPngDataURL(frontDataURL, backDataURL) {
+export async function composeMaketPngDataURL(frontDataURL, backDataURL) {
     if (!frontDataURL || !backDataURL) return null;
     const interval = 20;
-    const dpr = 2; // ×2 для нормальной резкости при печати
+    // Размер PNG 1:1 совпадает с SVG-вёрсткой в buildMaketSvg():
+    // viewBox 0 0 (CANVAS_WIDTH*2 + interval) × CANVAS_HEIGHT, реальные
+    // размеры в SVG указаны в сантиметрах (5.18×2+0.2 × 1.07). Раньше тут
+    // стоял dpr=2 (растровое ×2 для печати), но для отладки нужно
+    // получать PNG того же пиксельного размера, что и SVG — иначе
+    // оператор видит в Telegram файл другого размера, чем preview.
+    const dpr = 1;
     const outW = (CANVAS_WIDTH * 2 + interval) * dpr;
     const outH = CANVAS_HEIGHT * dpr;
     const radius = getMainBorderRadius() * (CONFIG.SCALE_FACTOR || 1) * dpr;

@@ -57,9 +57,18 @@
         body:not(.ready) #front-advanced-toggle,
         body:not(.ready) #front-advanced-panel,
         body:not(.ready) #create-maket,
+        body:not(.ready) #debug-download-png,
         body:not(.ready) #maket-toast,
         body:not(.ready) #ctx-menu,
-        body:not(.ready) #rotate-hint {
+        body:not(.ready) #rotate-hint,
+        body:not(.ready) #emoji-hint {
+            display: none !important;
+        }
+
+        /* Тестовая кнопка «Скачать PNG» скрыта по умолчанию.
+           Появится, если в консоли набрать `debug` (см. ниже
+           window.__enableDebugButtons — выставляет body.debug). */
+        body:not(.debug) #debug-download-png {
             display: none !important;
         }
         canvas {
@@ -1458,6 +1467,139 @@
 
         #font-toggle:active { transform: translateX(-50%) scale(0.96); }
 
+        /* ============================================================
+           Подсказка про системную панель эмодзи (Win+./Win+; на Windows,
+           Ctrl+Cmd+Space на macOS, Ctrl+. на Linux). Показывается
+           один раз за сессию (флаг в sessionStorage), когда юзер
+           впервые открывает панель шрифтов или впервые добавляет
+           текстбокс. Только десктоп — на мобиле скрыта полностью,
+           там системная панель эмодзи в браузере практически
+           не работает, и подсказка только зашумит.
+           ============================================================ */
+        #emoji-hint {
+            display: none;
+            position: fixed;
+            z-index: 14;          /* поверх #font-panel (10), но ниже диалогов */
+            /* На десктопе #font-panel висит СПРАВА СВЕРХУ:
+               top: 20px; right: 20px; width: 300px. Подсказку прижимаем
+               к левому-нижнему краю этой панели, чтобы стрелка-указатель
+               смотрела прямо на неё. Юзер работает с текстом именно там,
+               а не у нижних тогглов. */
+            top: 100px;
+            right: 340px;         /* 300 (ширина панели) + 20 (отступ) + 20 (зазор) */
+            pointer-events: auto; /* кликабельна: можно закрыть крестиком */
+            align-items: center;
+            gap: 8px;
+            padding: 9px 12px 9px 14px;
+            background: linear-gradient(135deg,
+                rgba(31, 41, 55, 0.96) 0%,
+                rgba(17, 24, 39, 0.96) 100%);
+            color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 0.1px;
+            line-height: 1.25;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45),
+                        0 0 0 4px rgba(249, 115, 22, 0.18);
+            white-space: nowrap;
+            /* По умолчанию скрыта, в показе — fade + лёгкий slide-in. */
+            opacity: 0;
+            transform: translateX(8px);
+            transition: opacity 0.22s ease, transform 0.22s ease;
+        }
+        #emoji-hint.eh-show {
+            display: inline-flex;
+            opacity: 1;
+            transform: translateX(0);
+        }
+        /* Стрелочка-указатель вправо, ведёт к панели #font-panel */
+        #emoji-hint::after {
+            content: "";
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            width: 12px;
+            height: 12px;
+            background: rgba(17, 24, 39, 0.96);
+            border-right: 1px solid rgba(255, 255, 255, 0.12);
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            transform: translateY(-50%) rotate(45deg);
+        }
+        /* Лёгкая пульсация рамки, чтобы привлечь внимание */
+        @keyframes eh-pulse {
+            0%, 100% { box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45),
+                                    0 0 0 4px rgba(249, 115, 22, 0.18); }
+            50%      { box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45),
+                                    0 0 0 9px rgba(249, 115, 22, 0.05); }
+        }
+        #emoji-hint.eh-show {
+            animation: eh-pulse 2.4s ease-in-out infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #emoji-hint.eh-show { animation: none; }
+            #emoji-hint { transition: opacity 0.05s linear; }
+        }
+        /* Иконка-эмодзи в начале подсказки */
+        #emoji-hint .eh-icon {
+            font-size: 17px;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* Текст подсказки — сочетание клавиш выделено ярче */
+        #emoji-hint .eh-keys {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 700;
+            color: #fb923c;      /* оранжевый — перекликается с #create-maket */
+        }
+        #emoji-hint .eh-keys .eh-kbd {
+            display: inline-block;
+            padding: 2px 7px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-bottom-width: 2px;
+            border-radius: 5px;
+            font: 700 12px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            color: #f8fafc;
+            letter-spacing: 0;
+            white-space: nowrap;
+        }
+        /* Кнопка-крестик закрытия */
+        #emoji-hint .eh-close {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            margin-left: 4px;
+            background: transparent;
+            color: rgba(248, 250, 252, 0.7);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            touch-action: manipulation;
+        }
+        #emoji-hint .eh-close:hover { background: rgba(255, 255, 255, 0.1); color: #f8fafc; }
+        #emoji-hint .eh-close:active { transform: scale(0.92); }
+        #emoji-hint .eh-close:focus-visible {
+            outline: 2px solid #93c5fd;
+            outline-offset: 1px;
+        }
+        /* На мобильном подсказку не показываем — там нет штатной
+           системной панели эмодзи в браузере, и лишний элемент на
+           узком экране только мешает. */
+        @media (max-width: 768px), (orientation: landscape) and (max-height: 600px) {
+            #emoji-hint { display: none !important; }
+        }
+
         /* Кнопка «Посмотреть результат» — поверх, всегда видна, яркий акцент.
            Оранжевый + белая кайма + плотная тень, чтобы выделяться на тёмно-зелёном
            фоне back.png. */
@@ -1553,6 +1695,60 @@
             #create-maket { transition: none; }
             #create-maket::after,
             #create-maket::before { transition: opacity 0.05s linear; }
+        }
+
+        /* ============================================================
+           ОТЛАДОЧНАЯ КНОПКА «Скачать PNG» — качает тот же PNG, что
+           уходит в Telegram через sendMaketToTelegram(). Работает
+           напрямую через composeMaketPngDataURL из js/download.js,
+           без открытия модалок и без обращения к реле. Только для
+           отладки: чтобы можно было скачать итоговый файл и
+           посмотреть, что именно увидит оператор.
+           ============================================================ */
+        #debug-download-png {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            position: fixed;
+            z-index: 12;
+            /* На десктопе сидит под основной кнопкой «Посмотреть результат».
+               Позиция синхронизирована с bottom #create-maket (320px) + его высоты.
+               Используем тот же десктопный медиа-запрос, что и #create-maket ниже,
+               чтобы на мобиле уехать в общую панель тогглов. */
+            bottom: 260px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(17, 24, 39, 0.92);
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 12px;
+            padding: 9px 14px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            touch-action: manipulation;
+            white-space: nowrap;
+            transition: background-color 0.15s ease, transform 0.1s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #debug-download-png:hover { background: #1f2937; }
+        #debug-download-png:active { transform: translateX(-50%) scale(0.97); }
+        #debug-download-png:focus-visible {
+            outline: 2px solid #93c5fd;
+            outline-offset: 2px;
+        }
+        #debug-download-png:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            background: #374151;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #debug-download-png:active { transform: translateX(-50%); }
+            #debug-download-png { transition: none; }
         }
 
         /* Всплывающая подсказка после отправки макета */
@@ -1747,6 +1943,23 @@
             #create-maket:focus,
             #create-maket:focus-visible {
                 transform: none !important;
+            }
+
+            /* Отладочная кнопка на мобильном — над тогглами, под #create-maket.
+               На мобиле «Посмотреть результат» висит на bottom: 76px; свою debug
+               кнопку ставим повыше, чтобы не налезать. */
+            #debug-download-png {
+                z-index: 8;
+                left: 12px;
+                right: 12px;
+                bottom: 132px;
+                width: fit-content;
+                padding: 9px 14px;
+                font-size: 13px;
+                transform: none;
+            }
+            #debug-download-png:active {
+                transform: scale(0.97);
             }
             #maket-toast {
                 bottom: 160px;
@@ -1981,6 +2194,15 @@
         </label>
     </div>
     <button id="create-maket" type="button" aria-label="Посмотреть результат" data-tooltip="Создаёт и отправляет макет">Посмотреть результат</button>
+    <button id="debug-download-png" type="button" aria-label="Скачать PNG макета (отладка)" data-tooltip="Скачивает PNG-файл, который уходит в Telegram">🧪 Скачать PNG</button>
+    <div id="emoji-hint" role="tooltip" aria-live="polite">
+        <span class="eh-icon" aria-hidden="true">😀</span>
+        <span>Чтобы написать эмодзи, нажмите</span>
+        <span class="eh-keys">
+            <span class="eh-kbd" id="eh-kbd-1">Win</span><span>+</span><span class="eh-kbd" id="eh-kbd-2">.</span>
+        </span>
+        <button class="eh-close" type="button" id="eh-close" aria-label="Закрыть подсказку">✕</button>
+    </div>
     <div id="maket-toast" role="status" aria-live="polite"></div>
     <script>
         // Размеры передней стороны — как в js/drawing-front.js + js/config.js
@@ -2381,6 +2603,12 @@
             const displayH = Math.max(40, Math.floor(PLATE_H * scale));
             canvas.setDimensions({ width: displayW, height: displayH }, { cssOnly: false });
             canvas.setZoom(displayW / PLATE_W);
+            // Пересчитать координаты висящих snap-направляющих под новый размер канвы.
+            // Линии создавались с canvas.getWidth()/getHeight() на момент drag'а; после
+            // ресайза эти размеры другие — оставлять их со старым extent нельзя,
+            // иначе они обрезаются или висят за пределами сцены. Перекладываем x1/y1/x2/y2
+            // по новой геометрии; x и y берём из уже сохранённых scene-space координат.
+            resnapGuidesToViewport();
             canvas.requestRenderAll();
             // Передняя сторона: в мобильном ландшафте дополнительно уменьшаем
             // нативный канвас на FRONT_LANDSCAPE_SHRINK (по обоим осям — иначе
@@ -2991,12 +3219,41 @@
             };
             let line;
             if (orientation === 'v') {
-                line = new fabric.Line([value, 0, value, canvas.getHeight()], opts);
+                // Extent рисуем в scene-space (PLATE_W×PLATE_H), а не в
+                // canvas.getWidth()/getHeight(). После setDimensions с cssOnly:false
+                // backing-store канваса сжимается до displayW/displayH, и extent
+                // обрезается по этой величине — линия не доходит до краёв плашки.
+                // scene-space extent гарантирует, что она идёт от края до края
+                // плиты в координатах сцены; clipPath у канваса сам обрежет её
+                // по скруглённым углам, а viewportTransform отзумит.
+                line = new fabric.Line([value, 0, value, PLATE_H], opts);
             } else {
-                line = new fabric.Line([0, value, canvas.getWidth(), value], opts);
+                line = new fabric.Line([0, value, PLATE_W, value], opts);
             }
             line.__guide = true;
+            line.__guideOrient = orientation; // 'v' | 'h' — чтобы ресайз мог переразложить координаты
+            line.__guideValue = value;        // scene-space x или y, фиксируем «смысл» линии
             canvas.add(line);
+        }
+
+        // Пересчитать координаты висящих snap-направляющих под текущий размер канвы.
+        // Линии создавались с canvas.getWidth()/getHeight() на момент drag'а;
+        // при ресайзе/повороте размеры меняются, и старая геометрия линий «уезжает»
+        // за пределы сцены (или обрезается). Здесь мы не трогаем scene-space позицию
+        // (x для вертикальной, y для горизонтальной) — только extent, чтобы линия
+        // снова шла от края до края канвы.
+        function resnapGuidesToViewport() {
+            const guides = canvas.getObjects().filter(o => o.__guide);
+            if (!guides.length) return;
+            for (const line of guides) {
+                if (line.__guideOrient === 'v' && typeof line.__guideValue === 'number') {
+                    // Extent в scene-space (PLATE_W×PLATE_H), см. комментарий в drawGuideLine.
+                    line.set({ x1: line.__guideValue, y1: 0, x2: line.__guideValue, y2: PLATE_H });
+                } else if (line.__guideOrient === 'h' && typeof line.__guideValue === 'number') {
+                    line.set({ x1: 0, y1: line.__guideValue, x2: PLATE_W, y2: line.__guideValue });
+                }
+                line.setCoords();
+            }
         }
 
         function getObjectEdges(obj) {
@@ -3708,6 +3965,136 @@
 
         initFontPanel();
 
+        // ============================================================
+        // Подсказка про системную панель эмодзи (Win+. / Win+; на Windows,
+        // ⌃⌘Space на macOS, Ctrl+. на большинстве Linux DE). Показываем
+        // ОДИН раз за сессию (флаг в sessionStorage), когда пользователь
+        // впервые открывает панель шрифтов или впервые добавляет текстбокс.
+        // Только десктоп — на мобильном CSS прячет плашку полностью.
+        // ============================================================
+        (function setupEmojiHint() {
+            const hint = document.getElementById('emoji-hint');
+            if (!hint) return;
+
+            // Определяем ОС и подставляем шорткат. Порядок проверок важен:
+            // iPadOS прикидывается Mac (navigator.platform === 'MacIntel'),
+            // но на нём работает Win+.-подобный шорткат из виртуальной
+            // клавиатуры; для надёжности считаем его «не десктопом» и
+            // прячем подсказку ниже отдельной проверкой.
+            const ua = navigator.userAgent || '';
+            const platform = (navigator.userAgentData?.platform || navigator.platform || '').toLowerCase();
+            const isMac = /mac|darwin/i.test(platform) || /Mac OS X/.test(ua);
+            const isWin = /win/i.test(platform) || /Windows NT/.test(ua);
+            const isLinux = /linux/i.test(platform) && !/android/i.test(ua);
+
+            // На iPadOS / Android подсказка бессмысленна — там нет
+            // системной панели эмодзи в том же смысле, что на десктопе.
+            const isTabletLike = /iPad|iPhone|iPod|Android/i.test(ua);
+            if (isTabletLike) {
+                hint.remove();
+                return;
+            }
+
+            const kbd1 = document.getElementById('eh-kbd-1');
+            const kbd2 = document.getElementById('eh-kbd-2');
+            if (isMac) {
+                // macOS: ⌃⌘Space (Ctrl+Cmd+Space). На маке логичнее показать
+                // символы, чем буквы, чтобы сразу считывалось.
+                if (kbd1) kbd1.textContent = '⌃⌘';
+                if (kbd2) kbd2.textContent = 'Space';
+            } else if (isLinux) {
+                // Linux: зависит от DE. GNOME — Ctrl+. (точнее Super+. в
+                // новых версиях, но Ctrl+. работает шире). Показываем
+                // «Ctrl + .», это самый распространённый вариант.
+                if (kbd1) kbd1.textContent = 'Ctrl';
+                if (kbd2) kbd2.textContent = '.';
+            } else {
+                // Windows (по умолчанию): Win+. или Win+;
+                if (kbd1) kbd1.textContent = 'Win';
+                if (kbd2) kbd2.textContent = '.';
+            }
+
+            const SEEN_KEY = 'emojiHintSeen';
+            let seen = false;
+            try { seen = sessionStorage.getItem(SEEN_KEY) === '1'; } catch (_) { /* приватный режим */ }
+            if (seen) {
+                hint.remove();
+                return;
+            }
+
+            let hideTimer = null;
+            function show() {
+                if (hideTimer) clearTimeout(hideTimer);
+                hint.classList.add('eh-show');
+                // Авто-скрытие через 9 секунд. Не делаем короче — подсказка
+                // должна успеть дочитаться, но и не висеть вечно.
+                hideTimer = setTimeout(() => dismiss(), 9000);
+            }
+            // Снять визуально (используется при уходе с back на front, или
+            // при ручном закрытии — тогда ещё помечаем как «видели»).
+            function dismiss(markSeen) {
+                if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+                hint.classList.remove('eh-show');
+                if (markSeen) {
+                    try { sessionStorage.setItem(SEEN_KEY, '1'); } catch (_) {}
+                    seen = true;
+                }
+            }
+
+            // Показываем подсказку именно тогда, когда юзер вошёл в режим
+            // редактирования текстбокса (двойной клик / Enter на выделенном).
+            // Только в этот момент шорткат эмодзи осмыслен: курсор стоит
+            // в тексте, и пользователь готов печатать. На передней стороне
+            // эмодзи не нужны (там ввод цифр номера/региона).
+            //
+            // Триггер: canvas.on('text:editing:entered') — Fabric 5.x стреляет
+            // его на канвасе при входе в edit-mode (см. текстбокс_behavior:
+            // canvas.fire('text:editing:entered', {target, e})). Дополнительно
+            // проверяем сторону: подсказку показываем только когда мы на back.
+            const sideLabel = document.getElementById('canvas-label');
+            const isBackSide = () => sideLabel?.dataset?.side === 'back';
+
+            canvas.on('text:editing:entered', () => {
+                if (!isBackSide()) return;     // на front не показываем
+                if (seen) return;              // уже видели в этой сессии
+                show();
+            });
+            // При выходе из режима редактирования — прячем визуально, но
+            // НЕ помечаем как «видели»: пользователь мог просто клик-
+            // мимоходом зайти и выйти, не успев прочитать. Тогда при
+            // следующем входе подсказка снова всплывёт.
+            canvas.on('text:editing:exited', () => dismiss(false));
+
+            // На случай если юзер уйдёт с back на front прямо во время
+            // редактирования — подсказка должна исчезнуть. MutationObserver
+            // на data-side ловит этот момент. Подсказка остаётся не-
+            // помеченной — при возврате на back и новом входе в edit
+            // она снова покажется.
+            if (sideLabel) {
+                new MutationObserver(() => {
+                    if (!isBackSide()) dismiss(false);
+                }).observe(sideLabel, { attributes: true, attributeFilter: ['data-side'] });
+            }
+
+            // Закрытие по крестику — считаем, что пользователь прочитал.
+            document.getElementById('eh-close')?.addEventListener('click', () => dismiss(true));
+
+            // Закрытие по Escape — тоже «прочитал». В режиме редактирования
+            // текстбокса Escape сам выходит из редактирования и стреляет
+            // text:editing:exited, который сам вызовет dismiss(false). Чтобы
+            // не было гонки — наш keydown сработает раньше и пометит как
+            // прочитанное, что и нужно.
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && hint.classList.contains('eh-show')) dismiss(true);
+            });
+
+            // Клик по самой подсказке не должен её закрывать — пользователь
+            // может захотеть скопировать шорткат. Закрываем только по
+            // клику вне плашки (на канвас / в кнопку), и если плашка не
+            // была закрыта за 9с — она уйдёт сама.
+            hint.addEventListener('click', (e) => e.stopPropagation());
+        })();
+
         // Дефолтная подпись при загрузке — шрифт Everlasting, текст по центру канвы.
         // Размер побольше, чем при ручном выборе шрифта из панели — это первый
         // и единственный объект на канве при открытии back.html, он должен
@@ -3778,7 +4165,7 @@
         import { openResultPreview } from './js/result-preview.js';
         import { openOrderForm } from './js/order-form.js';
         import { openThanksModal } from './js/thanks-modal.js';
-        import { buildMaketSvg, sendMaketToTelegram } from './js/download.js';
+        import { buildMaketSvg, sendMaketToTelegram, composeMaketPngDataURL } from './js/download.js';
 
         const btn = document.getElementById('create-maket');
         if (!btn) {
@@ -3888,7 +4275,98 @@
                     btn.disabled = false;
                 }
             });
+
+            // ===== DEBUG: кнопка «🧪 Скачать PNG» — только для отладки.
+            // Собирает ИТОГОВЫЙ PNG (тот же, что composeMaketPngDataURL
+            // отдаёт в Telegram как файл) и скачивает его. После тестов —
+            // удалить кнопку, обработчик и CSS.
+            const dbgBtn = document.getElementById('debug-download-png');
+            if (dbgBtn) {
+                dbgBtn.disabled = false;
+                dbgBtn.addEventListener('click', async () => {
+                    const original = dbgBtn.textContent;
+                    dbgBtn.textContent = '⏳ ...';
+                    dbgBtn.disabled = true;
+                    try {
+                        const frontDataURL = getFrontDataURL();
+                        const backDataURL = window.__sideToggle?.getRearSnapshot?.() ?? null;
+                        const png = await composeMaketPngDataURL(frontDataURL, backDataURL);
+                        if (!png) {
+                            showToast('⚠️ Не удалось собрать PNG', true);
+                            return;
+                        }
+                        // Имя файла — как в sendMaketToTelegram (brelok-<номер><регион>.png).
+                        const { number, region } = window.__sideToggle?.getPlate?.() ?? {};
+                        const nn = (number || '').trim();
+                        const rr = (region || '').trim();
+                        const filename = (nn || rr) ? `brelok-${nn}${rr}.png` : 'brelok.png';
+                        downloadDataURL(png, filename);
+                        showToast('✅ PNG скачан');
+                    } catch (e) {
+                        console.error('debug download:', e);
+                        showToast('⚠️ Ошибка скачивания', true);
+                    } finally {
+                        dbgBtn.textContent = original;
+                        dbgBtn.disabled = false;
+                    }
+                });
+            }
+
+            function downloadDataURL(dataURL, filename) {
+                const a = document.createElement('a');
+                a.href = dataURL;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            }
         }
+
+        // ===== СКРЫТЫЕ ТЕСТОВЫЕ КНОПКИ =====
+        // Тестовая кнопка «Скачать PNG» в этом файле и «Подтвердить (тест)»
+        // в модалке заказа спрятаны от обычных пользователей. Появляются
+        // только когда в консоли набран `debug` (или `undebug` чтобы скрыть).
+        //
+        // Хитрость с консолью: если просто повесить `window.debug = function() {...}`,
+        // набор `debug` без скобок в DevTools напечатает исходник функции,
+        // а не вызовет её — юзер решит, что «ничего не сработало».
+        //
+        // Решение: геттер через Object.defineProperty. Любое обращение к
+        // `window.debug` (с или без скобок) запускает геттер, который
+        // включает кнопки и возвращает строку-подсказку. Идемпотентно —
+        // можно набирать много раз.
+        const debugAction = () => {
+            document.body.classList.add('debug');
+            console.info('%c[debug] 🧪 Тестовые кнопки ВКЛ', 'color:#fb923c;font-weight:700');
+            console.info('Чтобы скрыть — наберите: undebug');
+            return '🧪 Тестовые кнопки видны.';
+        };
+        const undebugAction = () => {
+            document.body.classList.remove('debug');
+            console.info('%c[debug] Тестовые кнопки ВЫКЛ', 'color:#9ca3af;font-weight:700');
+            return 'Тестовые кнопки скрыты.';
+        };
+        window.__enableDebugButtons = debugAction;
+        window.__disableDebugButtons = undebugAction;
+        try {
+            Object.defineProperty(window, 'debug', {
+                get() { return debugAction; },
+                configurable: true,
+                enumerable: false,
+            });
+            Object.defineProperty(window, 'undebug', {
+                get() { return undebugAction; },
+                configurable: true,
+                enumerable: false,
+            });
+        } catch (e) {
+            // Фоллбэк — на всякий случай. Старое присвоение: юзеру придётся
+            // набрать debug() со скобками, но хотя бы не упадём.
+            window.debug = debugAction;
+            window.undebug = undebugAction;
+        }
+        console.info('%c[debug]', 'color:#fb923c;font-weight:700',
+            'Наберите в консоли «debug» чтобы показать тестовые кнопки, «undebug» чтобы скрыть');
     </script>
 </body>
 </html>

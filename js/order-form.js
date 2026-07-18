@@ -109,15 +109,22 @@ export function openOrderForm() {
         // Тестовая кнопка-заглушка: имитирует успешную отправку без ухода
         // данных в Telegram-бот. Полезна, чтобы отладить поток модалок
         // (preview → order → thanks), не дёргая реальный sendMaketToTelegram
-        // и не засоряя прод-бота тестовыми заказами. Размещаем слева от
-        // основной «Подтвердить», чтобы визуально отделить от боевого
-        // действия (серая обводка через .rp-btn--test, см. css/order-form.css).
-        const testBtn = document.createElement('button');
-        testBtn.type = 'button';
-        testBtn.className = 'rp-btn rp-btn--test';
-        testBtn.textContent = 'Подтвердить (тест)';
-        // Вставляем перед submit, чтобы порядок был: Отмена · Тест · Подтвердить
-        actions.insertBefore(testBtn, submitBtn);
+        // и не засоряя прод-бота тестовыми заказами.
+        //
+        // СКРЫТА ПО УМОЛЧАНИЮ: появляется только если на body есть класс
+        // «debug» (выставляется через `window.__enableDebugButtons()` или
+        // алиас `debug()` в консоли). Так обычные пользователи её не
+        // видят, а разработчик может быстро включить одной командой.
+        const debugEnabled = document.body.classList.contains('debug');
+        let testBtn = null;
+        if (debugEnabled) {
+            testBtn = document.createElement('button');
+            testBtn.type = 'button';
+            testBtn.className = 'rp-btn rp-btn--test';
+            testBtn.textContent = 'Подтвердить (тест)';
+            // Вставляем перед submit, чтобы порядок был: Отмена · Тест · Подтвердить
+            actions.insertBefore(testBtn, submitBtn);
+        }
 
         windowEl.appendChild(modal);
         windowEl.appendChild(actions);
@@ -168,20 +175,24 @@ export function openOrderForm() {
         submitBtn.addEventListener('click', () => {
             submitBtn.disabled = true;
             cancelBtn.disabled = true;
-            testBtn.disabled = true;
+            if (testBtn) testBtn.disabled = true;
             finish(collect());
         });
 
         // Тестовая кнопка: резолвит так же, как и «Подтвердить», но с
         // флагом __test. back.html увидит флаг и пропустит
         // sendMaketToTelegram, оставив только открытие thanks-модалки —
-        // этого достаточно для отладки UX-потока.
-        testBtn.addEventListener('click', () => {
-            submitBtn.disabled = true;
-            cancelBtn.disabled = true;
-            testBtn.disabled = true;
-            finish({ ...collect(), __test: true });
-        });
+        // этого достаточно для отладки UX-потока. Обработчик вешаем
+        // только если кнопка реально создана (см. выше — кнопка скрыта
+        // по умолчанию, появляется через `debug` в консоли).
+        if (testBtn) {
+            testBtn.addEventListener('click', () => {
+                submitBtn.disabled = true;
+                cancelBtn.disabled = true;
+                testBtn.disabled = true;
+                finish({ ...collect(), __test: true });
+            });
+        }
 
         document.body.appendChild(overlay);
 
