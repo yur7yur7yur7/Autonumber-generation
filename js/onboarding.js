@@ -125,9 +125,18 @@ function closeGuide() {
     const overlay = document.getElementById('onboarding-overlay');
     if (overlay) overlay.remove();
     setSpotlight(null);
+    // Если был observer — отключаем.
+    if (typeof currentObserver === 'function') {
+        try { currentObserver(); } catch (_e) {}
+        currentObserver = null;
+    }
     open = false;
     currentStep = 0;
 }
+
+// Текущий observer для динамического spotlight. Cleanup-функция,
+// потому что MutationObserver.disconnect() не возвращает удобного ref'а.
+let currentObserver = null;
 
 function startGuide() {
     if (open) return;
@@ -157,6 +166,49 @@ function startGuide() {
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && open) closeGuide();
     });
+
+    // Фокус-ловушка: Tab/Shift+Tab не выходят за пределы карточки.
+    overlay.addEventListener('keydown', (e) => {
+        if (e.key !== 'Tab') return;
+        const focusables = Array.from(overlay.querySelectorAll(
+            'button, [href], input, [tabindex]:not([tabindex="-1"])'
+        )).filter((el) => !el.disabled && el.offsetParent !== null);
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+        }
+    });
+    // Ставим фокус на первую интерактивную кнопку карточки,
+    // чтобы клавиатурные шорткаты работали сразу.
+    const firstFocusable = overlay.querySelector('button:not(:disabled)');
+    if (firstFocusable) firstFocusable.focus();
+
+    // Динамический spotlight: если таргет текущего шага внезапно стал
+    // невидим (например, #front-advanced-panel при переключении на back),
+    // просто снимаем подсветку. Когда вернётся — снова подсветится.
+    const observer = new MutationObserver(() => {
+        const step = STEPS[currentStep];
+        if (!step || !step.target) return;
+        const el = document.querySelector(step.target);
+        if (!el || el.offsetParent === null) {
+            setSpotlight(null);
+            return;
+        }
+        setSpotlight(el);
+    });
+    observer.observe(document.body, {
+        attributes: true,
+        subtree: true,
+        attributeFilter: ['class', 'style', 'hidden', 'aria-hidden'],
+    });
+    currentObserver = () => observer.disconnect();
+
     renderStep();
 }
 
