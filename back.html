@@ -59,6 +59,7 @@
         body:not(.ready) #create-maket,
         body:not(.ready) #debug-download-png,
         body:not(.ready) #download-config-btn,
+        body:not(.ready) #guide-toggle,
         body:not(.ready) #maket-toast,
         body:not(.ready) #ctx-menu,
         body:not(.ready) #rotate-hint,
@@ -2269,6 +2270,7 @@
             <input type="color" id="ctx-color-input" value="#111111" aria-label="Выбрать цвет текста">
         </label>
     </div>
+    <button id="guide-toggle" type="button" aria-label="Открыть инструкцию" data-tooltip="Показывает пошаговую инструкцию">?</button>
     <button id="create-maket" type="button" aria-label="Посмотреть результат" data-tooltip="Создаёт и отправляет макет">Посмотреть результат</button>
     <button id="debug-download-png" type="button" aria-label="Скачать PNG макета (отладка)" data-tooltip="Скачивает PNG-файл, который уходит в Telegram">🧪 Скачать PNG</button>
     <button id="download-config-btn" type="button" aria-label="Скачать конфиг (отладка)" data-tooltip="Сохраняет текущий дизайн брелка в .json">⬇ Скачать конфиг</button>
@@ -4624,6 +4626,48 @@
         }
         console.info('%c[debug]', 'color:#fb923c;font-weight:700',
             'Наберите в консоли «debug» чтобы показать тестовые кнопки, «undebug» чтобы скрыть');
+    </script>
+
+    <!-- ============================================================
+         ONBOARDING GUIDE: ручной запуск и автопоказ при первом заходе.
+         Сам модуль (js/onboarding.js) определяет STEPS и повесит
+         startGuide()/closeGuide() на window. Здесь — кнопка «?» и
+         логика «seen» в localStorage. CSS для overlay живёт в
+         <style> выше — Task 3 его добавляет.
+         ============================================================ -->
+    <script type="module">
+        import './js/onboarding.js';
+
+        // Ручной запуск — клик по «?» в header'е.
+        document.getElementById('guide-toggle')?.addEventListener('click', () => {
+            window.startGuide();
+        });
+
+        // Автопоказ при первом заходе. После первого закрытия (любым
+        // путём: Esc, мимо, «Пропустить», «Готово») флаг в localStorage
+        // не даст показывать снова при обычной загрузке. Повторное
+        // ручное открытие через «?» — безусловное.
+        const SEEN_KEY = 'brelok-onboarding-seen';
+        let seen = false;
+        try {
+            seen = localStorage.getItem(SEEN_KEY) === '1';
+        } catch (e) {
+            // localStorage недоступен (privacy-mode) — пропускаем автопоказ.
+        }
+        if (!seen) {
+            // Небольшая задержка, чтобы канва успела отрисоваться и шаги с
+            // таргетами реально что-то подсветили.
+            setTimeout(() => {
+                window.startGuide();
+            }, 600);
+        }
+
+        // Обёртка над closeGuide — ставит флаг «seen» при первом закрытии.
+        const originalClose = window.closeGuide;
+        window.closeGuide = function () {
+            try { localStorage.setItem(SEEN_KEY, '1'); } catch (_e) {}
+            originalClose();
+        };
     </script>
 </body>
 </html>
