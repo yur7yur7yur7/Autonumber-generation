@@ -1473,6 +1473,14 @@
             pointer-events: none;
             user-select: none;
         }
+        /* Inline-SVG внутри .tg-icon: без width/height в атрибутах iOS Safari
+           иногда сворачивает его в 0×0 (крестик в открытом состоянии гамбургер-
+           кнопки не виден). Явно задаём размер от родителя 48×48. */
+        #front-advanced-toggle .tg-icon svg {
+            width: 60%;
+            height: 60%;
+            pointer-events: none;
+        }
         #front-advanced-toggle:active { transform: scale(0.96); }
 
         #font-toggle:active { transform: translateX(-50%) scale(0.96); }
