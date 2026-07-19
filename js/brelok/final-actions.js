@@ -203,50 +203,88 @@ function tryAutoImportFromQuery() {
     const incomingType = params.get('type');
     if (!configKey) return;
 
-    const rawText = (() => {
+    // Путь 1: ключ лежит в sessionStorage — старый сценарий (index.html
+    // кладёт JSON в sessionStorage, редиректит сюда, мы забираем).
+    // Путь 2: ключа нет — это случай «пришли из Telegram по inline-кнопке».
+    // Тогда UUID-ключ в query означает «спроси у воркера через /api/config»,
+    // воркер выдаст .brelok-config.json из KV.
+    // В обоих путях валидация, парсинг и применение одинаковые.
+    let rawText = (() => {
         try { return sessionStorage.getItem(configKey); } catch (_e) { return null; }
     })();
     try { sessionStorage.removeItem(configKey); } catch (_e) {}
 
-    if (rawText == null) {
-        console.warn('config key missing in sessionStorage:', configKey);
-        return;
-    }
-
-    let cfg;
-    try {
-        cfg = JSON.parse(rawText);
-    } catch (e) {
-        console.error('config parse failed:', e);
-        showConfigToast('⚠️ Файл конфига повреждён', true);
-        return;
-    }
-    if (!cfg || typeof cfg !== 'object') return;
-
-    function waitFor(predicate, cb, attempts = 60) {
-        if (predicate()) return cb();
-        if (attempts <= 0) return;
-        setTimeout(() => waitFor(predicate, cb, attempts - 1), 100);
-    }
-    waitFor(
-        () => window.__sideToggle && window.__backCanvas,
-        () => {
-            (async () => {
-                try {
-                    await applyBrelokConfig(window.__backCanvas, cfg, incomingType);
-                    showConfigToast('✅ Макет загружен');
-                    const maket = document.getElementById('create-maket');
-                    if (maket) {
-                        maket.classList.add('btn-attention');
-                        setTimeout(() => maket.classList.remove('btn-attention'), 1500);
-                    }
-                } catch (err) {
-                    console.error('config apply:', err);
-                    showConfigToast(`⚠️ Не получилось: ${err.message}`, true);
-                }
-            })();
+    function applyRawText(text) {
+        let cfg;
+        try {
+            cfg = JSON.parse(text);
+        } catch (e) {
+            console.error('config parse failed:', e);
+            showConfigToast('⚠️ Файл конфига повреждён', true);
+            return;
         }
-    );
+        if (!cfg || typeof cfg !== 'object') return;
+
+        function waitFor(predicate, cb, attempts = 60) {
+            if (predicate()) return cb();
+            if (attempts <= 0) return;
+            setTimeout(() => waitFor(predicate, cb, attempts - 1), 100);
+        }
+        waitFor(
+            () => window.__sideToggle && window.__backCanvas,
+            () => {
+                (async () => {
+                    try {
+                        await applyBrelokConfig(window.__backCanvas, cfg, incomingType);
+                        showConfigToast('✅ Макет загружен');
+                        const maket = document.getElementById('create-maket');
+                        if (maket) {
+                            maket.classList.add('btn-attention');
+                            setTimeout(() => maket.classList.remove('btn-attention'), 1500);
+                        }
+                    } catch (err) {
+                        console.error('config apply:', err);
+                        showConfigToast(`⚠️ Не получилось: ${err.message}`, true);
+                    }
+                })();
+            }
+        );
+    }
+
+    if (rawText != null) {
+        applyRawText(rawText);
+        return;
+    }
+
+    // Нет ключа в sessionStorage — пробуем стянуть конфиг из KV через воркер.
+    // Импорт CONFIG здесь не подходит (нужен на момент парсинга query),
+    // TELEGRAM_RELAY_URL лежит в js/shared/config.js — динамический import.
+    console.warn('config key missing in sessionStorage:', configKey, '— пробую /api/config у воркера');
+    import('../shared/config.js').then(({ CONFIG }) => {
+        const endpoint = (CONFIG && CONFIG.TELEGRAM_RELAY_URL || '').trim().replace(/\/$/, '');
+        if (!endpoint) {
+            showConfigToast('⚠️ Не настроен реле для импорта конфига', true);
+            return;
+        }
+        const url = endpoint + '/api/config?id=' + encodeURIComponent(configKey);
+        return fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } })
+            .then((r) => {
+                if (!r.ok) {
+                    throw new Error('HTTP ' + r.status + ' от /api/config');
+                }
+                return r.text();
+            })
+            .then((text) => {
+                applyRawText(text);
+            })
+            .catch((err) => {
+                console.error('KV import failed:', err);
+                showConfigToast('⚠️ Не удалось импортировать конфиг из Telegram: ' + err.message, true);
+            });
+    }).catch((err) => {
+        console.error('dynamic import config.js failed:', err);
+        showConfigToast('⚠️ Ошибка импорта CONFIG', true);
+    });
 }
 
 function attachDebugConsoleToggle() {

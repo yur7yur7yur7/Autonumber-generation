@@ -185,6 +185,20 @@ python update-logos.py
 
 Если `TELEGRAM_RELAY_URL` пустой — кнопка «📦 Макет» остаётся рабочей (открывает модалку предпросмотра и итоговый PNG), но без отправки. Релей opt-in.
 
+### 🔧 Открыть на сайте (inline-кнопка в Telegram)
+
+В дополнение к `sendDocument(.config.json)` воркер может класть конфиг в Cloudflare Workers KV и добавлять в Telegram-к сообщению inline-кнопку «🔧 Открыть на сайте». По клику оператор попадает на сайт с уже подгруженным макетом — без вылавливания JSON-файла из чата и загрузки его на лендинге.
+
+**Что нужно сделать на стороне релея** (разово):
+
+1. `cd worker && wrangler kv:namespace create BRELOK_CONFIG` — выдаст `id`.
+2. Вписать этот `id` в `worker/wrangler.toml` вместо `TODO_REPLACE_WITH_KV_NAMESPACE_ID`.
+3. Убедиться, что `[vars] SITE_BASE_URL = "https://yur7yur7yur7.github.io/Autonumber-generation"` совпадает с фактическим адресом сайта (или переопределить через `wrangler secret put SITE_BASE_URL`).
+4. `wrangler deploy` — перезалить воркер с новым binding.
+5. Сайт (`js/config.js`) **не меняется** — клиент берёт `TELEGRAM_RELAY_URL` и фетчит `${URL}/api/config?id=<uuid>` при отсутствии ключа в `sessionStorage`.
+
+Без KV-binding фича деградирует прозрачно: `sendDocument` уходит, кнопка просто не отправляется (так же, как сейчас). Это значит, что воркер можно деплоить как раньше и добавить KV, когда будет удобно.
+
 ### Приватность
 
 Воркер видит только PNG/SVG-байты и (если есть) текст конфига. Никакой телеметрии по номерам, никакой аналитики, никакого логирования IP сверх стандартного Cloudflare-лога. Endpoint принимает POSTs с любого origin (`Access-Control-Allow-Origin: *`). Если нужно закрыть — поменяйте заголовок в `worker/src/index.js` и заведите shared secret в теле запроса.

@@ -52,6 +52,13 @@ export default {
         }
 
         if (request.method !== 'POST') {
+            // GET /api/config?id=<uuid> — отдаёт .brelok-config.json из KV,
+            // чтобы back.html мог достать его без sessionStorage. Остальные
+            // GET/HEAD/PUT и пр. — Method Not Allowed.
+            const url = new URL(request.url);
+            if (request.method === 'GET' && url.pathname === '/api/config') {
+                return handleApiConfigGet(request, env, url);
+            }
             return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
         }
 
@@ -154,9 +161,34 @@ export default {
         //   2. sendDocument with the SVG file (или PNG, если есть в payload)
         //   3. sendDocument с config-файлом — только если в payload есть body.config
         //      (прислано из js/brelok-config.js через sendMaketToTelegram).
+        //      После успешной отправки дополнительно шлём sendMessage c inline-
+        //      кнопкой «🔧 Открыть на сайте», ссылающейся на KV-UUID конфига.
+        //      UUID генерируется один раз на все чаты, чтобы ссылка была
+        //      идентичной для всех получателей. KV пишется один раз (вне цикла).
         // Sequential, with a 1.1s gap between recipients — Telegram's
         // 1 msg/s/chat flood control. For 2 recipients this is ~2.2s total,
         // acceptable for an operator-facing UX.
+
+        // Сгенерируем UUID и положим конфиг в KV — один раз для всех чатов,
+        // если конфиг вообще есть. Без KV (BRELOK_CONFIG не бинден) — отдаём
+        // только sendDocument, без inline-кнопки.
+        let configUuid = null;
+        if (body.config && typeof body.config === 'string' && body.config.trim() && env.BRELOK_CONFIG) {
+            try {
+                configUuid = crypto.randomUUID();
+                // metadata: schemaVersion + тип — для будущей миграции / cleanup.
+                await env.BRELOK_CONFIG.put(configUuid, body.config, {
+                    metadata: {
+                        brelokType: 'ru',
+                        uploadedAt: new Date().toISOString(),
+                    },
+                });
+            } catch (e) {
+                console.warn('KV put failed, кнопка в Telegram не будет:', e && e.message);
+                configUuid = null;
+            }
+        }
+
         const results = [];
         for (let i = 0; i < chatIds.length; i++) {
             const chatId = chatIds[i];
@@ -260,6 +292,45 @@ export default {
                         message_id: cmsg && cmsg.message_id,
                         file_id: cmsg && cmsg.document && cmsg.document.file_id,
                     };
+
+                    // 3a) Inline-кнопка «Открыть на сайте» в ответ на каждый
+                    //     конфиг. URL собирается из SITE_BASE_URL + UUID, по
+                    //     которому back.html через GET /api/config?id=<uuid>
+                    //     вытянет этот же JSON из KV. Один UUID на все чаты —
+                    //     внутри чатов ссылка общая.
+                    if (configUuid) {
+                        const buttonText = '🔧 Открыть на сайте';
+                        const buttonUrl = buildOpenUrl(env, configUuid);
+                        const btnResp = await fetch(
+                            'https://api.telegram.org/bot' + botToken + '/sendMessage',
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    chat_id: chatId,
+                                    text: '⬆️ Откройте макет в редакторе, нажмите кнопку ниже:',
+                                    reply_markup: {
+                                        inline_keyboard: [[
+                                            { text: buttonText, url: buttonUrl },
+                                        ]],
+                                    },
+                                }),
+                            }
+                        );
+                        const btnJson = await btnResp.json().catch(() => null);
+                        if (!btnResp.ok || !btnJson || !btnJson.ok) {
+                            chatResult.config_button = {
+                                ok: false,
+                                error: (btnJson && btnJson.description) || ('HTTP ' + btnResp.status),
+                            };
+                            console.warn('config sendMessage(button) failed for', chatId, btnJson && btnJson.description);
+                        } else {
+                            chatResult.config_button = {
+                                ok: true,
+                                message_id: btnJson.result && btnJson.result.message_id,
+                            };
+                        }
+                    }
                 }
             }
 
@@ -507,4 +578,63 @@ function parseDataUrl(value) {
     } catch (e) {
         return null;
     }
+}
+
+/**
+ * GET /api/config?id=<uuid> — отдаёт .brelok-config.json из KV.
+ *
+ * KV-binding BRELOK_CONFIG должен быть привязан (см. worker/wrangler.toml).
+ * Если binding отсутствует или конфиг не найден — 404.
+ *
+ * Для inline-кнопки в Telegram использовался UUID, сгенерированный в fan-out
+ * цикле запроса / и сохранённый в KV под ключом = UUID. Никакой авторизации
+ * не требуется: UUID — это секрет в URL, и подобрать 122-битный идентификатор
+ * нереально (как сбрутфорсить uuid4).
+ *
+ * @param {Request} request
+ * @param {Object} env
+ * @param {URL} url
+ * @returns {Promise<Response>}
+ */
+async function handleApiConfigGet(request, env, url) {
+    const cors = corsHeaders();
+    // CORS — сайт на github.io, воркер на workers.dev, Access-Control-Origin
+    // уже выставлен на '*'. Этого достаточно: GET без credentials.
+    if (!env.BRELOK_CONFIG) {
+        return jsonResponse({ ok: false, error: 'KV not bound' }, 500, cors);
+    }
+    const id = url.searchParams.get('id');
+    if (!id || !/^[0-9a-fA-F-]{8,64}$/.test(id)) {
+        return jsonResponse({ ok: false, error: 'Missing or malformed id' }, 400, cors);
+    }
+    let value;
+    try {
+        value = await env.BRELOK_CONFIG.get(id);
+    } catch (e) {
+        return jsonResponse({ ok: false, error: 'KV read failed: ' + (e && e.message) }, 500, cors);
+    }
+    if (!value) {
+        return jsonResponse({ ok: false, error: 'Config not found' }, 404, cors);
+    }
+    // Отдаём напрямую как application/json — back.html ждёт JSON, а не строку,
+    // которую сам бы парсил. CORS-headers обязательны: см. note выше.
+    return new Response(value, {
+        status: 200,
+        headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Cache-Control': 'no-store',
+            ...cors,
+        },
+    });
+}
+
+/**
+ * Собрать абсолютный URL сайта для inline-кнопки. Берёт SITE_BASE_URL из
+ * env (vars в wrangler.toml или secret), при отсутствии — fallback.
+ * Возвращает строку БЕЗ trailing slash; добавляет '/back.html?config=…'.
+ */
+function buildOpenUrl(env, uuid) {
+    const base = (env.SITE_BASE_URL || 'https://yur7yur7yur7.github.io/Autonumber-generation')
+        .replace(/\/$/, '');
+    return base + '/back.html?config=' + encodeURIComponent(uuid) + '&type=ru';
 }

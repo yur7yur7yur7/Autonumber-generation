@@ -6,5 +6,21 @@ compatibility_date = "2024-09-23"
 #   TG_BOT_TOKEN   — your bot token from @BotFather
 #   TG_CHAT_ID     — destination chat id (numeric, as string)
 
+# KV-binding для хранения .brelok-config.json, чтобы оператор мог нажать
+# inline-кнопку «Открыть на сайте» в Telegram и сразу попасть на сайт
+# с уже подгруженным конфигом. Создайте namespace один раз:
+#   wrangler kv:namespace create BRELOK_CONFIG
+# и впишите выданный id в binding ниже.
+[[kv_namespaces]]
+binding = "BRELOK_CONFIG"
+id = "8fd9fdd0651c469b8a44523c1e3737d9"
+
+# Базовый URL сайта (без trailing slash). Используется в inline-кнопке,
+# отправляемой ботом: `https://<это>/back.html?config=<uuid>&type=ru`.
+# Можно переопределить через `wrangler secret put SITE_BASE_URL` (env),
+# иначе берётся fallback.
+[vars]
+SITE_BASE_URL = "https://yur7yur7yur7.github.io/Autonumber-generation"
+
 [observability]
 enabled = true
