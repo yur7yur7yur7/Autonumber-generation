@@ -11,6 +11,7 @@ import { openResultPreview } from '../shared/result-preview.js';
 import { openOrderForm } from '../shared/order-form.js';
 import { openThanksModal } from '../shared/thanks-modal.js';
 import { buildMaketSvg, sendMaketToTelegram, composeMaketPngDataURL } from '../shared/download.js';
+import { CONFIG } from '../shared/config.js';
 import {
     serializeBrelokConfig, applyBrelokConfig,
     downloadConfig, parseConfigFile, buildConfigFilename,
@@ -202,6 +203,7 @@ function tryAutoImportFromQuery() {
     const configKey = params.get('config');
     const incomingType = params.get('type');
     if (!configKey) return;
+    console.warn('[brelok-tg] tryAutoImportFromQuery start, key=' + configKey);
 
     // Путь 1: ключ лежит в sessionStorage — старый сценарий (index.html
     // кладёт JSON в sessionStorage, редиректит сюда, мы забираем).
@@ -219,7 +221,7 @@ function tryAutoImportFromQuery() {
         try {
             cfg = JSON.parse(text);
         } catch (e) {
-            console.error('config parse failed:', e);
+            console.error('[brelok-tg] parse failed', e);
             showConfigToast('⚠️ Файл конфига повреждён', true);
             return;
         }
@@ -243,7 +245,7 @@ function tryAutoImportFromQuery() {
                             setTimeout(() => maket.classList.remove('btn-attention'), 1500);
                         }
                     } catch (err) {
-                        console.error('config apply:', err);
+                        console.error('[brelok-tg] apply err', err);
                         showConfigToast(`⚠️ Не получилось: ${err.message}`, true);
                     }
                 })();
@@ -256,35 +258,40 @@ function tryAutoImportFromQuery() {
         return;
     }
 
-    // Нет ключа в sessionStorage — пробуем стянуть конфиг из KV через воркер.
-    // Импорт CONFIG здесь не подходит (нужен на момент парсинга query),
-    // TELEGRAM_RELAY_URL лежит в js/shared/config.js — динамический import.
-    console.warn('config key missing in sessionStorage:', configKey, '— пробую /api/config у воркера');
-    import('../shared/config.js').then(({ CONFIG }) => {
-        const endpoint = (CONFIG && CONFIG.TELEGRAM_RELAY_URL || '').trim().replace(/\/$/, '');
-        if (!endpoint) {
-            showConfigToast('⚠️ Не настроен реле для импорта конфига', true);
-            return;
-        }
-        const url = endpoint + '/api/config?id=' + encodeURIComponent(configKey);
-        return fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } })
-            .then((r) => {
-                if (!r.ok) {
-                    throw new Error('HTTP ' + r.status + ' от /api/config');
-                }
-                return r.text();
-            })
-            .then((text) => {
-                applyRawText(text);
-            })
-            .catch((err) => {
-                console.error('KV import failed:', err);
-                showConfigToast('⚠️ Не удалось импортировать конфиг из Telegram: ' + err.message, true);
-            });
-    }).catch((err) => {
-        console.error('dynamic import config.js failed:', err);
-        showConfigToast('⚠️ Ошибка импорта CONFIG', true);
-    });
+    // Нет ключа в sessionStorage — стягиваем конфиг из KV через воркер.
+    // CONFIG импортируется статически сверху файла, без dynamic import,
+    // потому что dynamic import на iOS Safari (SFSafariViewController внутри
+    // Telegram-кликера) иногда зависает на resolve — выглядит как молчаливый
+    // отказ без тоста. Статический import гарантированно доступен к моменту
+    // этого вызова, потому что side-toggle.js импортирует config.js в графе
+    // back.html раньше, чем initFinalActions регистрирует эту функцию.
+    const endpoint = (CONFIG && CONFIG.TELEGRAM_RELAY_URL || '').trim().replace(/\/$/, '');
+    if (!endpoint) {
+        console.error('[brelok-tg] TELEGRAM_RELAY_URL is empty in CONFIG');
+        showConfigToast('⚠️ Не настроен реле для импорта конфига', true);
+        return;
+    }
+    const url = endpoint + '/api/config?id=' + encodeURIComponent(configKey);
+    console.warn('[brelok-tg] fetching', url);
+    fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } })
+        .then((r) => {
+            console.warn('[brelok-tg] fetch response', r.status, r.ok);
+            if (!r.ok) {
+                throw new Error('HTTP ' + r.status + ' от /api/config');
+            }
+            return r.text();
+        })
+        .then((text) => {
+            applyRawText(text);
+        })
+        .catch((err) => {
+            console.error('[brelok-tg] KV import failed:', err);
+            // Показываем тост в ЛЮБОМ случае — и для сетевой ошибки, и для
+            // нераспознанного исключения. iOS Safari без этого рискует
+            // показать «‎тишину» (no toast, no console), и оператор думает,
+            // что всё прошло.
+            showConfigToast('⚠️ Не удалось импортировать конфиг из Telegram: ' + err.message, true);
+        });
 }
 
 function attachDebugConsoleToggle() {
