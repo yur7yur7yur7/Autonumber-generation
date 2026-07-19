@@ -38,8 +38,8 @@ let teardown = null;
 // при показе передней стороны, чтобы канва отражала то, что ввёл пользователь.
 let currentNumber = '';
 let currentRegion = '';
-import { ALLOWED_CHARS, RUS_TO_LAT, DEFAULT_SETTINGS } from './config.js';
-import { showTemporaryMessage } from './validation.js';
+import { ALLOWED_CHARS, RUS_TO_LAT, DEFAULT_SETTINGS } from '../shared/config.js';
+import { showTemporaryMessage } from '../shared/validation.js';
 
 // Настройки передней стороны. Управляются четырьмя панелями в setSide('front'):
 //   - «Общие настройки» (тоглы): showFlag, showSideDots.
@@ -80,8 +80,8 @@ function getFrontDeps() {
     if (cachedDeps) return Promise.resolve(cachedDeps);
     if (!frontDepsPromise) {
         frontDepsPromise = Promise.all([
-            import('./drawing-front.js'),
-            import('./drawing-utils.js')
+            import('../shared/drawing-front.js'),
+            import('../shared/drawing-utils.js')
         ]).then(([front, utils]) => {
             cachedDeps = { front, utils };
             return cachedDeps;
