@@ -6,6 +6,8 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="theme-color" content="#1e1e2f">
+    <link rel="icon" href="icon.png" type="image/png">
     <title>Редактор брелка</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
     <script src="back.js?v=2"></script>
@@ -60,6 +62,7 @@
         body:not(.ready) #debug-download-png,
         body:not(.ready) #download-config-btn,
         body:not(.ready) #guide-toggle,
+        body:not(.ready) #home-link,
         body:not(.ready) #maket-toast,
         body:not(.ready) #ctx-menu,
         body:not(.ready) #rotate-hint,
@@ -2478,6 +2481,9 @@
             <input type="color" id="ctx-color-input" value="#111111" aria-label="Выбрать цвет текста">
         </label>
     </div>
+    <a id="home-link" href="index.html" aria-label="Вернуться на главную страницу">
+        <span aria-hidden="true">←</span><span class="home-link-label">На главную</span>
+    </a>
     <button id="guide-toggle" type="button" aria-label="Открыть инструкцию" data-tooltip="Показывает пошаговую инструкцию">?</button>
     <button id="create-maket" type="button" aria-label="Посмотреть результат" data-tooltip="Создаёт и отправляет макет">Посмотреть результат</button>
     <button id="debug-download-png" type="button" aria-label="Скачать PNG макета (отладка)" data-tooltip="Скачивает PNG-файл, который уходит в Telegram">🧪 Скачать PNG</button>

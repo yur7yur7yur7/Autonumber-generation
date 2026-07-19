@@ -48,12 +48,22 @@ function waitForImage(url) {
 
 export function startPreloader() {
     showLoader();
-    Promise.all([
-        (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve())
-            .catch(() => {}),
-        waitForImage(BACK_IMAGE_URL)
-    ]).finally(() => {
-        setTimeout(hideLoader, MIN_VISIBLE_MS);
+    return new Promise((resolve) => {
+        let finished = false;
+        const finish = () => {
+            if (finished) return;
+            finished = true;
+            hideLoader();
+            resolve();
+        };
+
+        Promise.all([
+            (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve())
+                .catch(() => {}),
+            waitForImage(BACK_IMAGE_URL)
+        ]).finally(() => {
+            setTimeout(finish, MIN_VISIBLE_MS);
+        });
+        setTimeout(finish, SAFETY_TIMEOUT_MS);
     });
-    setTimeout(hideLoader, SAFETY_TIMEOUT_MS);
 }

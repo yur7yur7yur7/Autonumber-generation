@@ -32,7 +32,7 @@ const scaledInnerRadius = SETTINGS_INNER_RADIUS * SCALE_FACTOR;
 // Прелоадер + rotate-hint — стартуем ДО создания fabric.Canvas, чтобы
 // спиннер висел пока инициализируется сцена.
 // ----------------------------------------------------------------
-startPreloader();
+const preloaderDone = startPreloader();
 initRotateHint();
 
 // ----------------------------------------------------------------
@@ -209,7 +209,7 @@ import('./side-toggle.js').then(({ initSideToggle }) => {
 // ----------------------------------------------------------------
 initFinalActions();
 window.__importConfigFile = (file) => import('./final-actions.js').then((m) => m.importConfigFile(file));
-initGuide();
+initGuide(preloaderDone);
 
 // Экспорт для отладки / тестов.
 export { canvas, frontRect, fitCanvasToViewport };

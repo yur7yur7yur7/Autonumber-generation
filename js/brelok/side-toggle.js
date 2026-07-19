@@ -833,6 +833,31 @@ export function initSideToggle(deps) {
     // покажет native-канву, скроет fabric-chrome и front-панель сделает видимой.
     // Дополнительной инициализации не нужно — setSide делает всё: font-load gate,
     // fitCanvasToViewport, value из currentNumber/currentRegion.
+    const homeLink = document.getElementById('home-link');
+
+    const isMobileLayout = () => window.matchMedia(
+        '(max-width: 768px), (orientation: landscape) and (max-height: 600px)'
+    ).matches;
+
+    function syncHomeLink() {
+        if (!homeLink) return;
+        const switchesToFront = isMobileLayout() && currentSide === 'back';
+        homeLink.setAttribute('aria-label', switchesToFront
+            ? 'Переключиться на переднюю сторону'
+            : 'Вернуться на главную страницу');
+        const label = homeLink.querySelector('.home-link-label');
+        if (label) label.textContent = 'На главную';
+        homeLink.title = switchesToFront ? 'Передняя сторона' : 'На главную';
+    }
+
+    if (homeLink) {
+        homeLink.addEventListener('click', (event) => {
+            if (!isMobileLayout() || currentSide !== 'back') return;
+            event.preventDefault();
+            setSide('front');
+        });
+    }
+
     setSide('front');
 
     function setSide(side) {
@@ -842,6 +867,7 @@ export function initSideToggle(deps) {
             sideLabel.dataset.side = side;
             sideLabel.textContent = side === 'front' ? '🚗 Передняя сторона' : '🎨 Задняя сторона';
         }
+        syncHomeLink();
 
         if (side === 'front') {
             // Снимаем .ready-гард с body — панели (#front-panel, #snap-panel и т.д.)

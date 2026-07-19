@@ -6,7 +6,7 @@
 
 import '../shared/onboarding.js';
 
-export function initGuide() {
+export function initGuide(preloaderDone = Promise.resolve()) {
     const guideBtn = document.getElementById('guide-toggle');
     if (guideBtn) {
         guideBtn.addEventListener('click', () => {
@@ -23,7 +23,11 @@ export function initGuide() {
          typeof window.__sideToggle.getCurrentSide === 'function' &&
          window.__sideToggle.getCurrentSide()) || 'front';
     if (window.shouldAutoShowGuide && window.shouldAutoShowGuide(initialSide)) {
-        setTimeout(() => window.startGuide(initialSide), 600);
+        Promise.resolve(preloaderDone).then(() => {
+            if (window.shouldAutoShowGuide(initialSide)) {
+                window.startGuide(initialSide);
+            }
+        });
     }
 
     const label = document.getElementById('canvas-label');
