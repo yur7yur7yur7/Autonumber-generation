@@ -18,6 +18,7 @@ import { attachRearChannel } from './rear-channel.js';
 import { initFrameOverlay } from './clamp-objects.js';
 import { initFinalActions } from './final-actions.js';
 import { initGuide } from './back-guide.js';
+import { initHistory } from './history.js';
 
 const PLATE_W = 1224;
 const PLATE_H = 252;
@@ -171,6 +172,8 @@ initFontPanel(canvas, frontRect).then(() => {
     const defaultFont = FONT_OPTIONS.find((f) => f.name === 'Everlasting')
         || FONT_OPTIONS[FONT_OPTIONS.length - 1];
     addTextWithFont(canvas, frontRect, defaultFont, { fontSize: 56, width: 720 });
+    window.__historyReady = true;
+    window.dispatchEvent(new Event('history:ready'));
 });
 
 // ----------------------------------------------------------------
@@ -199,6 +202,9 @@ import('./side-toggle.js').then(({ initSideToggle }) => {
         getFrontRect: () => frontRect,
         fitCanvasToViewport
     });
+    const startHistory = () => initHistory(canvas);
+    if (window.__historyReady) startHistory();
+    else window.addEventListener('history:ready', startHistory, { once: true });
 });
 
 // ----------------------------------------------------------------

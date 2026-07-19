@@ -1,3 +1,51 @@
+#history-controls {
+    position: fixed;
+    z-index: 12;
+    top: 12px;
+    left: calc(50% + 105px);
+    display: inline-flex;
+    padding: 3px;
+    gap: 2px;
+    background: rgba(17, 24, 39, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+#history-controls button {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: #f8fafc;
+    border: 0;
+    border-radius: 50%;
+    font: 700 20px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    cursor: pointer;
+    transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+#history-controls button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+#history-controls button:active:not(:disabled) {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+#history-controls button:focus-visible {
+    outline: 2px solid #93c5fd;
+    outline-offset: 1px;
+}
+
+#history-controls button:disabled {
+    opacity: 0.32;
+    cursor: default;
+}
+
 #home-link {
     position: fixed;
     z-index: 12;
@@ -141,6 +189,20 @@
 }
 
 @media (min-width: 769px) and (min-height: 601px) {
+    #logo-panel {
+        top: 64px;
+        left: 20px;
+        width: 248px;
+        max-height: calc(100vh - 84px);
+    }
+
+    #font-panel {
+        top: 64px;
+        right: 20px;
+        width: 288px;
+        max-height: calc(100vh - 84px);
+    }
+
     #create-maket {
         top: auto;
         bottom: 12px;
@@ -173,11 +235,29 @@
 
     #canvas-label {
         margin-left: 60px;
+        color: #ffffff;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35),
+                    0 0 0 1px rgba(37, 99, 235, 0.18);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
         transform: none;
+    }
+
+    #canvas-label:hover {
+        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+        box-shadow: 0 8px 22px rgba(37, 99, 235, 0.45),
+                    0 0 0 1px rgba(96, 165, 250, 0.5);
     }
 
     #canvas-label:active {
         transform: scale(0.97);
+    }
+
+    #history-controls {
+        top: 12px;
+        left: min(270px, calc(100vw - 92px));
     }
 
     #canvas-wrap .back-canvas-wrap,
@@ -190,6 +270,19 @@
     #home-link {
         top: 12px;
         left: 12px;
+    }
+
+    #create-maket {
+        left: auto;
+        right: 60px;
+        transform: none !important;
+    }
+
+    #create-maket:hover,
+    #create-maket:active,
+    #create-maket:focus,
+    #create-maket:focus-visible {
+        transform: none !important;
     }
 
     #front-toggle {
@@ -218,16 +311,6 @@
     #create-maket {
         top: 20px;
         bottom: auto;
-        left: 50%;
-        right: auto;
         margin: 0;
-        transform: translateX(-50%) !important;
-    }
-
-    #create-maket:hover,
-    #create-maket:active,
-    #create-maket:focus,
-    #create-maket:focus-visible {
-        transform: translateX(-50%) !important;
     }
 }

@@ -63,6 +63,7 @@
         body:not(.ready) #download-config-btn,
         body:not(.ready) #guide-toggle,
         body:not(.ready) #home-link,
+        body:not(.ready) #history-controls,
         body:not(.ready) #maket-toast,
         body:not(.ready) #ctx-menu,
         body:not(.ready) #rotate-hint,
@@ -2484,6 +2485,10 @@
     <a id="home-link" href="index.html" aria-label="Вернуться на главную страницу">
         <span aria-hidden="true">←</span><span class="home-link-label">На главную</span>
     </a>
+    <div id="history-controls" role="group" aria-label="История изменений">
+        <button id="undo-btn" type="button" aria-label="Отменить последнее действие" title="Отменить (Ctrl+Z)" disabled>↶</button>
+        <button id="redo-btn" type="button" aria-label="Вернуть отменённое действие" title="Вернуть (Ctrl+Shift+Z)" disabled>↷</button>
+    </div>
     <button id="guide-toggle" type="button" aria-label="Открыть инструкцию" data-tooltip="Показывает пошаговую инструкцию">?</button>
     <button id="create-maket" type="button" aria-label="Посмотреть результат" data-tooltip="Создаёт и отправляет макет">Посмотреть результат</button>
     <button id="debug-download-png" type="button" aria-label="Скачать PNG макета (отладка)" data-tooltip="Скачивает PNG-файл, который уходит в Telegram">🧪 Скачать PNG</button>
