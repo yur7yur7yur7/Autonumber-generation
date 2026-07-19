@@ -211,7 +211,7 @@ export async function composeMaketPngDataURL(frontDataURL, backDataURL) {
     ctx.fillRect(backX, 0, sideW, sideH);
     ctx.drawImage(backImg, backX, 0, sideW, sideH);
 
-    return canvas.toDataURL('image/png');
+    return setPngDpi(canvas.toDataURL('image/png'), 600);
 }
 
 function loadImage(src) {
@@ -221,6 +221,125 @@ function loadImage(src) {
         img.onerror = () => reject(new Error('Не удалось загрузить PNG-снимок стороны'));
         img.src = src;
     });
+}
+
+/**
+ * Прописывает в PNG-байты физическое разрешение (pHYs chunk), чтобы
+ * Photoshop / Illustrator / превью печати выводили PNG в сантиметрах
+ * согласно SVG (10.56 × 1.07 см) — без pHYs дефолтный DPI приложения
+ * (Photoshop — 72) даёт ~87 × 8.9 см, в ~9× больше ожидаемого.
+ *
+ * Используется в composeMaketPngDataURL. Туда же добавлен хардкод 600 dpi:
+ * 2468 px / 600 dpi × 2.54 ≈ 10.45 см (SVG: 10.56 см);
+ * 252 px / 600 dpi × 2.54 ≈ 1.07 см (SVG: 1.07 см).
+ *
+ * Парсер минимальный: бежит по чанкам, заменяет существующий pHYs или
+ * вставляет новый прямо перед IEND. CRC32 считается по type+data чанка.
+ * Невалидный PNG (другая сигнатура, нет IEND) — возвращает вход как есть.
+ *
+ * @param {string} dataUrl - data:image/png;base64,...
+ * @param {number} dpi     - целевой DPI (целое положительное)
+ * @returns {string} новый data:image/png;base64,...
+ */
+function setPngDpi(dataUrl, dpi) {
+    if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/png;base64,')) return dataUrl;
+    const m = dataUrl.match(/^data:image\/png;base64,(.+)$/);
+    if (!m) return dataUrl;
+    if (!Number.isFinite(dpi) || dpi <= 0) return dataUrl;
+
+    let raw;
+    try {
+        const bin = atob(m[1]);
+        raw = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) raw[i] = bin.charCodeAt(i);
+    } catch (e) {
+        return dataUrl;
+    }
+    if (raw.length < 8) return dataUrl;
+    // Сигнатура PNG: 89 50 4E 47 0D 0A 1A 0A
+    const SIG = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+    for (let i = 0; i < 8; i++) if (raw[i] !== SIG[i]) return dataUrl;
+
+    const PPM = Math.round(dpi * 39.3700787); // pixels per metre (units=1)
+    // pHYs data: 4 байта x, 4 байта y, 1 байт units=1.
+    const phys = new Uint8Array(9);
+    const dv = new DataView(phys.buffer);
+    dv.setUint32(0, PPM, false);
+    dv.setUint32(4, PPM, false);
+    phys[8] = 1; // units: 1 = metre
+
+    const out = [];
+    out.push(raw.subarray(0, 8));
+    let physInserted = false;
+
+    let p = 8;
+    while (p + 8 <= raw.length) {
+        const view = new DataView(raw.buffer, raw.byteOffset + p, 8);
+        const len = view.getUint32(0, false);
+        const type = String.fromCharCode(
+            raw[p + 4], raw[p + 5], raw[p + 6], raw[p + 7]
+        );
+        const totalLen = 12 + len;
+        if (p + totalLen > raw.length) break;
+
+        if (type === 'pHYs') {
+            // заменяем существующий pHYs
+            const physChunk = buildChunk('pHYs', phys);
+            out.push(physChunk);
+            physInserted = true;
+            p += totalLen;
+            continue;
+        }
+        if (type === 'IEND') {
+            if (!physInserted) out.push(buildChunk('pHYs', phys));
+            out.push(raw.subarray(p, p + totalLen));
+            p += totalLen;
+            // добиваем хвост (бывает мусор после IEND — обычно пусто)
+            if (p < raw.length) out.push(raw.subarray(p));
+            break;
+        }
+        out.push(raw.subarray(p, p + totalLen));
+        p += totalLen;
+    }
+
+    const total = out.reduce((s, a) => s + a.byteLength, 0);
+    const merged = new Uint8Array(total);
+    let off = 0;
+    for (const a of out) { merged.set(a, off); off += a.byteLength; }
+
+    let bin = '';
+    for (let i = 0; i < merged.length; i++) bin += String.fromCharCode(merged[i]);
+    return 'data:image/png;base64,' + btoa(bin);
+}
+
+/** Собрать один PNG-чанк: 4 байта length, 4 байта type, data, 4 байта CRC32(type+data). */
+function buildChunk(type, data) {
+    const len = data.byteLength;
+    const out = new Uint8Array(12 + len);
+    const dv = new DataView(out.buffer);
+    dv.setUint32(0, len, false);
+    for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+    out.set(data, 8);
+    const crc = crc32(out.subarray(4, 8 + len));
+    dv.setUint32(8 + len, crc, false);
+    return out;
+}
+
+/** CRC32 (PNG polynomial 0xEDB88320) по массиву байтов. Без таблицы — на холодную. */
+function crc32(bytes) {
+    let c;
+    if (!crc32._t) {
+        const t = new Uint32Array(256);
+        for (let n = 0; n < 256; n++) {
+            c = n;
+            for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+            t[n] = c >>> 0;
+        }
+        crc32._t = t;
+    }
+    c = 0xFFFFFFFF;
+    for (let i = 0; i < bytes.length; i++) c = crc32._t[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
 }
 
 /**

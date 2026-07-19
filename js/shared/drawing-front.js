@@ -186,7 +186,12 @@ function drawPlateNumber(number, rectX, rectY, rectWidth, rectHeight, offsetY, p
 function drawRusAndFlag(regionX, regionY, regionWidth, regionOffset, rusX, rusY, flagX, flagY, flagHeight) {
     const flagWidth = 50 * SCALE_FACTOR;
 
-    ctx.font = `bold ${40 * SCALE_FACTOR}px Arial`;
+    // PT Sans поставлен перед Arial специально: iOS WebKit подменяет
+    // «Arial» в стеке на Helvetica, у которого другой em-baseline,
+    // и блок RUS+флаг едет вниз относительно цифр региона. PT Sans явно
+    // подключён через @font-face в back.html, одинаково рисуется на
+    // iOS/Android и геометрически близок к Arial — выравнивание стабильно.
+    ctx.font = `bold ${40 * SCALE_FACTOR}px "PT Sans", Arial`;
     ctx.fillStyle = '#000000';
     ctx.textAlign = 'left';
     ctx.fillText('RUS', regionX + rusX, regionY + regionOffset + rusY + flagHeight/2);
