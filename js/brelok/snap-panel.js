@@ -8,13 +8,17 @@
 
 import { snapState } from './smart-guides.js';
 import { applyAngleSnapToAll } from './selection-style.js';
+import { setFrameMode } from './clamp-objects.js';
 
 const SWIPE_DOWN_DISMISS_PX = 80;
 const SWIPE_DOWN_MAX_LAT = 24;
 
 const SNAP_ICONS = {
     position: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8 V4 H8"/><path d="M20 8 V4 H16"/><path d="M4 16 V20 H8"/><path d="M20 16 V20 H16"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/></svg>',
-    showHint: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5 H20 V16 H12 L8 20 V16 H4 Z"/><circle cx="9" cy="11" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="11" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="11" r="1.1" fill="currentColor" stroke="none"/></svg>'
+    showHint: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5 H20 V16 H12 L8 20 V16 H4 Z"/><circle cx="9" cy="11" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="11" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="11" r="1.1" fill="currentColor" stroke="none"/></svg>',
+    // Квадратная рамка с обрезанным углом + объект внутри — иллюстрирует
+    // режим clamp: объекты остаются внутри плашки.
+    frame: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" stroke="none"/></svg>'
 };
 
 function rowTemplate(label, key, hint) {
@@ -82,6 +86,7 @@ export function attachSnapPanel(canvas) {
     panel.innerHTML = `
         <div class="sp-header">⚙ Настройки</div>
         <div class="sp-body">
+            ${rowTemplate('Границы', 'frame', 'удерживать объекты внутри плашки')}
             ${rowTemplate('Положение', 'position', 'края / центры рамки и других элементов')}
             ${rowTemplate('Подсказки', 'showHint', 'всплывающий текст при срабатывании')}
             <button class="sp-delete" type="button" disabled>🗑 Удалить выделенное</button>
@@ -153,8 +158,16 @@ export function attachSnapPanel(canvas) {
             if (hint) hint.style.display = 'none';
         }
     });
+    document.getElementById('snap-frame').addEventListener('change', (e) => {
+        snapState.frame = e.target.checked;
+        refreshPanelToggleUI('frame');
+        // snapState.frame === true → clamp (по умолчанию)
+        // snapState.frame === false → cover (рамка поверх всего)
+        setFrameMode(canvas, snapState.frame ? 'clamp' : 'cover');
+    });
 
     applyAngleSnapToAll(canvas, snapState.angle);
+    setFrameMode(canvas, snapState.frame ? 'clamp' : 'cover');
 
     // ESC / Delete / Backspace
     window.addEventListener('keydown', (e) => {

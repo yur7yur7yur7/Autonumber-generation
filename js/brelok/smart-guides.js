@@ -12,7 +12,8 @@ const GUIDE_COLOR = '#ff3b6b';
 export const snapState = {
     position: true,   // привязка к краям/центрам
     angle: true,      // поворот с шагом 15°
-    showHint: false   // текстовая подсказка при snap (по умолчанию выключено)
+    showHint: false,  // текстовая подсказка при snap (по умолчанию выключено)
+    frame: true       // режим рамки: true = clamp (объекты внутри плашки), false = cover (рамка поверх всего)
 };
 
 let snapHint = null;

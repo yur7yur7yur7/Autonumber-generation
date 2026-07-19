@@ -15,6 +15,7 @@ import { initLogoPanel } from './logo-panel.js';
 import { initFontPanel, addTextWithFont, FONT_OPTIONS } from './font-panel.js';
 import { initEmojiHint } from './emoji-hint.js';
 import { attachRearChannel } from './rear-channel.js';
+import { initFrameOverlay } from './clamp-objects.js';
 import { initFinalActions } from './final-actions.js';
 import { initGuide } from './back-guide.js';
 
@@ -107,6 +108,13 @@ canvas.__requestContextMenu = openMenuAt;
 // ----------------------------------------------------------------
 attachSmartGuides(canvas, PLATE_W, PLATE_H);
 attachSnapPanel(canvas);
+
+// ----------------------------------------------------------------
+// Режим рамки: clamp (по умолчанию) — объекты внутри плашки; cover —
+// рамка поверх всего. Управляется тоглом «Границы» в snap-панели
+// (см. snap-panel.js + clamp-objects.js).
+// ----------------------------------------------------------------
+initFrameOverlay(canvas, PLATE_W, PLATE_H, scaledInnerRadius, frontRect);
 
 // ----------------------------------------------------------------
 // Fit canvas to viewport — реагирует на resize/orientationchange,
