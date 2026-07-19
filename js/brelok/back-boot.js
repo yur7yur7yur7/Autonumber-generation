@@ -107,7 +107,7 @@ canvas.__requestContextMenu = openMenuAt;
 // Smart guides + snap-панель.
 // ----------------------------------------------------------------
 attachSmartGuides(canvas, PLATE_W, PLATE_H);
-attachSnapPanel(canvas);
+attachSnapPanel(canvas, frontRect);
 
 // ----------------------------------------------------------------
 // Режим рамки: clamp (по умолчанию) — объекты внутри плашки; cover —

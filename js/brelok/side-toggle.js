@@ -410,17 +410,25 @@ export function createFrontPanel(deps) {
     // Swipe-down на мобильном — закрыть drawer.
     attachSwipeDownToDismiss(panel, '.sp-header', 'fp-open', () => {
         panel.classList.remove('fp-open');
+        toggleBtn.classList.remove('is-open');
         toggleBtn.textContent = '⚙ Настройки';
+        toggleBtn.setAttribute('aria-label', 'Открыть настройки передней стороны');
     });
 
     // Гамбургер-кнопка — мобильный toggle (CSS прячет на десктопе).
     const toggleBtn = document.createElement('button');
     toggleBtn.id = 'front-toggle';
     toggleBtn.innerHTML = '⚙ Настройки';
+    toggleBtn.setAttribute('aria-label', 'Открыть настройки передней стороны');
     document.body.appendChild(toggleBtn);
     toggleBtn.addEventListener('click', () => {
         panel.classList.toggle('fp-open');
-        toggleBtn.textContent = panel.classList.contains('fp-open') ? '✕ Закрыть' : '⚙ Настройки';
+        const isOpen = panel.classList.contains('fp-open');
+        toggleBtn.classList.toggle('is-open', isOpen);
+        toggleBtn.textContent = isOpen ? '✕ Закрыть' : '⚙ Настройки';
+        toggleBtn.setAttribute('aria-label', isOpen
+            ? 'Закрыть настройки передней стороны'
+            : 'Открыть настройки передней стороны');
     });
 
     // Клик вне панели на мобильных — закрыть drawer.
@@ -430,7 +438,9 @@ export function createFrontPanel(deps) {
         if (panel.contains(e.target)) return;
         if (toggleBtn.contains(e.target)) return;
         panel.classList.remove('fp-open');
+        toggleBtn.classList.remove('is-open');
         toggleBtn.textContent = '⚙ Настройки';
+        toggleBtn.setAttribute('aria-label', 'Открыть настройки передней стороны');
     };
     document.addEventListener('click', onDocClick);
 

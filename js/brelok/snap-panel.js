@@ -13,6 +13,16 @@ import { setFrameMode } from './clamp-objects.js';
 const SWIPE_DOWN_DISMISS_PX = 80;
 const SWIPE_DOWN_MAX_LAT = 24;
 
+const DEFAULT_BACKGROUND = {
+    type: 'color',
+    color: '#ffffff',
+    colorStart: '#ffffff',
+    colorEnd: '#dbeafe',
+    angle: 90
+};
+
+const backgroundState = { ...DEFAULT_BACKGROUND };
+
 const SNAP_ICONS = {
     position: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8 V4 H8"/><path d="M20 8 V4 H16"/><path d="M4 16 V20 H8"/><path d="M20 16 V20 H16"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/></svg>',
     showHint: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5 H20 V16 H12 L8 20 V16 H4 Z"/><circle cx="9" cy="11" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="11" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="11" r="1.1" fill="currentColor" stroke="none"/></svg>',
@@ -80,12 +90,76 @@ function attachSwipeDownToDismiss(panelEl, headerSelector, openClass, onDismiss)
     header.addEventListener('pointerleave', cancel);
 }
 
-export function attachSnapPanel(canvas) {
+function normalizeBackground(value = {}) {
+    return {
+        type: value.type === 'gradient' ? 'gradient' : 'color',
+        color: typeof value.color === 'string' ? value.color : DEFAULT_BACKGROUND.color,
+        colorStart: typeof value.colorStart === 'string' ? value.colorStart : DEFAULT_BACKGROUND.colorStart,
+        colorEnd: typeof value.colorEnd === 'string' ? value.colorEnd : DEFAULT_BACKGROUND.colorEnd,
+        angle: [0, 45, 90, 135].includes(Number(value.angle)) ? Number(value.angle) : DEFAULT_BACKGROUND.angle
+    };
+}
+
+function makeBackgroundFill(frontRect) {
+    if (backgroundState.type !== 'gradient') return backgroundState.color;
+    const angle = backgroundState.angle * Math.PI / 180;
+    const centerX = frontRect.width / 2;
+    const centerY = frontRect.height / 2;
+    const halfLength = Math.abs(Math.cos(angle)) * centerX + Math.abs(Math.sin(angle)) * centerY;
+    const dx = Math.cos(angle) * halfLength;
+    const dy = Math.sin(angle) * halfLength;
+    return new fabric.Gradient({
+        type: 'linear',
+        gradientUnits: 'pixels',
+        coords: {
+            x1: centerX - dx,
+            y1: centerY - dy,
+            x2: centerX + dx,
+            y2: centerY + dy
+        },
+        colorStops: [
+            { offset: 0, color: backgroundState.colorStart },
+            { offset: 1, color: backgroundState.colorEnd }
+        ]
+    });
+}
+
+export function attachSnapPanel(canvas, frontRect) {
     const panel = document.createElement('div');
     panel.id = 'snap-panel';
     panel.innerHTML = `
         <div class="sp-header">⚙ Настройки</div>
         <div class="sp-body">
+            <fieldset class="sp-background">
+                <legend>Фон</legend>
+                <div class="sp-background-modes" role="radiogroup" aria-label="Тип фона">
+                    <label><input type="radio" name="background-type" value="color" checked> Цвет</label>
+                    <label><input type="radio" name="background-type" value="gradient"> Градиент</label>
+                </div>
+                <label class="sp-color-row" data-background-control="color">
+                    <span>Цвет фона</span>
+                    <input id="background-color" type="color" value="#ffffff" aria-label="Цвет фона">
+                </label>
+                <div class="sp-gradient-controls" hidden>
+                    <label class="sp-color-row">
+                        <span>Начало</span>
+                        <input id="background-color-start" type="color" value="#ffffff" aria-label="Начальный цвет градиента">
+                    </label>
+                    <label class="sp-color-row">
+                        <span>Конец</span>
+                        <input id="background-color-end" type="color" value="#dbeafe" aria-label="Конечный цвет градиента">
+                    </label>
+                    <label class="sp-direction-row">
+                        <span>Направление</span>
+                        <select id="background-angle" aria-label="Направление градиента">
+                            <option value="0">Слева направо</option>
+                            <option value="90" selected>Сверху вниз</option>
+                            <option value="45">По диагонали ↘</option>
+                            <option value="135">По диагонали ↙</option>
+                        </select>
+                    </label>
+                </div>
+            </fieldset>
             ${rowTemplate('Границы', 'frame', 'удерживать объекты внутри плашки')}
             ${rowTemplate('Положение', 'position', 'края / центры рамки и других элементов')}
             ${rowTemplate('Подсказки', 'showHint', 'всплывающий текст при срабатывании')}
@@ -106,6 +180,70 @@ export function attachSnapPanel(canvas) {
         panel.classList.remove('sp-open');
         toggleBtn.textContent = '⚙ Настройки';
     });
+
+    const colorControl = panel.querySelector('[data-background-control="color"]');
+    const gradientControls = panel.querySelector('.sp-gradient-controls');
+    const colorInput = panel.querySelector('#background-color');
+    const colorStartInput = panel.querySelector('#background-color-start');
+    const colorEndInput = panel.querySelector('#background-color-end');
+    const angleSelect = panel.querySelector('#background-angle');
+
+    function applyBackground() {
+        frontRect.set('fill', makeBackgroundFill(frontRect));
+        frontRect.setCoords();
+        canvas.requestRenderAll();
+    }
+
+    function syncBackgroundControls() {
+        panel.querySelectorAll('input[name="background-type"]').forEach((input) => {
+            input.checked = input.value === backgroundState.type;
+        });
+        colorInput.value = backgroundState.color;
+        colorStartInput.value = backgroundState.colorStart;
+        colorEndInput.value = backgroundState.colorEnd;
+        angleSelect.value = String(backgroundState.angle);
+        const gradientEnabled = backgroundState.type === 'gradient';
+        colorControl.hidden = gradientEnabled;
+        gradientControls.hidden = !gradientEnabled;
+    }
+
+    function setBackground(value) {
+        Object.assign(backgroundState, normalizeBackground(value));
+        syncBackgroundControls();
+        applyBackground();
+    }
+
+    panel.querySelectorAll('input[name="background-type"]').forEach((input) => {
+        input.addEventListener('change', (event) => {
+            if (!event.target.checked) return;
+            backgroundState.type = event.target.value;
+            syncBackgroundControls();
+            applyBackground();
+        });
+    });
+    colorInput.addEventListener('input', (event) => {
+        backgroundState.color = event.target.value;
+        applyBackground();
+    });
+    colorStartInput.addEventListener('input', (event) => {
+        backgroundState.colorStart = event.target.value;
+        applyBackground();
+    });
+    colorEndInput.addEventListener('input', (event) => {
+        backgroundState.colorEnd = event.target.value;
+        applyBackground();
+    });
+    angleSelect.addEventListener('change', (event) => {
+        backgroundState.angle = Number(event.target.value);
+        applyBackground();
+    });
+
+    window.__backBackground = {
+        get: () => ({ ...backgroundState }),
+        set: setBackground
+    };
+    syncBackgroundControls();
+    applyBackground();
 
     const deleteBtn = panel.querySelector('.sp-delete');
     const refreshDeleteState = () => {

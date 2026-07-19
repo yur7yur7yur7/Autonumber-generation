@@ -66,13 +66,19 @@ export function serializeBrelokConfig(canvas) {
         }
     }).filter(Boolean);
 
+    const background = (typeof window !== 'undefined'
+        && window.__backBackground
+        && typeof window.__backBackground.get === 'function')
+        ? window.__backBackground.get()
+        : { type: 'color', color: '#ffffff' };
+
     return {
         version: SCHEMA_VERSION,
         brelokType: BRELOK_TYPE,
         exportedAt: new Date().toISOString(),
         source: 'back.html',
         frontSide: front,
-        backSide: { elements },
+        backSide: { elements, background },
     };
 }
 
@@ -129,7 +135,17 @@ export function applyBrelokConfig(canvas, config, expectedType = BRELOK_TYPE) {
         }
     }
 
-    // 3. Восстанавливаем back-objects через enlivenObjects.
+    // 3. Восстанавливаем фон задней стороны. В старых конфигах поля нет — белый.
+    if (typeof window !== 'undefined'
+        && window.__backBackground
+        && typeof window.__backBackground.set === 'function') {
+        window.__backBackground.set(config.backSide?.background || {
+            type: 'color',
+            color: '#ffffff'
+        });
+    }
+
+    // 4. Восстанавливаем back-objects через enlivenObjects.
     const elements = Array.isArray(config.backSide?.elements) ? config.backSide.elements : [];
     const fabricGlobal = (typeof window !== 'undefined' && window.fabric)
         ? window.fabric
