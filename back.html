@@ -766,6 +766,12 @@
                 width: min(320px, calc(100vw - 40px));
                 max-width: none;
                 min-width: 0;
+                max-height: calc(100vh - 24px);
+            }
+            #snap-panel .sp-body {
+                min-height: 0;
+                overflow-y: auto;
+                overscroll-behavior: contain;
             }
 
             /* Панель «Общие настройки» — на передней стороне. Те же координаты
@@ -852,6 +858,23 @@
                 transform: none !important;
             }
         }
+
+        @media (min-width: 769px) and (min-height: 601px) and (max-height: 760px) {
+            /* На низких ноутбучных экранах раскрытый градиент делает нижнюю
+               панель выше и она заходит на центральный канвас. Правая колонка
+               уже зарезервирована через body padding-right: 320px, поэтому
+               переносим панель туда и ограничиваем её высотой viewport. */
+            #snap-panel {
+                top: 64px;
+                right: 20px;
+                bottom: auto;
+                left: auto;
+                transform: none;
+                width: 288px;
+                max-height: calc(100vh - 84px);
+            }
+        }
+
         #canvas-wrap {
             display: flex;
             flex-direction: column;
