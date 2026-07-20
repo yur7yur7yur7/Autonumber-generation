@@ -286,13 +286,6 @@ const STEPS = {
                   'привязки к краю или центру.',
         },
         {
-            target: '#snap-panel .sp-delete',
-            snapPanelStep: true,
-            title: 'Удалить выделенное',
-            body: 'Кнопка удаляет выбранную надпись или картинку. ' +
-                  'Пока ничего не выделено, она недоступна.',
-        },
-        {
             target: '#history-controls',
             onEnter: () => restoreSolidBackground(),
             title: 'Отменить или вернуть действие',

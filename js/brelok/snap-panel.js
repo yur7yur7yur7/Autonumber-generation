@@ -163,7 +163,6 @@ export function attachSnapPanel(canvas, frontRect) {
             ${rowTemplate('Границы', 'frame', 'удерживать объекты внутри плашки')}
             ${rowTemplate('Положение', 'position', 'края / центры рамки и других элементов')}
             ${rowTemplate('Подсказки', 'showHint', 'всплывающий текст при срабатывании')}
-            <button class="sp-delete" type="button" disabled>🗑 Удалить выделенное</button>
         </div>
     `;
     document.body.appendChild(panel);
@@ -244,23 +243,6 @@ export function attachSnapPanel(canvas, frontRect) {
     };
     syncBackgroundControls();
     applyBackground();
-
-    const deleteBtn = panel.querySelector('.sp-delete');
-    const refreshDeleteState = () => {
-        if (!deleteBtn) return;
-        deleteBtn.disabled = !canvas.getActiveObject();
-    };
-    deleteBtn.addEventListener('click', () => {
-        const active = canvas.getActiveObject();
-        if (!active) return;
-        canvas.remove(active);
-        canvas.requestRenderAll();
-        refreshDeleteState();
-    });
-    canvas.on('selection:created', refreshDeleteState);
-    canvas.on('selection:updated', refreshDeleteState);
-    canvas.on('selection:cleared', refreshDeleteState);
-    canvas.on('object:removed', refreshDeleteState);
 
     toggleBtn.addEventListener('click', () => {
         panel.classList.toggle('sp-open');
