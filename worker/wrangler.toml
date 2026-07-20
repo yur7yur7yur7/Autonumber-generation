@@ -22,5 +22,15 @@ id = "8fd9fdd0651c469b8a44523c1e3737d9"
 [vars]
 SITE_BASE_URL = "https://yur7yur7yur7.github.io/Autonumber-generation"
 
+# Мягкий лимит не меняет UX обычного пользователя, но останавливает
+# повторные клики, рекурсию и простой спам одним адресом.
+[[ratelimits]]
+name = "ORDER_RATE_LIMITER"
+namespace_id = "1001"
+
+[ratelimits.simple]
+limit = 10
+period = 60
+
 [observability]
 enabled = true

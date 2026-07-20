@@ -419,7 +419,8 @@ export async function sendMaketToTelegram(result, order, config) {
 // Returns the relay's JSON response on success, throws on failure (with a
 // human-readable message). Caller decides whether to show an error toast.
 async function sendToTelegramRelay(endpoint, payload) {
-    const resp = await fetch(endpoint, {
+    const orderEndpoint = endpoint.replace(/\/$/, '') + '/api/order';
+    const resp = await fetch(orderEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

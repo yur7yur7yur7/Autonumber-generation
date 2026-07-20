@@ -40,8 +40,18 @@
 //                                    — upstream Telegram error for at least one recipient
 //   500 { "ok": false, "error": "..." }    — internal error / misconfig
 
+const MAX_REQUEST_BYTES = 40 * 1024 * 1024;
+const MAX_SVG_BYTES = 20 * 1024 * 1024;
+const MAX_PNG_BYTES = 5 * 1024 * 1024;
+const MAX_CONFIG_BYTES = 200 * 1024;
+const ORDER_PATH = '/api/order';
+const ALLOWED_SITE_BASE_URLS = new Set([
+    'https://yur7yur7yur7.github.io/Autonumber-generation',
+]);
+
 export default {
     async fetch(request, env) {
+        const url = new URL(request.url);
         // CORS preflight — the editor is served from a different origin
         // (e.g. github.io) than the worker (e.g. *.workers.dev).
         if (request.method === 'OPTIONS') {
@@ -55,12 +65,28 @@ export default {
             // GET /api/config?id=<uuid> — отдаёт .brelok-config.json из KV,
             // чтобы back.html мог достать его без sessionStorage. Остальные
             // GET/HEAD/PUT и пр. — Method Not Allowed.
-            const url = new URL(request.url);
             if (request.method === 'GET' && url.pathname === '/api/config') {
                 return handleApiConfigGet(request, env, url);
             }
             return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
         }
+
+        if (url.pathname !== ORDER_PATH && url.pathname !== '/') {
+            return jsonResponse({ ok: false, error: 'Not found' }, 404);
+        }
+
+        const contentType = request.headers.get('Content-Type') || '';
+        if (!/^application\/json(?:\s*;|$)/i.test(contentType)) {
+            return jsonResponse({ ok: false, error: 'Content-Type must be application/json' }, 415);
+        }
+
+        const contentLength = Number(request.headers.get('Content-Length'));
+        if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) {
+            return jsonResponse({ ok: false, error: 'Request body too large (>40 MB)' }, 413);
+        }
+
+        const rateLimitResponse = await checkOrderRateLimit(request, env);
+        if (rateLimitResponse) return rateLimitResponse;
 
         // Validate env at runtime — fail fast with a clear message if missing.
         const botToken = env.TG_BOT_TOKEN;
@@ -88,7 +114,11 @@ export default {
 
         let body;
         try {
-            body = await request.json();
+            const rawBody = await request.text();
+            if (new TextEncoder().encode(rawBody).byteLength > MAX_REQUEST_BYTES) {
+                return jsonResponse({ ok: false, error: 'Request body too large (>40 MB)' }, 413);
+            }
+            body = JSON.parse(rawBody);
         } catch (e) {
             return jsonResponse({ ok: false, error: 'Invalid JSON body' }, 400);
         }
@@ -98,33 +128,41 @@ export default {
         if (typeof svg !== 'string' || svg.length < 10) {
             return jsonResponse({ ok: false, error: 'Missing or empty svg field' }, 400);
         }
-        if (svg.length > 20 * 1024 * 1024) {
-            // Telegram Bot API 50 MB hard limit; 20 MB is the practical safe ceiling
-            // for multipart body + headers.
+        if (new TextEncoder().encode(svg).byteLength > MAX_SVG_BYTES) {
             return jsonResponse({ ok: false, error: 'SVG too large (>20 MB)' }, 413);
         }
 
         // Build the human-readable caption in MarkdownV2. Escape every value the user
         // could influence (number, region) so stray '.' or '_' can't break parsing.
-        const number = String((body && body.number) || '').trim() || '—';
-        const region = String((body && body.region) || '').trim() || '—';
+        const number = limitText(body && body.number, 12) || '—';
+        const region = limitText(body && body.region, 4) || '—';
         const caption = buildCaption({
             number,
             region,
-            hasBack: !!parseDataUrl(body && body.back_png),
+            hasBack: !!parsePngDataUrl(body && body.back_png, MAX_PNG_BYTES),
             order: {
-                name: String((body && body.order_name) || '').trim(),
-                contact: String((body && body.order_contact) || '').trim(),
-                comment: String((body && body.order_comment) || '').trim(),
+                name: neutralizeUrls(limitText(body && body.order_name, 80)),
+                contact: neutralizeUrls(limitText(body && body.order_contact, 120)),
+                comment: neutralizeUrls(limitText(body && body.order_comment, 800)),
             },
         });
 
-        const frontPng = parseDataUrl(body && body.front_png);
-        const backPng = parseDataUrl(body && body.back_png);
+        const frontPng = parsePngDataUrl(body && body.front_png, MAX_PNG_BYTES);
+        const backPng = parsePngDataUrl(body && body.back_png, MAX_PNG_BYTES);
         // Опциональный готовый PNG-макет целиком (front+back одной картинкой).
         // Если есть — отправим его как sendDocument с image/png вместо SVG.
         // Валидация svg выше остаётся как fallback для старых клиентов.
-        const readyPng = parseDataUrl(body && body.png);
+        const readyPng = parsePngDataUrl(body && body.png, MAX_PNG_BYTES);
+        if (typeof body.png === 'string' && body.png && !readyPng) {
+            const encodedLength = body.png.startsWith('data:image/png;base64,')
+                ? body.png.length - 'data:image/png;base64,'.length
+                : 0;
+            const oversized = encodedLength > Math.ceil(MAX_PNG_BYTES / 3) * 4 + 4;
+            return jsonResponse({
+                ok: false,
+                error: oversized ? 'PNG too large (>5 MB)' : 'Invalid png field',
+            }, oversized ? 413 : 400);
+        }
         const mediaItems = [];
         if (frontPng) {
             mediaItems.push({ kind: 'front', bytes: frontPng });
@@ -169,15 +207,16 @@ export default {
         // 1 msg/s/chat flood control. For 2 recipients this is ~2.2s total,
         // acceptable for an operator-facing UX.
 
+        const config = normalizeConfig(body && body.config);
         // Сгенерируем UUID и положим конфиг в KV — один раз для всех чатов,
         // если конфиг вообще есть. Без KV (BRELOK_CONFIG не бинден) — отдаём
         // только sendDocument, без inline-кнопки.
         let configUuid = null;
-        if (body.config && typeof body.config === 'string' && body.config.trim() && env.BRELOK_CONFIG) {
+        if (config && env.BRELOK_CONFIG) {
             try {
                 configUuid = crypto.randomUUID();
                 // metadata: schemaVersion + тип — для будущей миграции / cleanup.
-                await env.BRELOK_CONFIG.put(configUuid, body.config, {
+                await env.BRELOK_CONFIG.put(configUuid, config, {
                     metadata: {
                         brelokType: 'ru',
                         uploadedAt: new Date().toISOString(),
@@ -262,10 +301,12 @@ export default {
             //    привязано к номеру/региону, чтобы оператору было понятно,
             //    к какому макету относится этот JSON. Не валим весь результат
             //    из-за ошибки отправки config (он — справочный документ).
-            if (body.config && typeof body.config === 'string' && body.config.trim()) {
-                const cfgName = `brelok-${(String(body.number || '').trim())}${(String(body.region || '').trim())}.config.json`
-                    .replace(/brelok-\.config\.json$/, 'brelok.config.json');
-                const cfgBytes = new TextEncoder().encode(body.config);
+            if (config) {
+                const cfgName = `brelok-${number === '—' ? '' : number}${region === '—' ? '' : region}.config.json`
+                    .replace(/brelok-\.config\.json$/, 'brelok.config.json')
+                    .replace(/[\r\n"\\/]/g, '_')
+                    .slice(0, 200);
+                const cfgBytes = new TextEncoder().encode(config);
                 const cfgBoundary = '----BrelokCfgBoundary' + crypto.randomUUID().replace(/-/g, '');
                 const cfgMultipart = buildDocumentMultipart(
                     cfgBoundary, chatId, cfgBytes, cfgName, 'application/json'
@@ -300,35 +341,47 @@ export default {
                     //     внутри чатов ссылка общая.
                     if (configUuid) {
                         const buttonText = '🔧 Открыть на сайте';
-                        const buttonUrl = buildOpenUrl(env, configUuid);
-                        const btnResp = await fetch(
-                            'https://api.telegram.org/bot' + botToken + '/sendMessage',
-                            {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    chat_id: chatId,
-                                    text: '⬆️ Откройте макет в редакторе, нажмите кнопку ниже:',
-                                    reply_markup: {
-                                        inline_keyboard: [[
-                                            { text: buttonText, url: buttonUrl },
-                                        ]],
-                                    },
-                                }),
-                            }
-                        );
-                        const btnJson = await btnResp.json().catch(() => null);
-                        if (!btnResp.ok || !btnJson || !btnJson.ok) {
+                        let buttonUrl = null;
+                        try {
+                            buttonUrl = buildOpenUrl(env, configUuid);
+                        } catch (e) {
                             chatResult.config_button = {
                                 ok: false,
-                                error: (btnJson && btnJson.description) || ('HTTP ' + btnResp.status),
+                                skipped: true,
+                                error: e && e.message,
                             };
-                            console.warn('config sendMessage(button) failed for', chatId, btnJson && btnJson.description);
-                        } else {
-                            chatResult.config_button = {
-                                ok: true,
-                                message_id: btnJson.result && btnJson.result.message_id,
-                            };
+                            console.warn('config button skipped:', e && e.message);
+                        }
+                        if (buttonUrl) {
+                            const btnResp = await fetch(
+                                'https://api.telegram.org/bot' + botToken + '/sendMessage',
+                                {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        chat_id: chatId,
+                                        text: '⬆️ Откройте макет в редакторе, нажмите кнопку ниже:',
+                                        reply_markup: {
+                                            inline_keyboard: [[
+                                                { text: buttonText, url: buttonUrl },
+                                            ]],
+                                        },
+                                    }),
+                                }
+                            );
+                            const btnJson = await btnResp.json().catch(() => null);
+                            if (!btnResp.ok || !btnJson || !btnJson.ok) {
+                                chatResult.config_button = {
+                                    ok: false,
+                                    error: (btnJson && btnJson.description) || ('HTTP ' + btnResp.status),
+                                };
+                                console.warn('config sendMessage(button) failed for', chatId, btnJson && btnJson.description);
+                            } else {
+                                chatResult.config_button = {
+                                    ok: true,
+                                    message_id: btnJson.result && btnJson.result.message_id,
+                                };
+                            }
                         }
                     }
                 }
@@ -360,18 +413,37 @@ export default {
 function corsHeaders() {
     return {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
         'Access-Control-Max-Age': '86400',
     };
 }
 
-function jsonResponse(obj, status) {
+async function checkOrderRateLimit(request, env) {
+    if (!env.ORDER_RATE_LIMITER) return null;
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    try {
+        const result = await env.ORDER_RATE_LIMITER.limit({ key: 'order:' + ip });
+        if (!result.success) {
+            return jsonResponse(
+                { ok: false, error: 'Too many orders. Please try again in a minute.' },
+                429,
+                { 'Retry-After': '60' }
+            );
+        }
+    } catch (e) {
+        console.warn('Rate limiter failed open:', e && e.message);
+    }
+    return null;
+}
+
+function jsonResponse(obj, status, extraHeaders) {
     return new Response(JSON.stringify(obj), {
         status: status || 200,
         headers: {
             'Content-Type': 'application/json; charset=utf-8',
             ...corsHeaders(),
+            ...(extraHeaders || {}),
         },
     });
 }
@@ -390,7 +462,7 @@ function jsonResponse(obj, status) {
 // (or skipped the chat_id part) and Telegram returned HTTP 400 with
 // "chat_id: chat not found" / "wrong type" — depending on which field was
 // misinterpreted. The shape below is the one accepted by the API.
-function buildMediaGroupMultipart(chatId, caption, mediaItems) {
+export function buildMediaGroupMultipart(chatId, caption, mediaItems) {
     const boundary = '----BrelokBoundary' + crypto.randomUUID().replace(/-/g, '');
     const enc = new TextEncoder();
     const parts = [];
@@ -454,7 +526,7 @@ function buildMediaGroupMultipart(chatId, caption, mediaItems) {
 // document (bytes with given MIME). No caption — Telegram shows it as a
 // bare document after the media-group message above. MIME берётся из
 // вызывающего кода: image/svg+xml (fallback) или image/png (готовый макет).
-function buildDocumentMultipart(boundary, chatId, fileBytes, filename, mime) {
+export function buildDocumentMultipart(boundary, chatId, fileBytes, filename, mime) {
     const enc = new TextEncoder();
     const parts = [];
 
@@ -488,7 +560,7 @@ function buildDocumentMultipart(boundary, chatId, fileBytes, filename, mime) {
 }
 
 // Build the MarkdownV2 caption shown under the first photo in the media group.
-function buildCaption({ number, region, hasBack, order }) {
+export function buildCaption({ number, region, hasBack, order }) {
     const date = formatHumanDate(new Date());
     // Escape every user-controlled piece: Telegram's MarkdownV2 requires that
     // these characters appear only inside `*…*`, `_…_`, etc. — anywhere else
@@ -538,7 +610,7 @@ function buildCaption({ number, region, hasBack, order }) {
 // Telegram MarkdownV2 reserved characters that must be escaped outside
 // formatting constructs.
 const MD2_RESERVED = /([_*\[\]()~`>#+\-=|{}.!\\])/g;
-function escapeMarkdownV2(s) {
+export function escapeMarkdownV2(s) {
     return String(s).replace(MD2_RESERVED, '\\$1');
 }
 
@@ -565,16 +637,42 @@ function formatHumanDate(d) {
 }
 
 // Decode a `data:image/png;base64,...` URL into raw PNG bytes. Returns null if
-// the input is missing or not a recognizable PNG data URL.
-function parseDataUrl(value) {
+// the input is missing, oversized, malformed, or does not contain PNG bytes.
+export function parsePngDataUrl(value, maxBytes = MAX_PNG_BYTES) {
     if (typeof value !== 'string') return null;
-    const m = value.match(/^data:image\/png;base64,(.+)$/);
-    if (!m) return null;
+    const prefix = 'data:image/png;base64,';
+    if (!value.startsWith(prefix)) return null;
+    const encoded = value.slice(prefix.length);
+    if (!encoded || encoded.length > Math.ceil(maxBytes / 3) * 4 + 4) return null;
     try {
-        const bin = atob(m[1]);
+        const bin = atob(encoded);
+        if (bin.length > maxBytes || bin.length < 8) return null;
         const out = new Uint8Array(bin.length);
         for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+        const signature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+        if (!signature.every((byte, index) => out[index] === byte)) return null;
         return out;
+    } catch (e) {
+        return null;
+    }
+}
+
+function limitText(value, maxLength) {
+    const text = value == null ? '' : String(value).trim();
+    return text.length > maxLength ? text.slice(0, maxLength) : text;
+}
+
+export function neutralizeUrls(value) {
+    return String(value).replace(/\b(https?):\/\//gi, '$1[:]//');
+}
+
+export function normalizeConfig(value) {
+    if (typeof value !== 'string' || !value.trim()) return null;
+    if (new TextEncoder().encode(value).byteLength > MAX_CONFIG_BYTES) return null;
+    try {
+        const parsed = JSON.parse(value);
+        if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') return null;
+        return value;
     } catch (e) {
         return null;
     }
@@ -633,8 +731,11 @@ async function handleApiConfigGet(request, env, url) {
  * env (vars в wrangler.toml или secret), при отсутствии — fallback.
  * Возвращает строку БЕЗ trailing slash; добавляет '/back.html?config=…'.
  */
-function buildOpenUrl(env, uuid) {
-    const base = (env.SITE_BASE_URL || 'https://yur7yur7yur7.github.io/Autonumber-generation')
+export function buildOpenUrl(env, uuid) {
+    const configuredBase = (env.SITE_BASE_URL || 'https://yur7yur7yur7.github.io/Autonumber-generation')
         .replace(/\/$/, '');
-    return base + '/back.html?config=' + encodeURIComponent(uuid) + '&type=ru';
+    if (!ALLOWED_SITE_BASE_URLS.has(configuredBase)) {
+        throw new Error('SITE_BASE_URL is not in the allowed site list');
+    }
+    return configuredBase + '/back.html?config=' + encodeURIComponent(uuid) + '&type=ru';
 }
