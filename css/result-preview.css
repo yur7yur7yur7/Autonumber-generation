@@ -364,6 +364,32 @@
     pointer-events: none;
 }
 
+.rp-editor-hint {
+    position: absolute;
+    top: 56%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    max-width: 72%;
+    padding: max(3px, 0.55cqw) max(7px, 1.2cqw);
+    border: 1px solid rgba(147, 197, 253, 0.28);
+    border-radius: 999px;
+    background: rgba(30, 58, 138, 0.52);
+    color: #dbeafe;
+    font-size: max(9px, 1.05cqw);
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: center;
+    white-space: nowrap;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    pointer-events: none;
+}
+
+.rp-editor-hint[hidden] {
+    display: none;
+}
+
 /* ============================================================
    СПИННЕР ЗАГРУЗКИ TEMPLATE (result-preview.js → ensureTemplate)
    Виден, пока template.png не докачался (первое открытие модалки

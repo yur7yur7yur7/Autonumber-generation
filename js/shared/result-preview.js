@@ -130,6 +130,11 @@ function buildModalMarkup() {
     hint.textContent = 'Так будет выглядеть ваш брелок';
     stage.appendChild(hint);
 
+    const editorHint = document.createElement('div');
+    editorHint.className = 'rp-editor-hint';
+    editorHint.textContent = 'Нажмите на сторону, чтобы открыть её редактор';
+    stage.appendChild(editorHint);
+
     modal.appendChild(stage);
 
     const close = document.createElement('button');
@@ -157,7 +162,7 @@ function buildModalMarkup() {
     windowEl.appendChild(actions);
     overlay.appendChild(windowEl);
 
-    return { overlay, modal, stage, close, sendBtn, cancelBtn, tpl, loader };
+    return { overlay, modal, stage, close, sendBtn, cancelBtn, tpl, loader, editorHint };
 }
 
 /**
@@ -238,7 +243,8 @@ export function openResultPreview({
     onSelectBack
 }) {
     return new Promise((resolve) => {
-        const { overlay, close, sendBtn, cancelBtn, stage, tpl, loader } = buildModalMarkup();
+        const { overlay, close, sendBtn, cancelBtn, stage, tpl, loader, editorHint } = buildModalMarkup();
+        editorHint.hidden = typeof onSelectFront !== 'function' && typeof onSelectBack !== 'function';
 
         // Плашки не добавляем в DOM сразу — иначе они будут видны висящими
         // в тёмном пространстве, пока template.png не загрузится. Ждём
