@@ -235,6 +235,7 @@
 
     #canvas-label {
         margin-left: 60px;
+        margin-right: max(12px, calc(100vw - 365px));
         color: #ffffff;
         background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
         border: 1px solid rgba(255, 255, 255, 0.25);
@@ -256,8 +257,14 @@
     }
 
     #history-controls {
+        /* Прижимаем справа рядом с #guide-toggle (правые 12px + 36px ширина
+           + зазор 8px), чтобы undo/redo никогда не наезжали на «?» даже
+           на самых узких экранах (≈320px). Раньше стояло
+           `left: min(270px, calc(100vw - 92px))` — на 365px это давало
+           правый край 335px, что перекрывало «?», сидящий в правых 48px. */
         top: 12px;
-        left: min(270px, calc(100vw - 92px));
+        left: auto;
+        right: calc(12px + 36px + 8px);
     }
 
     #canvas-wrap .back-canvas-wrap,

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -872,8 +872,10 @@
             overflow: hidden;
         }
 
-        /* Лейбл режима редактора («Задняя сторона» / «Передняя сторона»).
-           Сверху над канвасом, по центру; работает тогглом при клике. */
+        /* Лейбл режима редактора («Задняя» / «Передняя»).
+           Сверху над канвасом, по центру; работает тогглом при клике.
+           На мобиле укорочены «Передняя»/«Задняя» (без «сторона»), чтобы
+           верхняя строка (label + undo/redo + ?) не пересекалась на 320–365px. */
         #canvas-label {
             display: inline-flex;
             align-items: center;
@@ -2442,7 +2444,7 @@
     <div id="canvas-wrap">
         <div id="canvas-label" role="button" tabindex="0"
              aria-label="Переключить сторону брелка"
-             data-side="front">🚗 Передняя сторона</div>
+             data-side="front">🚗 Передняя</div>
         <div class="back-canvas-wrap" hidden>
             <canvas id="c" width="1224" height="252"></canvas>
         </div>

@@ -865,7 +865,7 @@ export function initSideToggle(deps) {
         currentSide = side;
         if (sideLabel) {
             sideLabel.dataset.side = side;
-            sideLabel.textContent = side === 'front' ? '🚗 Передняя сторона' : '🎨 Задняя сторона';
+            sideLabel.textContent = side === 'front' ? '🚗 Передняя' : '🎨 Задняя';
         }
         syncHomeLink();
 
