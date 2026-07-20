@@ -69,6 +69,7 @@ export function openOrderForm() {
             name: 'name',
             placeholder: 'Иван',
             autocomplete: 'given-name',
+            maxlength: 80,
             required: false,
         });
         const fContact = makeField({
@@ -76,12 +77,14 @@ export function openOrderForm() {
             name: 'contact',
             placeholder: '@username или телефон',
             autocomplete: 'off',
+            maxlength: 120,
             required: false,
         });
         const fComment = makeTextarea({
             label: 'Комментарий',
             name: 'comment',
             placeholder: 'Пожелания, что доделать или переделать…',
+            maxlength: 800,
         });
 
         form.appendChild(fName.wrap);
@@ -201,12 +204,18 @@ export function openOrderForm() {
     });
 }
 
-function makeField({ label, name, placeholder, autocomplete, required = false }) {
+function makeField({ label, name, placeholder, autocomplete, maxlength, required = false }) {
     const wrap = document.createElement('label');
     wrap.className = 'of-field';
     const lab = document.createElement('span');
     lab.className = 'of-field__label';
     lab.textContent = label;
+    if (maxlength) {
+        const counter = document.createElement('span');
+        counter.className = 'of-field__counter';
+        counter.textContent = '0/' + maxlength;
+        lab.appendChild(counter);
+    }
     if (required) {
         const star = document.createElement('span');
         star.className = 'of-field__required';
@@ -219,14 +228,20 @@ function makeField({ label, name, placeholder, autocomplete, required = false })
     input.type = 'text';
     input.name = name;
     input.placeholder = placeholder;
+    if (maxlength) input.maxLength = maxlength;
     if (autocomplete) input.autocomplete = autocomplete;
     if (required) input.required = true;
     wrap.appendChild(lab);
     wrap.appendChild(input);
+    if (maxlength) {
+        input.addEventListener('input', () => {
+            lab.querySelector('.of-field__counter').textContent = input.value.length + '/' + maxlength;
+        });
+    }
     return { wrap, input };
 }
 
-function makeTextarea({ label, name, placeholder }) {
+function makeTextarea({ label, name, placeholder, maxlength }) {
     const wrap = document.createElement('label');
     wrap.className = 'of-field';
     const lab = document.createElement('span');
@@ -237,6 +252,16 @@ function makeTextarea({ label, name, placeholder }) {
     input.name = name;
     input.placeholder = placeholder;
     input.rows = 3;
+    if (maxlength) {
+        const counter = document.createElement('span');
+        counter.className = 'of-field__counter';
+        counter.textContent = '0/' + maxlength;
+        lab.appendChild(counter);
+        input.maxLength = maxlength;
+        input.addEventListener('input', () => {
+            counter.textContent = input.value.length + '/' + maxlength;
+        });
+    }
     wrap.appendChild(lab);
     wrap.appendChild(input);
     return { wrap, input };

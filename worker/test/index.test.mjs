@@ -35,8 +35,16 @@ test('caption escapes user fields and neutralizes supplied comment URL', () => {
     assert.match(caption, /A\\_1/);
     assert.match(caption, /77\\\./);
     assert.match(caption, /Иван\\\*/);
-    assert.match(caption, /https\\\[:\\\]\/\/evil\\\.example\/a\\_b/);
-    assert.doesNotMatch(caption, /https:\/\//);
+    assert.match(caption, /https\\\[:\\\]\/\/evil\u2024example\/a\\_b/);
+    assert.doesNotMatch(caption, /evil\.example/);
+});
+
+test('neutralizeUrls swaps only domain dots, leaves normal punctuation', () => {
+    assert.equal(neutralizeUrls('example.com'), 'example․com');
+    assert.equal(neutralizeUrls('Подключи github.com/foo/bar'), 'Подключи github․com/foo/bar');
+    assert.equal(neutralizeUrls('Готово. Спасибо.'), 'Готово. Спасибо.');
+    assert.equal(neutralizeUrls('1.5 часа и 3.14'), '1.5 часа и 3.14');
+    assert.equal(neutralizeUrls('https://x.io/path?a=1.b'), 'https[:]//x․io/path?a=1.b');
 });
 
 test('parsePngDataUrl accepts a PNG signature and rejects invalid bytes', () => {

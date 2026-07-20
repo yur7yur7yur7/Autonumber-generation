@@ -553,6 +553,15 @@
     color: #f97316;
     font-weight: 700;
 }
+.of-field__counter {
+    margin-left: auto;
+    font-size: 0.85em;
+    font-weight: 500;
+    color: rgba(148, 163, 184, 0.85);
+    text-transform: none;
+    letter-spacing: 0;
+    font-variant-numeric: tabular-nums;
+}
 .of-field__input,
 .of-field__textarea {
     box-sizing: border-box;

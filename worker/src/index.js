@@ -663,7 +663,13 @@ function limitText(value, maxLength) {
 }
 
 export function neutralizeUrls(value) {
-    return String(value).replace(/\b(https?):\/\//gi, '$1[:]//');
+    return String(value)
+        .replace(/\b(https?):\/\//gi, '$1[:]//')
+        // Telegram распознаёт домены и без протокола. Меняем только точки,
+        // которые похожи на домен: слева латиница/кириллица, справа ≥2
+        // латинских/цифровых символов. Обычная пунктуация («Готово.»,
+        // «1.5 часа», «3.14») остаётся без изменений.
+        .replace(/([A-Za-zА-Яа-яЁё])\.(?=[A-Za-z0-9]{2,})/g, '$1․');
 }
 
 export function normalizeConfig(value) {
