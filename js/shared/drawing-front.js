@@ -42,9 +42,14 @@ export function drawFrontSide(plateNumber, region, plateWidth, plateHeight) {
     const scaledInnerBorderRadius = settings.innerBorderRadius * SCALE_FACTOR;
     const scaledPadding = settings.numberPadding * SCALE_FACTOR;
 
-    // Отступ для контента из-за точек
+    // Отступы из-за боковых точек. Логика номера и региона независима:
+    //   • contentOffset (множитель 1.5) — для региона/RUS/флага (исходная
+    //     логика editor, не трогаем).
+    //   • numberContentOffset (множитель 0.8) — для номера, чтобы при
+    //     включённых точках номер не сжимался избыточно слева.
     const dotOffset = settings.showSideDots ? (settings.dotOffset || 15) * SCALE_FACTOR : 0;
     const contentOffset = dotOffset * 1.5;
+    const numberContentOffset = dotOffset * 0.8;
 
     // БЕЛЫЙ ПРЯМОУГОЛЬНИК ДЛЯ НОМЕРА - БЕЗ СДВИГА (на всю ширину)
     const numberRectX = scaledMargin;
@@ -76,12 +81,13 @@ export function drawFrontSide(plateNumber, region, plateWidth, plateHeight) {
     const displayNumber = getDisplayNumber(plateNumber);
     const displayRegion = region || '777';
 
-    // Рисуем номер - СО СДВИГОМ
+    // Рисуем номер — отдельный от региона отступ под боковые точки,
+    // чтобы номер не сжимался слева избыточно.
     drawPlateNumber(
         displayNumber,
-        numberRectX + contentOffset + (settings.numberX || 0) * SCALE_FACTOR,
+        numberRectX + numberContentOffset + (settings.numberX || 0) * SCALE_FACTOR,
         numberRectY,
-        numberRectWidth - (contentOffset * 2),  // ← уменьшаем доступную ширину
+        numberRectWidth - numberContentOffset,  // только левый сдвиг, без ×2
         numberRectHeight,
         scaledNumberY,
         scaledPadding
@@ -197,7 +203,10 @@ function drawRusAndFlag(regionX, regionY, regionWidth, regionOffset, rusX, rusY,
     ctx.fillText('RUS', regionX + rusX, regionY + regionOffset + rusY + flagHeight/2);
 
     if (settings.showFlag) {
-        const flagXPos = regionX + regionWidth - flagWidth - flagX;
+        // Инверсия: раньше «больше flagX → левее» — слайдер вправо уводил
+        // флаг влево. Теперь «больше flagX → правее», как у numberX/regionX:
+        // направление ползунка совпадает с направлением объекта.
+        const flagXPos = regionX + regionWidth - flagWidth + flagX;
         const flagYPos = regionY + regionOffset + rusY - (5 * SCALE_FACTOR) + flagY;
 
         // Рамка

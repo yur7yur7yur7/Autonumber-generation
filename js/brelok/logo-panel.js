@@ -1,6 +1,6 @@
 // ============================================================
 // Панель логотипов: загружает манифест images/logos/manifest.json,
-// рендерит сетку по брендам, поиск + фильтр (Все/Значки/С надп.).
+// рендерит сетку по брендам, поиск + фильтр (Все/Эмблемы/С надп.).
 // Тапаешь по лого — добавляется как fabric.Image в центр сцены
 // (50% от высоты плиты по короткой стороне). На мобильных — bottom
 // sheet за гамбургер-кнопкой #logo-toggle, свайп вниз закрывает.
@@ -23,8 +23,48 @@ function stackLogosBelowTextboxes(canvas, frontRect) {
     canvas.requestRenderAll();
 }
 
+// Назначаем SVG-логотип через fabric.loadSVGFromURL + groupSVGElements,
+// потому что fabric.Image.fromURL через <img>+crossOrigin для локальных
+// SVG часто возвращает пустой объект (SVG не имеет нативного размера, и
+// tainted-canvas CORS-проверки блокируют его в Fabric).
+function addSvgLogo(canvas, url, PLATE_W, PLATE_H, frontRect) {
+    fabric.loadSVGFromURL(url, (objects, options) => {
+        if (!objects || !objects.length) {
+            console.warn('Не удалось разобрать SVG:', url);
+            return;
+        }
+        const group = fabric.util.groupSVGElements(objects, options);
+        const targetH = Math.round(FRACTION_OF_HEIGHT * PLATE_H);
+        // Используем group.height и group.width — это bbox группы до
+        // применения scaleX/Y (для SVG-группы это эквивалент viewBox).
+        const aspect = (group.width || 1) / (group.height || 1);
+        const w = Math.max(1, Math.round(targetH * aspect));
+        const scale = w / (group.width || 1);
+
+        group.set({
+            left: canvas.getWidth() / 2,
+            top: canvas.getHeight() / 2,
+            originX: 'center',
+            originY: 'center',
+            scaleX: scale,
+            scaleY: scale
+        });
+        canvas.add(group);
+        stackLogosBelowTextboxes(canvas, frontRect);
+        canvas.setActiveObject(group);
+        canvas.requestRenderAll();
+    });
+}
+
 function addLogoFromManifest(canvas, logo, PLATE_W, PLATE_H, frontRect) {
-    fabric.Image.fromURL(`images/logos/${logo.file}`, (img) => {
+    const url = `images/logos/${logo.file}`;
+    // SVG идёт отдельным путём — fabric.Image.fromURL через <img>+CORS
+    // для локальных SVG возвращает пустой объект.
+    if (/\.svg$/i.test(logo.file)) {
+        addSvgLogo(canvas, url, PLATE_W, PLATE_H, frontRect);
+        return;
+    }
+    fabric.Image.fromURL(url, (img) => {
         if (!img) {
             console.warn('Не удалось загрузить логотип:', logo.file);
             return;
@@ -65,6 +105,8 @@ function attachSwipeDownToDismiss(panelEl, headerSelector, openClass, onDismiss)
         startY = e.clientY;
         startX = e.clientX;
         dismissed = false;
+        // Блокируем pull-to-refresh / navigation gesture браузера.
+        if (typeof e.preventDefault === 'function') e.preventDefault();
     });
     header.addEventListener('pointermove', (e) => {
         if (activePointer === null || e.pointerId !== activePointer) return;
@@ -97,7 +139,7 @@ export async function initLogoPanel(canvas, PLATE_W, PLATE_H, frontRect) {
         </div>
         <div class="lp-filters">
             <button class="lp-filter-btn active" data-filter="all">Все</button>
-            <button class="lp-filter-btn" data-filter="badge">Значки</button>
+            <button class="lp-filter-btn" data-filter="badge">Эмблемы</button>
             <button class="lp-filter-btn" data-filter="text">С надп.</button>
         </div>
         <div class="lp-grid">

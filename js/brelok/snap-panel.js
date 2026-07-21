@@ -66,6 +66,8 @@ function attachSwipeDownToDismiss(panelEl, headerSelector, openClass, onDismiss)
         startY = e.clientY;
         startX = e.clientX;
         dismissed = false;
+        // Блокируем pull-to-refresh / navigation gesture браузера.
+        if (typeof e.preventDefault === 'function') e.preventDefault();
     });
 
     header.addEventListener('pointermove', (e) => {

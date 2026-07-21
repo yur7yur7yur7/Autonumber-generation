@@ -171,7 +171,7 @@ initFontPanel(canvas, frontRect).then(() => {
     // прогрела font-faces (await в initFontPanel).
     const defaultFont = FONT_OPTIONS.find((f) => f.name === 'Everlasting')
         || FONT_OPTIONS[FONT_OPTIONS.length - 1];
-    addTextWithFont(canvas, frontRect, defaultFont, { fontSize: 56, width: 720 });
+    addTextWithFont(canvas, frontRect, defaultFont);
     window.__historyReady = true;
     window.dispatchEvent(new Event('history:ready'));
 });

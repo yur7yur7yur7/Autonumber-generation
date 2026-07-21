@@ -129,12 +129,14 @@ async function renderFrontOnNativeCanvas(ctx, number, region) {
         mainBorderRadius: DEFAULT_SETTINGS.mainBorderRadius,
         borderThickness: DEFAULT_SETTINGS.borderThickness
     };
-    // Если точки по бокам включены — сдвигаем номер и регион, чтобы хватило
-    // места под боковые точки (старая логика editor.html).
-    if (settings.showSideDots) {
-        settings.numberPadding = 0;
-        settings.regionX = 23;
-    }
+    // При включённых «точках по бокам» НЕ перетираем numberPadding/regionX
+    // поверх пользовательских значений: расширенные слайдеры «Отступ номера»
+    // и «Регион X» работают только когда пользователь ими управляет, и
+    // принудительный сброс при showSideDots=true воспринимается как
+    // «слайдер не двигает текст». Если в будущем понадобится визуально
+    // сдвинуть номер/регион под боковые точки — это должно делаться
+    // отдельным оверлеем поверх пользовательских значений, без записи
+    // обратно в frontSettings и без перетирания DOM слайдеров.
 
     ctx.clearRect(0, 0, W, H);
     utils.setDrawingContext(ctx);
@@ -325,6 +327,10 @@ function attachSwipeDownToDismiss(panelEl, headerSelector, openClass, onDismiss)
         startY = e.clientY;
         startX = e.clientX;
         dismissed = false;
+        // Блокируем pull-to-refresh и навигационные жесты с самого начала
+        // свайпа: pointerdown у pointer-событий не пассивный, preventDefault
+        // подавляет дефолтный vertical-scroll/pinch-zoom на этом таргете.
+        if (typeof e.preventDefault === 'function') e.preventDefault();
     });
     header.addEventListener('pointermove', (e) => {
         if (activePointer === null || e.pointerId !== activePointer) return;
@@ -469,7 +475,27 @@ export function createFrontPanel(deps) {
         onChange();
     });
     document.getElementById('front-showSideDots').addEventListener('change', (e) => {
-        frontSettings.showSideDots = e.target.checked;
+        const enabled = e.target.checked;
+        frontSettings.showSideDots = enabled;
+        // Смещаем регион вправо на 23, чтобы он не наезжал на боковые
+        // точки. При выключении — снимаем тот же сдвиг, возвращая
+        // пользовательское значение regionX. Клампим в допустимый
+        // диапазон слайдера (-100..100), иначе DOM-инпут «прилипнет»
+        // к краю и обнулит ввод.
+        const REGION_X_STEP = 23;
+        const REGION_X_MIN = -100;
+        const REGION_X_MAX = 100;
+        let nextRegionX = frontSettings.regionX + (enabled ? REGION_X_STEP : -REGION_X_STEP);
+        if (nextRegionX > REGION_X_MAX) nextRegionX = REGION_X_MAX;
+        if (nextRegionX < REGION_X_MIN) nextRegionX = REGION_X_MIN;
+        frontSettings.regionX = nextRegionX;
+        const advPanel = document.getElementById('front-advanced-panel');
+        if (advPanel) {
+            const regionInput = advPanel.querySelector('[data-slider-key="regionX"]');
+            const regionValue = advPanel.querySelector('.sp-slider-value[data-value-for="regionX"]');
+            if (regionInput) regionInput.value = String(nextRegionX);
+            if (regionValue) regionValue.textContent = String(nextRegionX);
+        }
         onChange();
     });
 
@@ -784,7 +810,11 @@ export function initSideToggle(deps) {
             // Флаг и RUS
             { key: 'rusX', label: 'RUS X', min: 0, max: 100, value: frontSettings.rusX, icon: 'images/settings/rus-x.png' },
             { key: 'rusY', label: 'RUS Y', min: 0, max: 100, value: frontSettings.rusY, icon: 'images/settings/rus-y.png' },
-            { key: 'flagX', label: 'Флаг X', min: 0, max: 100, value: frontSettings.flagX, icon: 'images/settings/flag-x.png' },
+            // flagX после инверсии: значения ≤ 0 (0 — нейтраль, −19 — дефолт,
+            // полное смещение к левому краю региона — около −100). «Вправо →
+            // вправо»: пользователь тянет слайдер вправо, флаг едет к правому
+            // краю региона (значения ближе к 0).
+            { key: 'flagX', label: 'Флаг X', min: -100, max: 0, value: frontSettings.flagX, icon: 'images/settings/flag-x.png' },
             { key: 'flagY', label: 'Флаг Y', min: -50, max: 50, value: frontSettings.flagY, icon: 'images/settings/flag-y.png' },
             // Номер
             { key: 'numberY', label: 'Номер Y', min: -50, max: 100, value: frontSettings.numberY, icon: 'images/settings/num-y.png' },
@@ -805,14 +835,25 @@ export function initSideToggle(deps) {
         resetButtonLabel: '↺ Сбросить настройки',
         onReset: () => {
             // Сбрасываем все слайдеры панели к DEFAULT_SETTINGS и обновляем DOM.
+            // Для regionX учитываем «+23 с учётом showSideDots»: при включённых
+            // точках базовое значение слайдера должно вернуться к
+            // DEFAULT_SETTINGS.regionX + 23, чтобы визуал региона не
+            // налезал на боковые точки. Клампим в диапазон слайдера.
+            const REGION_X_STEP = 23;
+            const REGION_X_MIN = -100;
+            const REGION_X_MAX = 100;
             const panel = document.getElementById(`${ADVANCED_PANEL.id}-panel`);
             ADVANCED_PANEL.sliders.forEach((s) => {
-                frontSettings[s.key] = DEFAULT_SETTINGS[s.key];
+                const baseValue = (s.key === 'regionX')
+                    ? DEFAULT_SETTINGS.regionX + (frontSettings.showSideDots ? REGION_X_STEP : 0)
+                    : DEFAULT_SETTINGS[s.key];
+                const clamped = Math.max(s.min, Math.min(s.max, baseValue));
+                frontSettings[s.key] = clamped;
                 if (!panel) return;
                 const input = panel.querySelector(`[data-slider-key="${s.key}"]`);
                 const valueEl = panel.querySelector(`.sp-slider-value[data-value-for="${s.key}"]`);
-                if (input) input.value = String(DEFAULT_SETTINGS[s.key]);
-                if (valueEl) valueEl.textContent = String(DEFAULT_SETTINGS[s.key]);
+                if (input) input.value = String(clamped);
+                if (valueEl) valueEl.textContent = String(clamped);
             });
             // Синхронизируем чекбокс «Показывать флаг» и состояние flagX-слайдера
             // (rusX уже вернулся к DEFAULT_SETTINGS.rusX = 14 — это соответствует

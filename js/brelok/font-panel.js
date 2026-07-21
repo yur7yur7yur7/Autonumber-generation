@@ -43,10 +43,14 @@ function stackLogosBelowTextboxes(canvas, frontRect) {
 }
 
 export async function addTextWithFont(canvas, frontRect, font, options = {}) {
-    const fontSize = options.fontSize || 40;
-    const width = options.width || 520;
     const PLATE_WIDTH = 1224;
     const PLATE_HEIGHT = 252;
+    // Однострочная подпись ориентируется по ширине, не по высоте.
+    // Целевая ширина рамки выделения — 70% от длины канваса: текст
+    // почти вписан, но с запасом, чтобы Fabric bbox не вылезал за плашку.
+    const TARGET_W_FRACTION = 0.7;
+    const fontSize = options.fontSize || Math.round(PLATE_HEIGHT * 0.7);
+    const width = options.width || Math.round(PLATE_WIDTH * 0.9);
     await document.fonts.load(`${fontSize}px "${font.family}"`, SIGNATURE_TEXT);
     const textbox = new fabric.Textbox(SIGNATURE_TEXT, {
         left: PLATE_WIDTH / 2,
@@ -60,6 +64,26 @@ export async function addTextWithFont(canvas, frontRect, font, options = {}) {
         textAlign: 'center'
     });
     canvas.add(textbox);
+    // Подгоняем масштаб так, чтобы on-screen ширина bbox текстбокса
+    // (≈ ширина рамки выделения Fabric) была близка к целевой доле от
+    // длины канваса. У однострочной подписи высота bbox ≈ fontSize * lineHeight,
+    // поэтому уменьшение scale по ширине автоматически уменьшает и видимую
+    // высоту глифов — текст остаётся пропорциональным.
+    const targetW = PLATE_WIDTH * TARGET_W_FRACTION;
+    const bboxW = textbox.width * textbox.scaleX;
+    if (bboxW > targetW) {
+        const k = targetW / bboxW;
+        textbox.set({ scaleX: textbox.scaleX * k, scaleY: textbox.scaleY * k });
+        textbox.setCoords();
+    } else if (bboxW < targetW * 0.6) {
+        const targetScale = targetW / bboxW;
+        const currentScale = Math.max(textbox.scaleX, textbox.scaleY);
+        if (currentScale < targetScale) {
+            const k = targetScale / currentScale;
+            textbox.set({ scaleX: textbox.scaleX * k, scaleY: textbox.scaleY * k });
+            textbox.setCoords();
+        }
+    }
     stackLogosBelowTextboxes(canvas, frontRect);
     canvas.setActiveObject(textbox);
     canvas.requestRenderAll();
@@ -80,6 +104,8 @@ function attachSwipeDownToDismiss(panelEl, headerSelector, openClass, onDismiss)
         startY = e.clientY;
         startX = e.clientX;
         dismissed = false;
+        // Блокируем pull-to-refresh / navigation gesture браузера.
+        if (typeof e.preventDefault === 'function') e.preventDefault();
     });
     header.addEventListener('pointermove', (e) => {
         if (activePointer === null || e.pointerId !== activePointer) return;

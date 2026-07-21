@@ -30,6 +30,89 @@ function clampObjectToPlate(obj, plate) {
 }
 
 /**
+ * «Стоп-кран» при растягивании за якорь: объект не уменьшается в размере —
+ * якорь просто перестаёт тянуть, когда bbox уже уперся в plate.
+ *
+ * Реализация через кешированный «потолок» (obj.__scaleCap) с ПОЛНЫМ
+ * снапшотом валидного состояния (left, top, scaleX, scaleY):
+ *   • На каждом object:scaling, пока bbox помещается в plate, потолок
+ *     подтягивается вверх к новому валидному состоянию.
+ *   • Если bbox выходит за plate, мы возвращаем объект к снапшоту —
+ *     и size, и position. Без этого Fabric при масштабировании за якорь
+ *     сдвигает left/top вместе со scale, и объект «выпадает» за границу
+ *     по позиции; тогда следующий object:moving клампит позицию, и
+ *     визуально это читается как «якорь переключился в режим
+ *     передвижения объекта за границу».
+ *   • На object:modified (конец драга) снапшот сбрасывается, чтобы при
+ *     следующем resize объект снова мог свободно расти вниз.
+ */
+function fitsInPlate(obj, plate) {
+    const b = obj.getBoundingRect(true, true);
+    return b.left >= plate.left
+        && b.left + b.width <= plate.right
+        && b.top >= plate.top
+        && b.top + b.height <= plate.bottom;
+}
+
+function snapshotState(obj) {
+    return {
+        left: obj.left,
+        top: obj.top,
+        scaleX: obj.scaleX,
+        scaleY: obj.scaleY
+    };
+}
+
+function restoreState(obj, snap) {
+    obj.set({
+        left: snap.left,
+        top: snap.top,
+        scaleX: snap.scaleX,
+        scaleY: snap.scaleY
+    });
+    obj.setCoords();
+}
+
+function clampObjectScaleToPlate(obj, plate) {
+    const cap = obj.__scaleCap;
+    if (fitsInPlate(obj, plate)) {
+        // Запоминаем текущее валидное состояние как новый потолок —
+        // и size, и position, чтобы при пересечении границы вернуть
+        // объект ровно туда, где он был в последний валидный момент.
+        obj.__scaleCap = snapshotState(obj);
+        return;
+    }
+    if (!cap || cap.scaleX <= 0 || cap.scaleY <= 0) {
+        // Потолок ещё не выставлен — откатываем через бинарный спуск
+        // (одноразово на первом драге, если объект был больше plate).
+        clampObjectScaleFirstTime(obj, plate);
+        return;
+    }
+    // bbox превысил plate — возвращаем объект к последнему валидному
+    // состоянию (size + position). Якорь перестаёт тянуть, объект
+    // не сжимается и не уезжает за границу.
+    restoreState(obj, cap);
+}
+
+function clampObjectScaleFirstTime(obj, plate) {
+    const STEP = 0.01;
+    const MIN_SCALE = 0.01;
+    let lastValid = null;
+    for (let i = 0; i < 200; i++) {
+        if (fitsInPlate(obj, plate)) {
+            lastValid = snapshotState(obj);
+            break;
+        }
+        const nextSx = Math.max(MIN_SCALE, obj.scaleX - STEP);
+        const nextSy = Math.max(MIN_SCALE, obj.scaleY - STEP);
+        if (nextSx === obj.scaleX && nextSy === obj.scaleY) break;
+        obj.set({ scaleX: nextSx, scaleY: nextSy });
+        obj.setCoords();
+    }
+    if (lastValid) obj.__scaleCap = lastValid;
+}
+
+/**
  * Создаёт 4 чёрных прямоугольника по периметру frontRect:
  *   - верхняя полоса: y ∈ [0, frontRect.top]
  *   - нижняя полоса: y ∈ [frontRect.bottom, PLATE_H]
@@ -107,6 +190,26 @@ export function initFrameOverlay(canvas, PLATE_W, PLATE_H, scaledInnerRadius, fr
         const obj = e.target;
         if (!obj || obj.__guide || obj.__frameStrip || obj.__isFrontRect) return;
         clampObjectToPlate(obj, plate);
+    });
+
+    // Блокируем увеличение объекта за якорями так, чтобы bbox не вылезал
+    // за frontRect. В 'cover'-режиме clamp отключён → объект можно
+    // свободно растягивать (вылезающее скрывается за чёрными полосами).
+    canvas.on('object:scaling', (e) => {
+        if (currentMode !== 'clamp') return;
+        const obj = e.target;
+        if (!obj || obj.__guide || obj.__frameStrip || obj.__isFrontRect) return;
+        clampObjectScaleToPlate(obj, plate);
+    });
+
+    // Конец любого драга — снимаем кешированный «потолок» масштаба,
+    // чтобы при следующем resize объект снова мог свободно подрасти
+    // (если его предварительно подвинули обратно в плашку).
+    canvas.on('object:modified', () => {
+        if (currentMode !== 'clamp') return;
+        const obj = canvas.getActiveObject();
+        if (!obj || obj.__guide || obj.__frameStrip || obj.__isFrontRect) return;
+        delete obj.__scaleCap;
     });
 
     // После добавления нового объекта (логотип, текстбокс) — полосы

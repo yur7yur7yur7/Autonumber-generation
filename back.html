@@ -1966,18 +1966,34 @@
             }
 
             /* Шапки bottom-sheet'ов — зона хвата для свайпа вниз.
-               touch-action: pan-y разрешает вертикальный скролл страницы/списка,
-               но даёт JS перехватить pointer-события для закрытия панели. */
+               touch-action: none — браузер не запускает pull-to-refresh и не
+               выполняет navigation gesture, отдавая жест pointer-событиям в JS.
+               Внутри панели (body) скролл остаётся благодаря overscroll-behavior
+               и отдельной touch-action:none только на header'е. */
             #logo-panel .lp-header,
             #snap-panel .sp-header,
-            #font-panel .fp-header {
+            #font-panel .fp-header,
+            #front-panel .sp-header,
+            #front-advanced-panel .sp-header {
                 cursor: grab;
-                touch-action: pan-y;
+                touch-action: none;
             }
             #logo-panel .lp-header:active,
             #snap-panel .sp-header:active,
-            #font-panel .fp-header:active {
+            #font-panel .fp-header:active,
+            #front-panel .sp-header:active,
+            #front-advanced-panel .sp-header:active {
                 cursor: grabbing;
+            }
+
+            /* Контейнеры bottom-sheet'ов не должны пробрасывать вертикальный
+               оверскролл в навигационный жест браузера (PTR/назад-в-историю). */
+            #logo-panel,
+            #snap-panel,
+            #font-panel,
+            #front-panel,
+            #front-advanced-panel {
+                overscroll-behavior: contain;
             }
 
             /* «Посмотреть результат» на мобильном — по центру внизу, выше гамбургеров.

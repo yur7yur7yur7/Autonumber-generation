@@ -440,7 +440,7 @@
       "brand": "kia",
       "type": "badge",
       "category": "badge",
-      "file": "kia_badge_3.svg",
+      "file": "kia_badge_3.png",
       "label": "Kia (3)"
     },
     {
@@ -678,7 +678,7 @@
       "brand": "moskvich",
       "type": "badge",
       "category": "badge",
-      "file": "moskvich_badge_red.svg",
+      "file": "moskvich_badge_red.png",
       "label": "Moskvich (red)"
     },
     {
