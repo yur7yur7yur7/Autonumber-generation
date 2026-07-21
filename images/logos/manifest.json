@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-01T16:36:22.130367",
+  "generated": "2026-07-21T14:38:44.426435",
   "count": 128,
   "logos": [
     {
@@ -7,6 +7,7 @@
       "type": "text",
       "category": "text",
       "file": "audi_text.png",
+      "src": "audi_text.png",
       "label": "Audi (значок + надпись)"
     },
     {
@@ -14,6 +15,7 @@
       "type": "badge",
       "category": "badge",
       "file": "belgee_badge.png",
+      "src": "belgee_badge.png",
       "label": "Belgee (значок)"
     },
     {
@@ -21,6 +23,7 @@
       "type": "text",
       "category": "text",
       "file": "belgee_text.png",
+      "src": "belgee_text.png",
       "label": "Belgee (значок + надпись)"
     },
     {
@@ -28,6 +31,7 @@
       "type": "badge",
       "category": "badge",
       "file": "bentley_badge.png",
+      "src": "bentley_badge.png",
       "label": "Bentley (значок)"
     },
     {
@@ -35,6 +39,7 @@
       "type": "badge",
       "category": "badge",
       "file": "bmw_badge.png",
+      "src": "bmw_badge.png",
       "label": "BMW (значок)"
     },
     {
@@ -42,6 +47,7 @@
       "type": "badge",
       "category": "badge",
       "file": "bugatti_badge.png",
+      "src": "bugatti_badge.png",
       "label": "Bugatti (значок)"
     },
     {
@@ -49,6 +55,7 @@
       "type": "badge",
       "category": "badge",
       "file": "byd_badge.jpg",
+      "src": "byd_badge.jpg",
       "label": "BYD (значок)"
     },
     {
@@ -56,6 +63,7 @@
       "type": "badge",
       "category": "badge",
       "file": "byd_badge_2.svg",
+      "src": "byd_badge_2.svg",
       "label": "BYD (2)"
     },
     {
@@ -63,6 +71,7 @@
       "type": "badge",
       "category": "badge",
       "file": "byd_badge_3.webp",
+      "src": "byd_badge_3.webp",
       "label": "BYD (3)"
     },
     {
@@ -70,6 +79,7 @@
       "type": "text",
       "category": "text",
       "file": "cadillac_text.png",
+      "src": "cadillac_text.png",
       "label": "Cadillac (значок + надпись)"
     },
     {
@@ -77,6 +87,7 @@
       "type": "text",
       "category": "text",
       "file": "changan_text.jpg",
+      "src": "changan_text.jpg",
       "label": "Changan (значок + надпись)"
     },
     {
@@ -84,6 +95,7 @@
       "type": "text",
       "category": "text",
       "file": "changan_text_2.png",
+      "src": "changan_text_2.png",
       "label": "Changan 2"
     },
     {
@@ -91,6 +103,7 @@
       "type": "text",
       "category": "text",
       "file": "changan_text_3.png",
+      "src": "changan_text_3.png",
       "label": "Changan 3"
     },
     {
@@ -98,6 +111,7 @@
       "type": "text",
       "category": "text",
       "file": "chery_text.png",
+      "src": "chery_text.png",
       "label": "Chery (значок + надпись)"
     },
     {
@@ -105,6 +119,7 @@
       "type": "text",
       "category": "text",
       "file": "chevrolet_niva_text.png",
+      "src": "chevrolet_niva_text.png",
       "label": "Chevrolet niva"
     },
     {
@@ -112,6 +127,7 @@
       "type": "text",
       "category": "text",
       "file": "chevrolet_text.png",
+      "src": "chevrolet_text.png",
       "label": "Chevrolet (значок + надпись)"
     },
     {
@@ -119,6 +135,7 @@
       "type": "badge",
       "category": "badge",
       "file": "chrysler_badge.png",
+      "src": "chrysler_badge.png",
       "label": "Chrysler (значок)"
     },
     {
@@ -126,6 +143,7 @@
       "type": "badge",
       "category": "badge",
       "file": "citroen_badge.png",
+      "src": "citroen_badge.png",
       "label": "Citroen (значок)"
     },
     {
@@ -133,6 +151,7 @@
       "type": "text",
       "category": "text",
       "file": "citroen_text.png",
+      "src": "citroen_text.png",
       "label": "Citroen (значок + надпись)"
     },
     {
@@ -140,6 +159,7 @@
       "type": "badge",
       "category": "badge",
       "file": "dacia_badge.jpg",
+      "src": "dacia_badge.jpg",
       "label": "Dacia (значок)"
     },
     {
@@ -147,6 +167,7 @@
       "type": "text",
       "category": "text",
       "file": "daewoo_text.png",
+      "src": "daewoo_text.png",
       "label": "Daewoo (значок + надпись)"
     },
     {
@@ -154,6 +175,7 @@
       "type": "badge",
       "category": "badge",
       "file": "daf_badge.png",
+      "src": "daf_badge.png",
       "label": "Daf (значок)"
     },
     {
@@ -161,6 +183,7 @@
       "type": "badge",
       "category": "badge",
       "file": "datsun_badge.png",
+      "src": "datsun_badge.png",
       "label": "Datsun (значок)"
     },
     {
@@ -168,6 +191,7 @@
       "type": "badge",
       "category": "badge",
       "file": "dodge_badge_2.png",
+      "src": "dodge_badge_2.png",
       "label": "Dodge (2)"
     },
     {
@@ -175,6 +199,7 @@
       "type": "text",
       "category": "text",
       "file": "dodge_text.png",
+      "src": "dodge_text.png",
       "label": "Dodge (значок + надпись)"
     },
     {
@@ -182,6 +207,7 @@
       "type": "badge",
       "category": "badge",
       "file": "dongfeng_badge_black.png",
+      "src": "dongfeng_badge_black.png",
       "label": "Dongfeng (black)"
     },
     {
@@ -189,6 +215,7 @@
       "type": "badge",
       "category": "badge",
       "file": "dongfeng_badge_red.png",
+      "src": "dongfeng_badge_red.png",
       "label": "Dongfeng (red)"
     },
     {
@@ -196,6 +223,7 @@
       "type": "text",
       "category": "text",
       "file": "dongfeng_text.jpg",
+      "src": "dongfeng_text.jpg",
       "label": "Dongfeng (значок + надпись)"
     },
     {
@@ -203,6 +231,7 @@
       "type": "text",
       "category": "text",
       "file": "dongfeng_text_2.png",
+      "src": "dongfeng_text_2.png",
       "label": "Dongfeng 2"
     },
     {
@@ -210,6 +239,7 @@
       "type": "badge",
       "category": "badge",
       "file": "exeed_badge.jpg",
+      "src": "exeed_badge.jpg",
       "label": "Exeed (значок)"
     },
     {
@@ -217,6 +247,7 @@
       "type": "text",
       "category": "text",
       "file": "faw_text.png",
+      "src": "faw_text.png",
       "label": "FAW (значок + надпись)"
     },
     {
@@ -224,6 +255,7 @@
       "type": "badge",
       "category": "badge",
       "file": "ferrari_badge.png",
+      "src": "ferrari_badge.png",
       "label": "Ferrari (значок)"
     },
     {
@@ -231,6 +263,7 @@
       "type": "badge",
       "category": "badge",
       "file": "fiat_badge.png",
+      "src": "fiat_badge.png",
       "label": "Fiat (значок)"
     },
     {
@@ -238,13 +271,23 @@
       "type": "badge",
       "category": "badge",
       "file": "ford_badge.png",
+      "src": "ford_badge.png",
       "label": "Ford (значок)"
+    },
+    {
+      "brand": "gac",
+      "type": "badge",
+      "category": "badge",
+      "file": "gac_badge.png",
+      "src": "gac_badge.png",
+      "label": "GAC (значок)"
     },
     {
       "brand": "gac",
       "type": "text",
       "category": "text",
       "file": "gac_text.png",
+      "src": "gac_text.png",
       "label": "GAC (значок + надпись)"
     },
     {
@@ -252,6 +295,7 @@
       "type": "badge",
       "category": "badge",
       "file": "gaz_badge_blue.png",
+      "src": "gaz_badge_blue.png",
       "label": "GAZ (blue)"
     },
     {
@@ -259,6 +303,7 @@
       "type": "badge",
       "category": "badge",
       "file": "gaz_badge_red.png",
+      "src": "gaz_badge_red.png",
       "label": "GAZ (red)"
     },
     {
@@ -266,6 +311,7 @@
       "type": "text",
       "category": "text",
       "file": "gazel_next_text.png",
+      "src": "gazel_next_text.png",
       "label": "Gazel next"
     },
     {
@@ -273,6 +319,7 @@
       "type": "badge",
       "category": "badge",
       "file": "geely_badge.png",
+      "src": "geely_badge.png",
       "label": "Geely (значок)"
     },
     {
@@ -280,6 +327,7 @@
       "type": "badge",
       "category": "badge",
       "file": "geely_badge_2.png",
+      "src": "geely_badge_2.png",
       "label": "Geely (2)"
     },
     {
@@ -287,6 +335,7 @@
       "type": "text",
       "category": "text",
       "file": "geely_text.png",
+      "src": "geely_text.png",
       "label": "Geely (значок + надпись)"
     },
     {
@@ -294,6 +343,7 @@
       "type": "badge",
       "category": "badge",
       "file": "genesis_badge.png",
+      "src": "genesis_badge.png",
       "label": "Genesis (значок)"
     },
     {
@@ -301,6 +351,7 @@
       "type": "badge",
       "category": "badge",
       "file": "gmc_badge.png",
+      "src": "gmc_badge.png",
       "label": "GMC (значок)"
     },
     {
@@ -308,6 +359,7 @@
       "type": "badge",
       "category": "badge",
       "file": "great_wall_badge.png",
+      "src": "great_wall_badge.png",
       "label": "Great wall (значок)"
     },
     {
@@ -315,6 +367,7 @@
       "type": "text",
       "category": "text",
       "file": "great_wall_text.png",
+      "src": "great_wall_text.png",
       "label": "Great wall (значок + надпись)"
     },
     {
@@ -322,6 +375,7 @@
       "type": "badge",
       "category": "badge",
       "file": "haval_badge.jpg",
+      "src": "haval_badge.jpg",
       "label": "Haval (значок)"
     },
     {
@@ -329,6 +383,7 @@
       "type": "badge",
       "category": "badge",
       "file": "haval_badge.png",
+      "src": "haval_badge.png",
       "label": "Haval (значок)"
     },
     {
@@ -336,6 +391,7 @@
       "type": "badge",
       "category": "badge",
       "file": "haval_badge_2.png",
+      "src": "haval_badge_2.png",
       "label": "Haval (2)"
     },
     {
@@ -343,6 +399,7 @@
       "type": "text",
       "category": "text",
       "file": "honda_text.png",
+      "src": "honda_text.png",
       "label": "Honda (значок + надпись)"
     },
     {
@@ -350,6 +407,7 @@
       "type": "badge",
       "category": "badge",
       "file": "hyundai_badge_2.jpg",
+      "src": "hyundai_badge_2.jpg",
       "label": "Hyundai (2)"
     },
     {
@@ -357,6 +415,7 @@
       "type": "badge",
       "category": "badge",
       "file": "hyundai_badge_3.png",
+      "src": "hyundai_badge_3.png",
       "label": "Hyundai (3)"
     },
     {
@@ -364,6 +423,7 @@
       "type": "text",
       "category": "text",
       "file": "hyundai_text.png",
+      "src": "hyundai_text.png",
       "label": "Hyundai (значок + надпись)"
     },
     {
@@ -371,6 +431,7 @@
       "type": "text",
       "category": "text",
       "file": "hyundai_text_2.png",
+      "src": "hyundai_text_2.png",
       "label": "Hyundai 2"
     },
     {
@@ -378,20 +439,15 @@
       "type": "text",
       "category": "text",
       "file": "infiniti_text.png",
+      "src": "infiniti_text.png",
       "label": "Infiniti (значок + надпись)"
-    },
-    {
-      "brand": "jac",
-      "type": "badge",
-      "category": "badge",
-      "file": "jac_badge.png",
-      "label": "JAC (значок)"
     },
     {
       "brand": "jaguar",
       "type": "badge",
       "category": "badge",
       "file": "jaguar_badge.png",
+      "src": "jaguar_badge.png",
       "label": "Jaguar (значок)"
     },
     {
@@ -399,6 +455,7 @@
       "type": "badge",
       "category": "badge",
       "file": "jaguar_badge_2.png",
+      "src": "jaguar_badge_2.png",
       "label": "Jaguar (2)"
     },
     {
@@ -406,6 +463,7 @@
       "type": "text",
       "category": "text",
       "file": "jaguar_text.png",
+      "src": "jaguar_text.png",
       "label": "Jaguar (значок + надпись)"
     },
     {
@@ -413,6 +471,7 @@
       "type": "badge",
       "category": "badge",
       "file": "jeep_badge.png",
+      "src": "jeep_badge.png",
       "label": "Jeep (значок)"
     },
     {
@@ -420,6 +479,7 @@
       "type": "badge",
       "category": "badge",
       "file": "jetour_badge.svg",
+      "src": "jetour_badge.svg",
       "label": "Jetour (значок)"
     },
     {
@@ -427,6 +487,7 @@
       "type": "badge",
       "category": "badge",
       "file": "kia_badge.jpg",
+      "src": "kia_badge.jpg",
       "label": "Kia (значок)"
     },
     {
@@ -434,6 +495,7 @@
       "type": "badge",
       "category": "badge",
       "file": "kia_badge_2.png",
+      "src": "kia_badge_2.png",
       "label": "Kia (2)"
     },
     {
@@ -441,6 +503,7 @@
       "type": "badge",
       "category": "badge",
       "file": "kia_badge_3.png",
+      "src": "kia_badge_3.png",
       "label": "Kia (3)"
     },
     {
@@ -448,6 +511,7 @@
       "type": "badge",
       "category": "badge",
       "file": "lada_badge.png",
+      "src": "lada_badge.png",
       "label": "Lada (значок)"
     },
     {
@@ -455,6 +519,7 @@
       "type": "badge",
       "category": "badge",
       "file": "lada_badge_black.png",
+      "src": "lada_badge_black.png",
       "label": "Lada (black)"
     },
     {
@@ -462,6 +527,7 @@
       "type": "badge",
       "category": "badge",
       "file": "lada_badge_gray.png",
+      "src": "lada_badge_gray.png",
       "label": "Lada (gray)"
     },
     {
@@ -469,6 +535,7 @@
       "type": "badge",
       "category": "badge",
       "file": "lada_badge_red.jpg",
+      "src": "lada_badge_red.jpg",
       "label": "Lada (red)"
     },
     {
@@ -476,6 +543,7 @@
       "type": "text",
       "category": "text",
       "file": "lada_granta_text.png",
+      "src": "lada_granta_text.png",
       "label": "Lada granta"
     },
     {
@@ -483,6 +551,7 @@
       "type": "text",
       "category": "text",
       "file": "lada_kalina_text.png",
+      "src": "lada_kalina_text.png",
       "label": "Lada kalina"
     },
     {
@@ -490,6 +559,7 @@
       "type": "text",
       "category": "text",
       "file": "lada_priora_text.png",
+      "src": "lada_priora_text.png",
       "label": "Lada priora"
     },
     {
@@ -497,6 +567,7 @@
       "type": "text",
       "category": "text",
       "file": "lada_priora_text_2.png",
+      "src": "lada_priora_text_2.png",
       "label": "Lada priora 2"
     },
     {
@@ -504,6 +575,7 @@
       "type": "text",
       "category": "text",
       "file": "lada_text.png",
+      "src": "lada_text.png",
       "label": "Lada (значок + надпись)"
     },
     {
@@ -511,6 +583,7 @@
       "type": "text",
       "category": "text",
       "file": "lada_vesta_text.png",
+      "src": "lada_vesta_text.png",
       "label": "Lada vesta"
     },
     {
@@ -518,6 +591,7 @@
       "type": "badge",
       "category": "badge",
       "file": "lamborghini_badge.png",
+      "src": "lamborghini_badge.png",
       "label": "Lamborghini (значок)"
     },
     {
@@ -525,6 +599,7 @@
       "type": "badge",
       "category": "badge",
       "file": "land_rover_badge.png",
+      "src": "land_rover_badge.png",
       "label": "Land rover (значок)"
     },
     {
@@ -532,6 +607,7 @@
       "type": "badge",
       "category": "badge",
       "file": "land_rover_badge_2.png",
+      "src": "land_rover_badge_2.png",
       "label": "Land rover (2)"
     },
     {
@@ -539,6 +615,7 @@
       "type": "badge",
       "category": "badge",
       "file": "lexus_badge.png",
+      "src": "lexus_badge.png",
       "label": "Lexus (значок)"
     },
     {
@@ -546,6 +623,7 @@
       "type": "text",
       "category": "text",
       "file": "lexus_text.png",
+      "src": "lexus_text.png",
       "label": "Lexus (значок + надпись)"
     },
     {
@@ -553,6 +631,7 @@
       "type": "badge",
       "category": "badge",
       "file": "lifan_badge_2.jpg",
+      "src": "lifan_badge_2.jpg",
       "label": "Lifan (2)"
     },
     {
@@ -560,6 +639,7 @@
       "type": "badge",
       "category": "badge",
       "file": "lifan_badge_3.png",
+      "src": "lifan_badge_3.png",
       "label": "Lifan (3)"
     },
     {
@@ -567,6 +647,7 @@
       "type": "text",
       "category": "text",
       "file": "lifan_text.png",
+      "src": "lifan_text.png",
       "label": "Lifan (значок + надпись)"
     },
     {
@@ -574,6 +655,7 @@
       "type": "text",
       "category": "text",
       "file": "lifan_text_2.png",
+      "src": "lifan_text_2.png",
       "label": "Lifan 2"
     },
     {
@@ -581,6 +663,7 @@
       "type": "badge",
       "category": "badge",
       "file": "lincoln_badge.jpg",
+      "src": "lincoln_badge.jpg",
       "label": "Lincoln (значок)"
     },
     {
@@ -588,6 +671,7 @@
       "type": "badge",
       "category": "badge",
       "file": "man_badge.png",
+      "src": "man_badge.png",
       "label": "Man (значок)"
     },
     {
@@ -595,6 +679,7 @@
       "type": "text",
       "category": "text",
       "file": "mazda_text.png",
+      "src": "mazda_text.png",
       "label": "Mazda (значок + надпись)"
     },
     {
@@ -602,6 +687,7 @@
       "type": "text",
       "category": "text",
       "file": "mazda_text_2.png",
+      "src": "mazda_text_2.png",
       "label": "Mazda 2"
     },
     {
@@ -609,6 +695,7 @@
       "type": "badge",
       "category": "badge",
       "file": "mercedes_badge_2.png",
+      "src": "mercedes_badge_2.png",
       "label": "Mercedes (2)"
     },
     {
@@ -616,6 +703,7 @@
       "type": "text",
       "category": "text",
       "file": "mercedes_text.png",
+      "src": "mercedes_text.png",
       "label": "Mercedes (значок + надпись)"
     },
     {
@@ -623,6 +711,7 @@
       "type": "badge",
       "category": "badge",
       "file": "mini_badge.jpg",
+      "src": "mini_badge.jpg",
       "label": "Mini (значок)"
     },
     {
@@ -630,6 +719,7 @@
       "type": "badge",
       "category": "badge",
       "file": "mini_badge_2.png",
+      "src": "mini_badge_2.png",
       "label": "Mini (2)"
     },
     {
@@ -637,6 +727,7 @@
       "type": "badge",
       "category": "badge",
       "file": "mitsubishi_badge.jpg",
+      "src": "mitsubishi_badge.jpg",
       "label": "Mitsubishi (значок)"
     },
     {
@@ -644,6 +735,7 @@
       "type": "badge",
       "category": "badge",
       "file": "mitsubishi_badge_2.png",
+      "src": "mitsubishi_badge_2.png",
       "label": "Mitsubishi (2)"
     },
     {
@@ -651,6 +743,7 @@
       "type": "badge",
       "category": "badge",
       "file": "mitsubishi_badge_3.png",
+      "src": "mitsubishi_badge_3.png",
       "label": "Mitsubishi (3)"
     },
     {
@@ -658,6 +751,7 @@
       "type": "text",
       "category": "text",
       "file": "mitsubishi_text.png",
+      "src": "mitsubishi_text.png",
       "label": "Mitsubishi (значок + надпись)"
     },
     {
@@ -665,6 +759,7 @@
       "type": "text",
       "category": "text",
       "file": "mitsubishi_text_2.png",
+      "src": "mitsubishi_text_2.png",
       "label": "Mitsubishi 2"
     },
     {
@@ -672,6 +767,7 @@
       "type": "badge",
       "category": "badge",
       "file": "moskvich_badge_black.png",
+      "src": "moskvich_badge_black.png",
       "label": "Moskvich (black)"
     },
     {
@@ -679,6 +775,7 @@
       "type": "badge",
       "category": "badge",
       "file": "moskvich_badge_red.png",
+      "src": "moskvich_badge_red.png",
       "label": "Moskvich (red)"
     },
     {
@@ -686,6 +783,7 @@
       "type": "badge",
       "category": "badge",
       "file": "nissan_badge.png",
+      "src": "nissan_badge.png",
       "label": "Nissan (значок)"
     },
     {
@@ -693,6 +791,7 @@
       "type": "text",
       "category": "text",
       "file": "nissan_text.png",
+      "src": "nissan_text.png",
       "label": "Nissan (значок + надпись)"
     },
     {
@@ -700,6 +799,7 @@
       "type": "badge",
       "category": "badge",
       "file": "omoda_badge.png",
+      "src": "omoda_badge.png",
       "label": "Omoda (значок)"
     },
     {
@@ -707,6 +807,7 @@
       "type": "badge",
       "category": "badge",
       "file": "opel_badge.png",
+      "src": "opel_badge.png",
       "label": "Opel (значок)"
     },
     {
@@ -714,6 +815,7 @@
       "type": "badge",
       "category": "badge",
       "file": "opel_badge_2.png",
+      "src": "opel_badge_2.png",
       "label": "Opel (2)"
     },
     {
@@ -721,27 +823,31 @@
       "type": "badge",
       "category": "badge",
       "file": "peugeot_badge.png",
+      "src": "peugeot_badge.png",
       "label": "Peugeot (значок)"
+    },
+    {
+      "brand": "peugeot",
+      "type": "text",
+      "category": "text",
+      "file": "peugeot_text.png",
+      "src": "peugeot_text.png",
+      "label": "Peugeot (значок + надпись)"
     },
     {
       "brand": "porsche",
       "type": "badge",
       "category": "badge",
       "file": "porsche_badge.png",
+      "src": "porsche_badge.png",
       "label": "Porsche (значок)"
     },
     {
       "brand": "porsche",
       "type": "text",
       "category": "text",
-      "file": "porsche_text.png",
-      "label": "Porsche (значок + надпись)"
-    },
-    {
-      "brand": "porsche",
-      "type": "text",
-      "category": "text",
       "file": "porsche_text_2.png",
+      "src": "porsche_text_2.png",
       "label": "Porsche 2"
     },
     {
@@ -749,6 +855,7 @@
       "type": "badge",
       "category": "badge",
       "file": "renault_badge.png",
+      "src": "renault_badge.png",
       "label": "Renault (значок)"
     },
     {
@@ -756,6 +863,7 @@
       "type": "text",
       "category": "text",
       "file": "renault_text.png",
+      "src": "renault_text.png",
       "label": "Renault (значок + надпись)"
     },
     {
@@ -763,6 +871,7 @@
       "type": "badge",
       "category": "badge",
       "file": "rolls_royce_badge.png",
+      "src": "rolls_royce_badge.png",
       "label": "Rolls royce (значок)"
     },
     {
@@ -770,6 +879,7 @@
       "type": "badge",
       "category": "badge",
       "file": "scania_badge.png",
+      "src": "scania_badge.png",
       "label": "Scania (значок)"
     },
     {
@@ -777,6 +887,7 @@
       "type": "text",
       "category": "text",
       "file": "scania_text.png",
+      "src": "scania_text.png",
       "label": "Scania (значок + надпись)"
     },
     {
@@ -784,6 +895,7 @@
       "type": "badge",
       "category": "badge",
       "file": "skoda_badge_2.jpg",
+      "src": "skoda_badge_2.jpg",
       "label": "Skoda (2)"
     },
     {
@@ -791,6 +903,7 @@
       "type": "text",
       "category": "text",
       "file": "skoda_text.png",
+      "src": "skoda_text.png",
       "label": "Skoda (значок + надпись)"
     },
     {
@@ -798,6 +911,7 @@
       "type": "badge",
       "category": "badge",
       "file": "ssangyong_badge.png",
+      "src": "ssangyong_badge.png",
       "label": "Ssangyong (значок)"
     },
     {
@@ -805,6 +919,7 @@
       "type": "text",
       "category": "text",
       "file": "ssangyong_text.png",
+      "src": "ssangyong_text.png",
       "label": "Ssangyong (значок + надпись)"
     },
     {
@@ -812,6 +927,7 @@
       "type": "text",
       "category": "text",
       "file": "subaru_text.png",
+      "src": "subaru_text.png",
       "label": "Subaru (значок + надпись)"
     },
     {
@@ -819,6 +935,7 @@
       "type": "badge",
       "category": "badge",
       "file": "suzuki_badge.png",
+      "src": "suzuki_badge.png",
       "label": "Suzuki (значок)"
     },
     {
@@ -826,6 +943,7 @@
       "type": "text",
       "category": "text",
       "file": "suzuki_text.png",
+      "src": "suzuki_text.png",
       "label": "Suzuki (значок + надпись)"
     },
     {
@@ -833,6 +951,7 @@
       "type": "badge",
       "category": "badge",
       "file": "tank_badge.jpeg",
+      "src": "tank_badge.jpeg",
       "label": "Tank (значок)"
     },
     {
@@ -840,6 +959,7 @@
       "type": "badge",
       "category": "badge",
       "file": "tenet_badge.png",
+      "src": "tenet_badge.png",
       "label": "Tenet (значок)"
     },
     {
@@ -847,6 +967,7 @@
       "type": "text",
       "category": "text",
       "file": "tesla_text.png",
+      "src": "tesla_text.png",
       "label": "Tesla (значок + надпись)"
     },
     {
@@ -854,6 +975,7 @@
       "type": "badge",
       "category": "badge",
       "file": "toyota_badge_2.jpg",
+      "src": "toyota_badge_2.jpg",
       "label": "Toyota (2)"
     },
     {
@@ -861,6 +983,7 @@
       "type": "text",
       "category": "text",
       "file": "toyota_text.png",
+      "src": "toyota_text.png",
       "label": "Toyota (значок + надпись)"
     },
     {
@@ -868,6 +991,7 @@
       "type": "badge",
       "category": "badge",
       "file": "uaz_badge.png",
+      "src": "uaz_badge.png",
       "label": "UAZ (значок)"
     },
     {
@@ -875,6 +999,7 @@
       "type": "badge",
       "category": "badge",
       "file": "volkswagen_badge_2.png",
+      "src": "volkswagen_badge_2.png",
       "label": "Volkswagen (2)"
     },
     {
@@ -882,6 +1007,7 @@
       "type": "text",
       "category": "text",
       "file": "volkswagen_polo_text.jpg",
+      "src": "volkswagen_polo_text.jpg",
       "label": "Volkswagen polo"
     },
     {
@@ -889,6 +1015,7 @@
       "type": "text",
       "category": "text",
       "file": "volkswagen_text.png",
+      "src": "volkswagen_text.png",
       "label": "Volkswagen (значок + надпись)"
     },
     {
@@ -896,6 +1023,7 @@
       "type": "text",
       "category": "text",
       "file": "volvo_text.png",
+      "src": "volvo_text.png",
       "label": "Volvo (значок + надпись)"
     }
   ]

@@ -96,11 +96,18 @@ def parse_filename(filename):
     else:
         label = name.replace('_', ' ')
 
+    # `src` — bare filename логотипа (например, "lada_badge.png"). Манифест
+    # специально хранит только имя файла, без префикса каталога — это позволяет
+    # редактору грузить логотип по пути `images/logos/${src}`, относительному
+    # к текущему origin. Так сохранённые на проде .brelok-config.json открываются
+    # на любом другом хосте (правки, превью) без привязки к абсолютному URL.
+    # Поле `file` оставлено для обратной совместимости со старым кодом.
     return {
         'brand': brand,
         'type': logo_type,
         'category': category,
         'file': filename,
+        'src': filename,
         'label': label
     }
     """

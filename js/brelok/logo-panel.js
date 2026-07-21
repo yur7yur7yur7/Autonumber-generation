@@ -10,6 +10,19 @@ const FRACTION_OF_HEIGHT = 0.5;
 const SWIPE_DOWN_DISMISS_PX = 80;
 const SWIPE_DOWN_MAX_LAT = 24;
 
+// Логотипы живут в images/logos/. В манифесте поле `src` хранит bare filename
+// (например, "lada_badge.png"), чтобы .brelok-config.json, сохранённый на
+// проде, открывался на любом другом хосте (правки/превью) — fabric-объект
+// сериализует этот src относительно текущего origin, без привязки к
+// абсолютному URL деплоя. Старый манифест без `src` читаем через `file`.
+const LOGOS_DIR = 'images/logos';
+function logoFilename(logo) {
+    return logo.src || logo.file || '';
+}
+function logoUrl(logo) {
+    return `${LOGOS_DIR}/${logoFilename(logo)}`;
+}
+
 let logoManifest = [];
 
 function stackLogosBelowTextboxes(canvas, frontRect) {
@@ -57,16 +70,17 @@ function addSvgLogo(canvas, url, PLATE_W, PLATE_H, frontRect) {
 }
 
 function addLogoFromManifest(canvas, logo, PLATE_W, PLATE_H, frontRect) {
-    const url = `images/logos/${logo.file}`;
+    const filename = logoFilename(logo);
+    const url = logoUrl(logo);
     // SVG идёт отдельным путём — fabric.Image.fromURL через <img>+CORS
     // для локальных SVG возвращает пустой объект.
-    if (/\.svg$/i.test(logo.file)) {
+    if (/\.svg$/i.test(filename)) {
         addSvgLogo(canvas, url, PLATE_W, PLATE_H, frontRect);
         return;
     }
     fabric.Image.fromURL(url, (img) => {
         if (!img) {
-            console.warn('Не удалось загрузить логотип:', logo.file);
+            console.warn('Не удалось загрузить логотип:', filename);
             return;
         }
         const targetH = Math.round(FRACTION_OF_HEIGHT * PLATE_H);
@@ -220,11 +234,11 @@ export async function initLogoPanel(canvas, PLATE_W, PLATE_H, frontRect) {
                 const btn = document.createElement('button');
                 btn.className = 'lp-logo-btn';
                 btn.title = logo.label;
-                btn.dataset.file = logo.file;
+                btn.dataset.src = logoFilename(logo);
 
                 const img = new Image();
                 img.crossOrigin = 'anonymous';
-                img.src = `images/logos/${logo.file}`;
+                img.src = logoUrl(logo);
                 img.onload = () => {
                     const c = document.createElement('canvas');
                     c.width = 128;

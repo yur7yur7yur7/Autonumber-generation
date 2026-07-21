@@ -31,6 +31,80 @@ export function getSchemaVersion() {
     return SCHEMA_VERSION;
 }
 
+// Каталог с логотипами на сайте. Все fabric.Image / fabric.Group, у которых
+// src попадает в этот каталог, сериализуются как bare filename и обратно
+// резолвятся относительно текущего origin. Так .brelok-config.json, сохранённый
+// на проде (yur7yur7yur7.github.io), корректно открывается на любом другом
+// хосте (правки/превью), без привязки к абсолютному URL деплоя.
+//
+// data: URL и абсолютные URL вне этого каталога не трогаем — это могут быть
+// пользовательские загрузки или будущие ассеты.
+const LOGOS_DIR = 'images/logos';
+
+// Вид: 'https://example.com/foo/images/logos/lada_badge.png?v=1' → 'lada_badge.png'
+// Вид: 'images/logos/lada_badge.png' → 'lada_badge.png' (на случай уже
+// частично-относительных URL)
+// null если src не из images/logos/.
+function bareLogoSrc(src) {
+    if (typeof src !== 'string' || !src) return null;
+    // Режем query/fragment.
+    const noQuery = src.split(/[?#]/, 1)[0];
+    // Декодируем percent-escape, чтобы 'a%20b.png' и 'a b.png' сравнивались
+    // одинаково. На хостах с пробелом в имени файла это критично.
+    let decoded;
+    try { decoded = decodeURIComponent(noQuery); } catch (_e) { decoded = noQuery; }
+    // Ищем /images/logos/<file> в любом месте пути (после любого origin/префикса).
+    // Имя файла — basename без расширения не ограничиваем: берём всё после
+    // последнего '/' и до конца noQuery.
+    const idx = decoded.lastIndexOf('/' + LOGOS_DIR + '/');
+    if (idx < 0) return null;
+    const tail = decoded.slice(idx + LOGOS_DIR.length + 2);
+    if (!tail || tail.includes('/')) return null;
+    return tail;
+}
+
+// src из /images/logos/<file> → '<file>' (bare). src, который уже bare —
+// тоже '<file>' (idempotent). Прочее → null.
+function toBareLogoSrc(src) {
+    if (typeof src !== 'string' || !src) return null;
+    const fromAbs = bareLogoSrc(src);
+    if (fromAbs) return fromAbs;
+    // Уже относительный путь images/logos/<file>.
+    const m = src.match(new RegExp('^' + LOGOS_DIR + '/([^/?#]+)$'));
+    if (m) return m[1];
+    return null;
+}
+
+// Проходит по элементам и переписывает src у image/group-объектов из images/logos/
+// в bare filename. Не трогает data: URL и URL из чужих каталогов.
+function rewriteElementsToBare(elements) {
+    if (!Array.isArray(elements)) return;
+    for (const el of elements) {
+        if (!el || typeof el !== 'object') continue;
+        const t = el.type;
+        if (t !== 'image' && t !== 'group') continue;
+        const bare = toBareLogoSrc(el.src);
+        if (bare) el.src = bare;
+    }
+}
+
+// Проходит по элементам и переписывает bare src в полный путь images/logos/<file>,
+// чтобы fabric.enlivenObjects загрузил логотип относительно текущего origin.
+// Прочие src (data:, абсолютные) не трогаем.
+function rewriteElementsFromBare(elements) {
+    if (!Array.isArray(elements)) return;
+    for (const el of elements) {
+        if (!el || typeof el !== 'object') continue;
+        const t = el.type;
+        if (t !== 'image' && t !== 'group') continue;
+        if (typeof el.src !== 'string' || !el.src) continue;
+        const s = el.src;
+        // bare filename: нет '/', нет ':' (схемы), не data: URL
+        if (s.includes('/') || s.includes(':')) continue;
+        el.src = LOGOS_DIR + '/' + s;
+    }
+}
+
 /**
  * Снять снимок текущего состояния брелка.
  * Сериализует:
@@ -65,6 +139,10 @@ export function serializeBrelokConfig(canvas) {
             return null;
         }
     }).filter(Boolean);
+
+    // Переписываем src у логотипов: вместо абсолютного URL деплоя кладём
+    // bare filename, чтобы конфиг был переносим между хостами.
+    rewriteElementsToBare(elements);
 
     const background = (typeof window !== 'undefined'
         && window.__backBackground
@@ -147,6 +225,14 @@ export function applyBrelokConfig(canvas, config, expectedType = BRELOK_TYPE) {
 
     // 4. Восстанавливаем back-objects через enlivenObjects.
     const elements = Array.isArray(config.backSide?.elements) ? config.backSide.elements : [];
+
+    // Bare-filename src из images/logos/ (новый формат конфигов) →
+    // полный относительный путь, чтобы fabric загрузил картинку
+    // относительно текущего origin. Старые конфиги с абсолютными URL
+    // из images/logos/ сначала нормализуются в bare (rewriteElementsToBare),
+    // затем разворачиваются обратно.
+    rewriteElementsToBare(elements);
+    rewriteElementsFromBare(elements);
     const fabricGlobal = (typeof window !== 'undefined' && window.fabric)
         ? window.fabric
         : (typeof fabric !== 'undefined' ? fabric : null);
