@@ -528,9 +528,10 @@ export function createFrontPanel(deps) {
  * @returns {{ panel: HTMLElement, toggleBtn: HTMLButtonElement, teardown: () => void }}
  */
 export function createFrontSliderPanel(deps) {
-    const { id, title, toggleLabel, iconSvg = '', toggleIconSvg = '', sliders, onChange, resetButtonLabel, onReset, layout = 'inline' } = deps;
+    const { id, title, toggleLabel, iconSvg = '', toggleIconSvg = '', sliders, onChange, resetButtonLabel, onReset, okButtonLabel, onOk, layout = 'inline' } = deps;
     const fireChange = typeof onChange === 'function' ? onChange : () => {};
     const fireReset = typeof onReset === 'function' ? onReset : null;
+    const fireOk = typeof onOk === 'function' ? onOk : null;
     // layout: 'inline' — старый горизонтальный (label+value сверху, slider снизу).
     // layout: 'vertical' — для каждого слайдера: название → картинка → слайдер → значение,
     //                    плюс визуальный разделитель между строками.
@@ -591,9 +592,27 @@ export function createFrontSliderPanel(deps) {
             ${iconSvg ? `<span class="sp-header-icon" aria-hidden="true">${iconSvg}</span>` : ''}
             ${title}
         </div>
-        <div class="sp-body">${rowsHtml}${fireReset ? `<button type="button" class="sp-reset-btn">${resetButtonLabel || '↺ Сбросить'}</button>` : ''}</div>
+        <div class="sp-body">
+            ${rowsHtml}
+            ${fireOk ? `<button type="button" class="sp-ok-btn">${okButtonLabel || 'Ок'}</button>` : ''}
+            ${fireReset ? `<button type="button" class="sp-reset-btn">${resetButtonLabel || '↺ Сбросить'}</button>` : ''}
+        </div>
     `;
     document.body.appendChild(panel);
+
+    if (fireOk) {
+        const okBtn = panel.querySelector('.sp-ok-btn');
+        if (okBtn) {
+            okBtn.addEventListener('click', () => {
+                // TEMP-DIAG: увидеть в console что клик дошёл и что класс снялся.
+                // Удалить после того как юзер подтвердит работу.
+                const before = panel.classList.contains('fp-open');
+                fireOk();
+                const after = panel.classList.contains('fp-open');
+                console.warn('[diag] ok click', { before, after, btnFound: !!okBtn });
+            });
+        }
+    }
 
     if (fireReset) {
         const resetBtn = panel.querySelector('.sp-reset-btn');
@@ -832,6 +851,15 @@ export function initSideToggle(deps) {
         ...ADVANCED_PANEL,
         layout: 'vertical',
         onChange: redrawFront,
+        okButtonLabel: 'Ок',
+        onOk: () => {
+            // Кнопка «Ок» физически находится внутри открытой панели,
+            // поэтому её невозможно нажать при закрытой панели. Просто
+            // эмулируем клик по тогглу — его handler снимет .fp-open и
+            // перерисует иконку через renderToggle.
+            const toggle = document.getElementById(`${ADVANCED_PANEL.id}-toggle`);
+            if (toggle) toggle.click();
+        },
         resetButtonLabel: '↺ Сбросить настройки',
         onReset: () => {
             // Сбрасываем все слайдеры панели к DEFAULT_SETTINGS и обновляем DOM.

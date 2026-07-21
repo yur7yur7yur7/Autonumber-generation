@@ -1203,6 +1203,41 @@
             margin: 6px 0;
             height: 0;
         }
+        /* Кнопка «Ок» внутри расширенной панели — закрывает панель после
+           того, как пользователь выставил слайдеры. По типу .sp-reset-btn
+           ниже, но другой акцент (зелёный — confirm, а не reset). Размещена
+           НАД reset, чтобы основное действие было сверху. */
+        #front-advanced-panel .sp-ok-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            margin-top: 10px;
+            padding: 9px 12px;
+            background: #10b981;
+            color: #ffffff;
+            border: 1px solid #059669;
+            border-radius: 8px;
+            font: 600 13px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            letter-spacing: 0.2px;
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: background 0.15s ease, transform 0.1s ease;
+        }
+        #front-advanced-panel .sp-ok-btn:hover {
+            background: #059669;
+        }
+        #front-advanced-panel .sp-ok-btn:active {
+            transform: scale(0.98);
+        }
+        #front-advanced-panel .sp-ok-btn:focus-visible {
+            outline: 2px solid #6ee7b7;
+            outline-offset: 2px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #front-advanced-panel .sp-ok-btn:active { transform: none; }
+        }
         /* Кнопка «Сбросить настройки» внутри расширенной панели — по типу
            .reset-btn из editor (css/settings-panel.css): синяя, на всю ширину
            sp-body, с ховером и active-состоянием. Текст идёт в потоке .sp-body
