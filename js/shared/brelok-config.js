@@ -99,9 +99,23 @@ function rewriteElementsFromBare(elements) {
         if (t !== 'image' && t !== 'group') continue;
         if (typeof el.src !== 'string' || !el.src) continue;
         const s = el.src;
-        // bare filename: нет '/', нет ':' (схемы), не data: URL
-        if (s.includes('/') || s.includes(':')) continue;
-        el.src = LOGOS_DIR + '/' + s;
+        // Уже полный путь images/logos/<file> — не трогаем (идемпотентно).
+        if (s.startsWith(LOGOS_DIR + '/')) continue;
+        // data: URL и абсолютные URL (содержат "://" или "//") — не трогаем:
+        // это либо пользовательская загрузка, либо будущий ассет из CDN.
+        if (/^[a-z][a-z0-9+.-]*:/i.test(s) || s.startsWith('//')) continue;
+        // Любой относительный путь, который выглядит как лого-файл
+        // (basename без слэшей, basename.png/jpg/svg/webp/jpeg) — приводим
+        // к images/logos/<basename>. Это покрывает:
+        //   - bare "peugeot_badge.png"
+        //   - "peugeot_badge.png?v=2" (cache-busting query — берём basename)
+        //   - "./peugeot_badge.png"
+        //   - любые другие «битые» формы, где fabric положил относительный
+        //     путь без префикса каталога.
+        const basename = s.split(/[?#]/, 1)[0].split('/').pop();
+        if (basename && /\.(png|jpe?g|svg|webp|gif)$/i.test(basename)) {
+            el.src = LOGOS_DIR + '/' + basename;
+        }
     }
 }
 
