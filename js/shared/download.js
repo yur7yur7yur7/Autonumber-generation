@@ -370,9 +370,13 @@ export async function sendMaketToTelegram(result, order, config) {
     }
     try {
         const pngDataURL = await composeMaketPngDataURL(result.frontPng, result.backPng);
-        // Имя файла тоже меняем с .svg на .png, чтобы оператору в Telegram
-        // прилетал правильный файл.
-        const pngFileName = (result.fileName || 'brelok.svg').replace(/\.svg$/i, '.png');
+        // Имя файла оставляем как есть (buildMaketSvg отдаёт `brelok-...svg`).
+        // Расширение должно соответствовать содержимому: sendDocument идёт
+        // в Telegram с MIME image/svg+xml и filename `*.svg` — это соглашение
+        // критично, иначе Telegram сохранит SVG-байты с расширением .png и
+        // оператор увидит «не открывается» в Telegram-клиенте. PNG присылаем
+        // параллельно для обратной совместимости (может пригодиться позже).
+        const fileName = result.fileName || 'brelok.svg';
         // Подготовим поля заказа (если есть) — строки приходят уже триммированными
         // из order-form.js, но на всякий случай ещё раз срезаем пробелы и
         // ограничиваем длину, чтобы воркеру не прилетело полотно текста.
@@ -386,12 +390,12 @@ export async function sendMaketToTelegram(result, order, config) {
             order_comment: trim(order.comment, 800),
         } : {};
         await sendToTelegramRelay(endpoint, {
-            // svg оставляем — реле его строго валидирует (Missing or empty
-            // svg field); png добавляем рядом как готовое растровое
-            // представление для печати/превью.
+            // svg — основной артефакт; воркер всегда шлёт его как sendDocument
+            // с image/svg+xml, filename = *.svg. Валидатор требует svg на
+            // входе (Missing or empty svg field, длина ≥ 10 символов).
             svg: result.svgString,
             png: pngDataURL,
-            filename: pngFileName,
+            filename: fileName,
             number: result.number,
             region: result.region,
             front_png: result.frontPng,
@@ -412,10 +416,14 @@ export async function sendMaketToTelegram(result, order, config) {
 }
 
 // Forward the generated SVG + PNG (and preview PNGs) to a Cloudflare Worker
-// that relays them to Telegram. The worker expects both `svg` (validated
-// strictly — Missing or empty svg field) and `png` (ready-to-print bitmap)
-// alongside front/back previews and caption fields:
-//   { svg, png, filename, number, region, front_png, back_png }
+// that relays them to Telegram. The worker expects:
+//   `svg` — strictly validated (>10 chars). Used as the primary
+//     sendDocument payload (image/svg+xml, filename *.svg).
+//   `png` — optional fallback for legacy clients / preview; in current
+//     priority logic, the worker uses SVG when present.
+//   `front_png` / `back_png` — preview thumbnails for sendMediaGroup.
+//   `filename` — name without extension enforcement (worker preserves it).
+// Payload shape: { svg, png, filename, number, region, front_png, back_png }.
 // Returns the relay's JSON response on success, throws on failure (with a
 // human-readable message). Caller decides whether to show an error toast.
 async function sendToTelegramRelay(endpoint, payload) {

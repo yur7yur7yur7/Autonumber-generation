@@ -1,7 +1,11 @@
 // ============================================================
 // Действия пользователя на финальной странице редактора брелка:
 //   • #create-maket — собрать мaкет, открыть preview → order → thanks;
-//   • #debug-download-png — скачать итоговый PNG (только при body.debug);
+//   • #debug-download-svg — скачать итоговый SVG с физическим размером
+//     10.56×1.07 см, зашитым в корневой <svg width/height> (только при body.debug);
+//     Photoshop/Illustrator/Inkscape читают эти сантиметры напрямую, минуя
+//     нестабильные pHYs/EXIF-метаданные PNG — поэтому для печати используется
+//     именно SVG, а не PNG-debug;
 //   • #download-config-btn — скачать конфиг .json (только при body.debug);
 //   • Импорт конфига по ?config=<key>&type=<brelokType> из sessionStorage;
 //   • Консольные команды debug() / undebug() для body.debug.
@@ -10,7 +14,7 @@
 import { openResultPreview } from '../shared/result-preview.js';
 import { openOrderForm } from '../shared/order-form.js';
 import { openThanksModal } from '../shared/thanks-modal.js';
-import { buildMaketSvg, sendMaketToTelegram, composeMaketPngDataURL } from '../shared/download.js';
+import { buildMaketSvg, sendMaketToTelegram } from '../shared/download.js';
 import { CONFIG } from '../shared/config.js';
 import {
     serializeBrelokConfig, applyBrelokConfig,
@@ -58,6 +62,22 @@ function downloadDataURL(dataURL, filename) {
     document.body.appendChild(a);
     a.click();
     a.remove();
+}
+
+// SVG нельзя качать через data: URL (URL получается слишком длинным для
+// браузерного лимита при больших встроенных PNG-sнимках), поэтому используем
+// Blob + URL.createObjectURL. MIME text/xml с charset=utf-8, чтобы Photoshop
+// и Illustrator корректно прочитали национальные буквы в номере/подписи.
+function downloadSVG(svgString, filename) {
+    const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function attachCreateMaket() {
@@ -129,7 +149,7 @@ function attachCreateMaket() {
 }
 
 function attachDebugDownloadPng() {
-    const dbgBtn = document.getElementById('debug-download-png');
+    const dbgBtn = document.getElementById('debug-download-svg');
     if (!dbgBtn) return;
     dbgBtn.disabled = false;
     dbgBtn.addEventListener('click', async () => {
@@ -140,17 +160,19 @@ function attachDebugDownloadPng() {
             const frontDataURL = getFrontDataURL();
             const backDataURL =
                 (await window.__sideToggle?.getRearSnapshot?.()) ?? null;
-            const png = await composeMaketPngDataURL(frontDataURL, backDataURL);
-            if (!png) {
-                showToast('⚠️ Не удалось собрать PNG', true);
+            if (!frontDataURL || !backDataURL) {
+                showToast('⚠️ Не удалось собрать стороны', true);
                 return;
             }
             const { number, region } = window.__sideToggle?.getPlate?.() ?? {};
-            const nn = (number || '').trim();
-            const rr = (region || '').trim();
-            const filename = (nn || rr) ? `brelok-${nn}${rr}.png` : 'brelok.png';
-            downloadDataURL(png, filename);
-            showToast('✅ PNG скачан');
+            const svgResult = buildMaketSvg({
+                frontDataURL,
+                backDataURL,
+                number: number || '',
+                region: region || '',
+            });
+            downloadSVG(svgResult.svgString, svgResult.fileName);
+            showToast('✅ SVG скачан');
         } catch (e) {
             console.error('debug download:', e);
             showToast('⚠️ Ошибка скачивания', true);

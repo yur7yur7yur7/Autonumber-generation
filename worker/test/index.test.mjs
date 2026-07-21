@@ -60,10 +60,14 @@ test('normalizeConfig accepts only small JSON objects', () => {
     assert.equal(normalizeConfig(JSON.stringify({ value: 'x'.repeat(210 * 1024) })), null);
 });
 
-test('buildOpenUrl only permits the production site', () => {
+test('buildOpenUrl permits both production sites', () => {
     assert.equal(
         buildOpenUrl({ SITE_BASE_URL: 'https://yur7yur7yur7.github.io/Autonumber-generation/' }, 'abc-123'),
         'https://yur7yur7yur7.github.io/Autonumber-generation/back.html?config=abc-123&type=ru'
+    );
+    assert.equal(
+        buildOpenUrl({ SITE_BASE_URL: 'https://autonum.pages.dev/' }, 'abc-123'),
+        'https://autonum.pages.dev/back.html?config=abc-123&type=ru'
     );
     assert.throws(
         () => buildOpenUrl({ SITE_BASE_URL: 'https://phishing.example' }, 'abc-123'),
@@ -210,6 +214,55 @@ test('valid public order sends preview and PNG document without authentication',
         assert.equal(calls.length, 2);
         assert.match(calls[0], /sendMediaGroup$/);
         assert.match(calls[1], /sendDocument$/);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test('sendDocument body carries SVG, not PNG, when both are provided', async () => {
+    const originalFetch = globalThis.fetch;
+    const documents = [];
+    globalThis.fetch = async (url, init) => {
+        const u = String(url);
+        if (u.endsWith('/sendMediaGroup')) {
+            return Response.json({ ok: true, result: [{ message_id: 1 }] });
+        }
+        if (u.endsWith('/sendDocument') && init && init.body) {
+            documents.push(init.body);
+        }
+        return Response.json({
+            ok: true,
+            result: { message_id: 2, document: { file_id: 'file-1' } },
+        });
+    };
+
+    try {
+        const response = await worker.fetch(new Request('https://worker.example/api/order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                svg: '<svg width="10.56cm" height="1.07cm">brelok</svg>',
+                png: PNG_DATA_URL,
+                front_png: PNG_DATA_URL,
+                filename: 'brelok-A001AA77.svg',
+                number: 'A001AA',
+                region: '77',
+            }),
+        }), {
+            TG_BOT_TOKEN: 'token',
+            TG_CHAT_IDS: '123',
+            ORDER_RATE_LIMITER: { async limit() { return { success: true }; } },
+        });
+        assert.equal(response.status, 200);
+        assert.equal(documents.length, 1);
+        const body = Buffer.from(documents[0]).toString('latin1');
+        // Filename matches what the client sent (no .png rewrite).
+        assert.match(body, /name="document"; filename="brelok-A001AA77\.svg"/);
+        // MIME is image/svg+xml (the SVG MIME), not image/png.
+        assert.match(body, /Content-Type: image\/svg\+xml/);
+        // Body does NOT contain PNG bytes — only the SVG string.
+        assert.equal(body.includes('10.56cm'), true);
+        assert.equal(Buffer.from(documents[0]).includes(Buffer.from(PNG_SIGNATURE)), false);
     } finally {
         globalThis.fetch = originalFetch;
     }

@@ -59,7 +59,7 @@
         body:not(.ready) #front-advanced-toggle,
         body:not(.ready) #front-advanced-panel,
         body:not(.ready) #create-maket,
-        body:not(.ready) #debug-download-png,
+        body:not(.ready) #debug-download-svg,
         body:not(.ready) #download-config-btn,
         body:not(.ready) #guide-toggle,
         body:not(.ready) #home-link,
@@ -74,7 +74,7 @@
         /* Тестовая кнопка «Скачать PNG» скрыта по умолчанию.
            Появится, если в консоли набрать `debug` (см. ниже
            window.__enableDebugButtons — выставляет body.debug). */
-        body:not(.debug) #debug-download-png {
+        body:not(.debug) #debug-download-svg {
             display: none !important;
         }
         canvas {
@@ -1681,14 +1681,14 @@
         }
 
         /* ============================================================
-           ОТЛАДОЧНАЯ КНОПКА «Скачать PNG» — качает тот же PNG, что
-           уходит в Telegram через sendMaketToTelegram(). Работает
-           напрямую через composeMaketPngDataURL из js/download.js,
-           без открытия модалок и без обращения к реле. Только для
-           отладки: чтобы можно было скачать итоговый файл и
-           посмотреть, что именно увидит оператор.
+           ОТЛАДОЧНАЯ КНОПКА «Скачать SVG» — собирает макет через
+           buildMaketSvg (js/download.js): физический размер 10.56×1.07 см
+           зашит в атрибутах width/height корневого <svg>, поэтому
+           Photoshop/Illustrator/Inkscape при печати читают ровно эти
+           сантиметры без зависимости от pHYs-чанка PNG. Используйте
+           для проверки вёрстки перед отправкой в Telegram.
            ============================================================ */
-        #debug-download-png {
+        #debug-download-svg {
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -1718,20 +1718,20 @@
             transition: background-color 0.15s ease, transform 0.1s ease;
             -webkit-tap-highlight-color: transparent;
         }
-        #debug-download-png:hover { background: #1f2937; }
-        #debug-download-png:active { transform: translateX(-50%) scale(0.97); }
-        #debug-download-png:focus-visible {
+        #debug-download-svg:hover { background: #1f2937; }
+        #debug-download-svg:active { transform: translateX(-50%) scale(0.97); }
+        #debug-download-svg:focus-visible {
             outline: 2px solid #93c5fd;
             outline-offset: 2px;
         }
-        #debug-download-png:disabled {
+        #debug-download-svg:disabled {
             opacity: 0.55;
             cursor: not-allowed;
             background: #374151;
         }
         @media (prefers-reduced-motion: reduce) {
-            #debug-download-png:active { transform: translateX(-50%); }
-            #debug-download-png { transition: none; }
+            #debug-download-svg:active { transform: translateX(-50%); }
+            #debug-download-svg { transition: none; }
         }
 
         /* ============================================================
@@ -2022,7 +2022,7 @@
             /* Отладочная кнопка на мобильном — над тогглами, под #create-maket.
                На мобиле «Посмотреть результат» висит на bottom: 76px; свою debug
                кнопку ставим повыше, чтобы не налезать. */
-            #debug-download-png {
+            #debug-download-svg {
                 z-index: 8;
                 left: 12px;
                 right: 12px;
@@ -2032,7 +2032,7 @@
                 font-size: 13px;
                 transform: none;
             }
-            #debug-download-png:active {
+            #debug-download-svg:active {
                 transform: scale(0.97);
             }
             #maket-toast {
@@ -2500,7 +2500,7 @@
     </div>
     <button id="guide-toggle" type="button" aria-label="Открыть инструкцию" data-tooltip="Показывает пошаговую инструкцию">?</button>
     <button id="create-maket" type="button" aria-label="Посмотреть результат" data-tooltip="Создаёт и отправляет макет">Посмотреть результат</button>
-    <button id="debug-download-png" type="button" aria-label="Скачать PNG макета (отладка)" data-tooltip="Скачивает PNG-файл, который уходит в Telegram">🧪 Скачать PNG</button>
+    <button id="debug-download-svg" type="button" aria-label="Скачать SVG макета (отладка)" data-tooltip="Скачивает SVG с правильным физическим размером в см (10.56×1.07) — Photoshop печатает его натурально">🧪 Скачать SVG</button>
     <button id="download-config-btn" type="button" aria-label="Скачать конфиг (отладка)" data-tooltip="Сохраняет текущий дизайн брелка в .json">⬇ Скачать конфиг</button>
     <div id="emoji-hint" role="tooltip" aria-live="polite">
         <span class="eh-icon" aria-hidden="true">😀</span>

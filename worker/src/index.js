@@ -7,7 +7,10 @@
 // TG_CHAT_IDS:
 //   1. a media group of 1–2 PNG previews (front, optionally back) with a
 //      MarkdownV2 caption that lists number, region, date, and order info;
-//   2. the ready-to-print PNG (or fallback SVG) as a separate sendDocument.
+//   2. the SVG file (with physical size in cm baked into <svg width/height>)
+//      as a separate sendDocument — operator's print software reads the
+//      10.56×1.07 cm size natively. PNG fallback only for legacy clients
+//      that don't supply a valid SVG.
 //
 // Secrets (set via `wrangler secret put` or Cloudflare dashboard, NEVER in code):
 //   TG_BOT_TOKEN  — token from @BotFather
@@ -47,6 +50,7 @@ const MAX_CONFIG_BYTES = 200 * 1024;
 const ORDER_PATH = '/api/order';
 const ALLOWED_SITE_BASE_URLS = new Set([
     'https://yur7yur7yur7.github.io/Autonumber-generation',
+    'https://autonum.pages.dev',
 ]);
 
 export default {
@@ -178,25 +182,29 @@ export default {
         }
 
         const filenameSafe = String(filename).replace(/[\r\n"]/g, '_').slice(0, 200);
-        // Что отправлять как sendDocument: готовый PNG-макет (если есть) или
-        // SVG как fallback. Расширение файла должно соответствовать MIME —
-        // иначе Telegram сохранит его с правильным MIME, но имя в *.svg / *.png
-        // врёт, и файл не открывается как ожидаемый формат.
+        // Что отправлять как sendDocument: SVG (приоритет — физический
+        // размер в см зашит в корневой <svg>, любая программа печати читает
+        // его натурально), PNG — fallback для старых клиентов, которые
+        // прислали только PNG без валидного SVG. Расширение файла должно
+        // соответствовать MIME — иначе Telegram сохранит его с правильным
+        // MIME, но имя в *.svg / *.png врёт, и файл не открывается как
+        // ожидаемый формат. SVG валиден здесь гарантированно (проверка выше
+        // возвращает 400 если строка короче 10 символов).
         let docBytes, docMime, docFilename;
-        if (readyPng) {
-            docBytes = readyPng;
-            docMime = 'image/png';
-            // Если пришло имя с .svg — переименуем в .png, иначе оставим.
-            docFilename = filenameSafe.replace(/\.svg$/i, '.png');
-        } else {
+        if (svg) {
             docBytes = new TextEncoder().encode(svg);
             docMime = 'image/svg+xml';
             docFilename = filenameSafe;
+        } else {
+            docBytes = readyPng;
+            docMime = 'image/png';
+            docFilename = filenameSafe.replace(/\.svg$/i, '.png');
         }
 
         // Fan out to every chat in TG_CHAT_IDS. Per recipient we do:
         //   1. sendMediaGroup with 1–2 photos + caption (one HTTP call to Telegram)
-        //   2. sendDocument with the SVG file (или PNG, если есть в payload)
+        //   2. sendDocument with the SVG file (PNG — fallback на старые клиенты
+        //      без валидного SVG; см. выбор docBytes/docMime выше)
         //   3. sendDocument с config-файлом — только если в payload есть body.config
         //      (прислано из js/brelok-config.js через sendMaketToTelegram).
         //      После успешной отправки дополнительно шлём sendMessage c inline-
