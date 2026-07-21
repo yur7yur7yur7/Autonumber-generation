@@ -103,6 +103,9 @@ function measureTextWidth(tb, text) {
 }
 
 function fitTextboxWidthToContent(tb) {
+    // Если пользователь явно зафиксировал ширину (например, через apply
+    // конфига), не расширяем textbox до ширины текста — иначе wrap сломается.
+    if (tb.__userLockedWidth === true) return;
     const lines = (tb.text || '').split('\n');
     let maxLineWidth = 0;
     for (const line of lines) {
@@ -307,9 +310,17 @@ function styleBaseObject(obj, onMenuClick) {
 function styleTextbox(tb, onMenuClick) {
     if (!tb || tb.type !== 'textbox') return;
     styleBaseObject(tb, onMenuClick);
-    fitTextboxWidthToContent(tb);
+    const locked = tb.__userLockedWidth === true;
+    if (!locked) {
+        fitTextboxWidthToContent(tb);
+    }
     applyCenterOrigin(tb);
     tb.on('changed', () => {
+        // Как только пользователь сам начал менять размер (scaling event),
+        // снимаем блокировку — дальнейшие правки width идут через обычный flow.
+        if (tb.__userLockedWidth === true) {
+            tb.__userLockedWidth = false;
+        }
         fitTextboxWidthToContent(tb);
         if (tb.originX !== 'center' || tb.originY !== 'center') {
             applyCenterOrigin(tb);

@@ -262,7 +262,15 @@ export function applyBrelokConfig(canvas, config, expectedType = BRELOK_TYPE) {
             fabricGlobal.util.enlivenObjects(elements, (enlivened) => {
                 try {
                     enlivened.forEach((obj) => {
-                        if (obj) canvas.add(obj);
+                        if (!obj) return;
+                        // Блокируем fitTextboxWidthToContent на первый apply,
+                        // иначе он развернёт textbox до ширины текста в одну
+                        // строку и перенос сломается. Флаг снимется в
+                        // selection-style.js при первом changed-событии.
+                        if (obj.type === 'textbox' && !('__userLockedWidth' in obj)) {
+                            obj.__userLockedWidth = true;
+                        }
+                        canvas.add(obj);
                     });
                     canvas.requestRenderAll();
                     resolve();
