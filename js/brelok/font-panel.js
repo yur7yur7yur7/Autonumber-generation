@@ -1,35 +1,82 @@
 // ============================================================
-// Панель шрифтов: добавляет текстбокс с выбранным шрифтом. Источник
-// шрифтов — список ниже, все они подгружаются как @font-face в
-// back.html (fonts/backpanel/). На мобильных — bottom sheet за
-// гамбургер-кнопкой #font-toggle, свайп вниз закрывает.
+// Панель шрифтов: добавляет текстбокс с выбранным шрифтом. Шрифты
+// берутся из fonts/backpanel/manifest.json (генерируется
+// update-fonts.py), @font-face инжектятся динамически в <head>.
+// Чтобы добавить новый шрифт:
+//   1) положить файл в fonts/backpanel/ (или подпапку);
+//   2) запустить `python update-fonts.py`;
+//   3) перезагрузить страницу.
+// На мобильных — bottom sheet за гамбургер-кнопкой #font-toggle,
+// свайп вниз закрывает.
 // ============================================================
 
 const SWIPE_DOWN_DISMISS_PX = 80;
 const SWIPE_DOWN_MAX_LAT = 24;
+const FONTS_DIR = 'fonts/backpanel';
+const FONT_MANIFEST_URL = `${FONTS_DIR}/manifest.json`;
 
-export const FONT_OPTIONS = [
-    { name: 'Inter', family: 'Panel Inter' },
-    { name: 'Montserrat', family: 'Panel Montserrat' },
-    { name: 'Raleway', family: 'Panel Raleway' },
-    { name: 'Roboto', family: 'Panel Roboto' },
-    { name: 'Noto Serif', family: 'Panel Noto Serif' },
-    { name: 'Caveat', family: 'Panel Caveat' },
-    { name: 'Bad Script', family: 'Panel Bad Script' },
-    { name: 'Gogol', family: 'Panel Gogol' },
-    { name: 'Brusnika', family: 'Panel Brusnika' },
-    { name: 'LeoHand', family: 'Panel LeoHand' },
-    { name: 'Everlasting', family: 'Panel Everlasting' },
-    { name: 'Resphekt', family: 'Panel Resphekt' },
-    { name: 'Margot Xtrafette', family: 'Panel Margot' },
-    { name: 'Fowviel', family: 'Panel Fowviel' },
-    { name: 'Bravo', family: 'Panel Bravo' },
-    { name: 'Marta', family: 'Panel Marta' },
-    { name: 'Troika', family: 'Panel Troika' },
-    { name: 'Sprite Graffiti', family: 'Panel Sprite Graffiti' }
-];
+// Загруженный манифест (кешируется после первого запроса). До завершения
+// loadFontManifest() экспорт ниже содержит пустой массив — вызовы из
+// других модулей (back-boot) должны ждать initFontPanel().
+let _cachedManifest = null;
 
 export const SIGNATURE_TEXT = 'Ваша красивая подпись';
+
+/**
+ * Возвращает текущий список шрифтов. До загрузки манифеста — пустой массив.
+ * Синхронный геттер для обратной совместимости со старым кодом, который
+ * ожидал немедленный FONT_OPTIONS. После initFontPanel() массив заполнен.
+ */
+export function getFontOptions() {
+    return _cachedManifest || [];
+}
+
+/**
+ * Загружает манифест шрифтов и инжектит @font-face в <head>.
+ * Возвращает массив { name, family, format, file, src }.
+ * При ошибке загрузки манифеста — падает (инициализация панели невозможна).
+ */
+export async function loadFontManifest() {
+    if (_cachedManifest) return _cachedManifest;
+    const resp = await fetch(FONT_MANIFEST_URL);
+    if (!resp.ok) {
+        throw new Error(`Манифест шрифтов не найден: ${FONT_MANIFEST_URL}`);
+    }
+    const data = await resp.json();
+    const fonts = Array.isArray(data.fonts) ? data.fonts : [];
+    injectFontFaces(fonts);
+    _cachedManifest = fonts;
+    return fonts;
+}
+
+function injectFontFaces(fonts) {
+    // Стили задней стороны больше не задаются статически в back.html —
+    // собираем их здесь из манифеста. Чистим старые правила, чтобы при
+    // повторной инициализации (HMR, ошибка fetch и retry) манифест
+    // не накапливался в DOM.
+    const sheet = ensureFontFaceSheet();
+    while (sheet.cssRules.length > 0) sheet.deleteRule(0);
+    for (const font of fonts) {
+        const url = `${FONTS_DIR}/${font.src}`;
+        const rule = `@font-face { font-family: '${font.family}'; ` +
+            `src: url('${url}') format('${font.format}'); ` +
+            `font-display: swap; }`;
+        sheet.insertRule(rule, sheet.cssRules.length);
+    }
+}
+
+let _fontFaceSheet = null;
+function ensureFontFaceSheet() {
+    if (_fontFaceSheet) return _fontFaceSheet;
+    let el = document.getElementById('panel-fonts-faces');
+    if (!el) {
+        el = document.createElement('style');
+        el.id = 'panel-fonts-faces';
+        document.head.appendChild(el);
+    }
+    _fontFaceSheet = el.sheet;
+    return _fontFaceSheet;
+}
 
 function stackLogosBelowTextboxes(canvas, frontRect) {
     const objs = canvas.getObjects().slice();
@@ -129,7 +176,10 @@ function attachSwipeDownToDismiss(panelEl, headerSelector, openClass, onDismiss)
 }
 
 export async function initFontPanel(canvas, frontRect) {
-    await Promise.all(FONT_OPTIONS.map((font) =>
+    // Загружаем манифест шрифтов и инжектим @font-face стили до того,
+    // как начнём прогревать кеш document.fonts.
+    const fonts = await loadFontManifest();
+    await Promise.all(fonts.map((font) =>
         document.fonts.load(`22px "${font.family}"`, SIGNATURE_TEXT)
     ));
 
@@ -149,7 +199,7 @@ export async function initFontPanel(canvas, frontRect) {
     window.__sideToggle?.syncChromeVisibility?.();
 
     const list = fontPanel.querySelector('.fp-list');
-    FONT_OPTIONS.forEach((font) => {
+    fonts.forEach((font) => {
         const button = document.createElement('button');
         button.className = 'fp-font-btn';
         button.type = 'button';

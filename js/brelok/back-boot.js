@@ -12,7 +12,7 @@ import { initSelectionStyle, styleNewObject } from './selection-style.js';
 import { snapState, attachSmartGuides, resnapGuidesToViewport } from './smart-guides.js';
 import { attachSnapPanel } from './snap-panel.js';
 import { initLogoPanel } from './logo-panel.js';
-import { initFontPanel, addTextWithFont, FONT_OPTIONS } from './font-panel.js';
+import { initFontPanel, addTextWithFont, getFontOptions } from './font-panel.js';
 import { initEmojiHint } from './emoji-hint.js';
 import { attachRearChannel } from './rear-channel.js';
 import { initFrameOverlay } from './clamp-objects.js';
@@ -169,8 +169,10 @@ initLogoPanel(canvas, PLATE_W, PLATE_H, frontRect);
 initFontPanel(canvas, frontRect).then(() => {
     // Дефолтная подпись при загрузке — после того как панель шрифтов
     // прогрела font-faces (await в initFontPanel).
-    const defaultFont = FONT_OPTIONS.find((f) => f.name === 'Everlasting')
-        || FONT_OPTIONS[FONT_OPTIONS.length - 1];
+    const fontOptions = getFontOptions();
+    const defaultFont = fontOptions.find((f) => f.name === 'Everlasting')
+        || fontOptions[fontOptions.length - 1];
+    if (!defaultFont) return;
     addTextWithFont(canvas, frontRect, defaultFont);
     window.__historyReady = true;
     window.dispatchEvent(new Event('history:ready'));

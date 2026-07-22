@@ -1,0 +1,209 @@
+{
+  "generated": "2026-07-22T12:54:06",
+  "count": 29,
+  "fonts": [
+    {
+      "name": "Bad Script",
+      "family": "Panel Bad Script",
+      "format": "truetype",
+      "file": "Bad Script.ttf",
+      "src": "Bad Script.ttf"
+    },
+    {
+      "name": "Bravo RG",
+      "family": "Panel Bravo RG",
+      "format": "opentype",
+      "file": "BravoRG.otf",
+      "src": "Bravo/BravoRG.otf"
+    },
+    {
+      "name": "Bravo SC",
+      "family": "Panel Bravo SC",
+      "format": "opentype",
+      "file": "BravoSC.otf",
+      "src": "Bravo/BravoSC.otf"
+    },
+    {
+      "name": "Bravo SCT",
+      "family": "Panel Bravo SCT",
+      "format": "opentype",
+      "file": "BravoSCT.otf",
+      "src": "Bravo/BravoSCT.otf"
+    },
+    {
+      "name": "Brusnika",
+      "family": "Panel Brusnika",
+      "format": "opentype",
+      "file": "Brusnika-normal_version_02.otf",
+      "src": "Brusnika/Brusnika-normal_version_02.otf"
+    },
+    {
+      "name": "Caveat",
+      "family": "Panel Caveat",
+      "format": "woff2",
+      "file": "Caveat.woff2",
+      "src": "Caveat.woff2"
+    },
+    {
+      "name": "Everlasting",
+      "family": "Panel Everlasting",
+      "format": "truetype",
+      "file": "Everlasting.ttf",
+      "src": "Everlasting/Everlasting.ttf"
+    },
+    {
+      "name": "Fowviel",
+      "family": "Panel Fowviel",
+      "format": "truetype",
+      "file": "Fowviel.ttf",
+      "src": "Fowviel/Fowviel.ttf"
+    },
+    {
+      "name": "Gogol",
+      "family": "Panel Gogol",
+      "format": "opentype",
+      "file": "gogol_regular.otf",
+      "src": "Gogol/gogol_regular.otf"
+    },
+    {
+      "name": "Inter",
+      "family": "Panel Inter",
+      "format": "woff2",
+      "file": "Inter.woff2",
+      "src": "Inter.woff2"
+    },
+    {
+      "name": "LeoHand",
+      "family": "Panel LeoHand",
+      "format": "truetype",
+      "file": "LeoHand.ttf",
+      "src": "LeoHand/LeoHand.ttf"
+    },
+    {
+      "name": "LeoHand Light",
+      "family": "Panel LeoHand Light",
+      "format": "truetype",
+      "file": "LeoHand-Light.ttf",
+      "src": "LeoHand/LeoHand-Light.ttf"
+    },
+    {
+      "name": "Margot",
+      "family": "Panel Margot",
+      "format": "truetype",
+      "file": "Margot Xtrafette.ttf",
+      "src": "Margot Xtrafette.ttf"
+    },
+    {
+      "name": "Marta Bold",
+      "family": "Panel Marta Bold",
+      "format": "opentype",
+      "file": "Marta_Bold.otf",
+      "src": "Marta/Marta_Bold.otf"
+    },
+    {
+      "name": "Marta Italic",
+      "family": "Panel Marta Italic",
+      "format": "opentype",
+      "file": "Marta_Italic.otf",
+      "src": "Marta/Marta_Italic.otf"
+    },
+    {
+      "name": "Marta Regular",
+      "family": "Panel Marta Regular",
+      "format": "opentype",
+      "file": "Marta_Regular.otf",
+      "src": "Marta/Marta_Regular.otf"
+    },
+    {
+      "name": "Monitorca",
+      "family": "Panel Monitorca",
+      "format": "truetype",
+      "file": "Monitorca.ttf",
+      "src": "Monitorca.ttf"
+    },
+    {
+      "name": "Montserrat",
+      "family": "Panel Montserrat",
+      "format": "woff2",
+      "file": "Montserrat.woff2",
+      "src": "Montserrat.woff2"
+    },
+    {
+      "name": "Noto Sans",
+      "family": "Panel Noto Sans",
+      "format": "woff2",
+      "file": "NotoSans.woff2",
+      "src": "NotoSans.woff2"
+    },
+    {
+      "name": "Noto Serif",
+      "family": "Panel Noto Serif",
+      "format": "woff2",
+      "file": "NotoSerif.woff2",
+      "src": "NotoSerif.woff2"
+    },
+    {
+      "name": "Nunito",
+      "family": "Panel Nunito",
+      "format": "woff2",
+      "file": "Nunito.woff2",
+      "src": "Nunito.woff2"
+    },
+    {
+      "name": "Oswald",
+      "family": "Panel Oswald",
+      "format": "woff2",
+      "file": "Oswald.woff2",
+      "src": "Oswald.woff2"
+    },
+    {
+      "name": "Princetown",
+      "family": "Panel Princetown",
+      "format": "truetype",
+      "file": "PrincetownD.ttf",
+      "src": "PrincetownD.ttf"
+    },
+    {
+      "name": "PT Sans",
+      "family": "Panel PT Sans",
+      "format": "woff2",
+      "file": "PTSans.woff2",
+      "src": "PTSans.woff2"
+    },
+    {
+      "name": "Raleway",
+      "family": "Panel Raleway",
+      "format": "woff2",
+      "file": "Raleway.woff2",
+      "src": "Raleway.woff2"
+    },
+    {
+      "name": "Resphekt",
+      "family": "Panel Resphekt",
+      "format": "truetype",
+      "file": "Resphekt.ttf",
+      "src": "Resphekt.ttf"
+    },
+    {
+      "name": "Roboto",
+      "family": "Panel Roboto",
+      "format": "woff2",
+      "file": "Roboto.woff2",
+      "src": "Roboto.woff2"
+    },
+    {
+      "name": "Sprite Graffiti",
+      "family": "Panel Sprite Graffiti",
+      "format": "woff2",
+      "file": "spritegraffiti.woff2",
+      "src": "spritegraffiti/fonts/spritegraffiti.woff2"
+    },
+    {
+      "name": "Troika",
+      "family": "Panel Troika",
+      "format": "opentype",
+      "file": "troika.otf",
+      "src": "Troika/troika.otf"
+    }
+  ]
+}

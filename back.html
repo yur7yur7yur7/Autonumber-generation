@@ -12,24 +12,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
     <script src="back.js?v=2"></script>
     <style>
-        @font-face { font-family: 'Panel Inter'; src: url('fonts/backpanel/Inter.woff2') format('woff2'); }
-        @font-face { font-family: 'Panel Montserrat'; src: url('fonts/backpanel/Montserrat.woff2') format('woff2'); }
-        @font-face { font-family: 'Panel Raleway'; src: url('fonts/backpanel/Raleway.woff2') format('woff2'); }
-        @font-face { font-family: 'Panel Roboto'; src: url('fonts/backpanel/Roboto.woff2') format('woff2'); }
-        @font-face { font-family: 'Panel Noto Serif'; src: url('fonts/backpanel/NotoSerif.woff2') format('woff2'); }
-        @font-face { font-family: 'Panel Caveat'; src: url('fonts/backpanel/Caveat.woff2') format('woff2'); }
-        @font-face { font-family: 'Panel Bad Script'; src: url('fonts/backpanel/Bad Script.ttf') format('truetype'); }
-        @font-face { font-family: 'Panel Gogol'; src: url('fonts/backpanel/Gogol/gogol_regular.otf') format('opentype'); }
-        @font-face { font-family: 'Panel Brusnika'; src: url('fonts/backpanel/Brusnika/Brusnika-normal_version_02.otf') format('opentype'); }
-        @font-face { font-family: 'Panel LeoHand'; src: url('fonts/backpanel/LeoHand/LeoHand.ttf') format('truetype'); }
-        @font-face { font-family: 'Panel Everlasting'; src: url('fonts/backpanel/Everlasting/Everlasting.ttf') format('truetype'); }
-        @font-face { font-family: 'Panel Resphekt'; src: url('fonts/backpanel/Resphekt.ttf') format('truetype'); }
-        @font-face { font-family: 'Panel Margot'; src: url('fonts/backpanel/Margot Xtrafette.ttf') format('truetype'); }
-        @font-face { font-family: 'Panel Fowviel'; src: url('fonts/backpanel/Fowviel/Fowviel.ttf') format('truetype'); }
-        @font-face { font-family: 'Panel Bravo'; src: url('fonts/backpanel/Bravo/BravoRG.otf') format('opentype'); }
-        @font-face { font-family: 'Panel Marta'; src: url('fonts/backpanel/Marta/Marta_Regular.otf') format('opentype'); }
-        @font-face { font-family: 'Panel Troika'; src: url('fonts/backpanel/Troika/troika.otf') format('opentype'); }
-        @font-face { font-family: 'Panel Sprite Graffiti'; src: url('fonts/backpanel/spritegraffiti/fonts/spritegraffiti.woff2') format('woff2'); }
+        /* Шрифты задней стороны (Panel *) инжектятся динамически из
+           fonts/backpanel/manifest.json — см. injectFontFaces() в back.js
+           (вызывается до initFontPanel). Чтобы добавить новый шрифт:
+           1) положить файл в fonts/backpanel/;
+           2) запустить python update-fonts.py. */
         @font-face {
             font-family: 'GibddFont';
             src: url('fonts/frontpanel/gibdd-font.ttf') format('truetype');
