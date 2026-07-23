@@ -315,9 +315,21 @@ function styleTextbox(tb, onMenuClick) {
         fitTextboxWidthToContent(tb);
     }
     applyCenterOrigin(tb);
+    // Различаем триггеры 'changed':
+    //   • правка текста (text:changed) — содержимое поменялось, надо
+    //     снять __userLockedWidth и пересчитать ширину под новый текст;
+    //   • трансформ (драг/scale) — содержимое НЕ менялось, ширину не трогаем
+    //     (пользователь сам её выбрал перетягиванием ручки);
+    //   • первый рендер после enlivenObjects — текст ещё не правили, блокировку
+    //     сохраняем, иначе fitTextboxWidthToContent пересчитает ширину по
+    //     (возможно ещё не загруженному) fallback-шрифту.
+    // Сравниваем с предыдущим текстом через closure, чтобы понять intent.
+    let lastText = tb.text || '';
     tb.on('changed', () => {
-        // Как только пользователь сам начал менять размер (scaling event),
-        // снимаем блокировку — дальнейшие правки width идут через обычный flow.
+        const currentText = tb.text || '';
+        const textChanged = currentText !== lastText;
+        lastText = currentText;
+        if (!textChanged) return;
         if (tb.__userLockedWidth === true) {
             tb.__userLockedWidth = false;
         }
