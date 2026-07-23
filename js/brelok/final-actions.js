@@ -190,6 +190,13 @@ async function importConfigFile(file) {
         const canvas = window.__backCanvas;
         if (!canvas) throw new Error('fabric.Canvas не найден');
         await applyBrelokConfig(canvas, cfg);
+        // Сигнал для back-boot.js: если он ещё не дошёл до места, где
+        // добавляет дефолтный textbox (await window.__pendingConfigImport),
+        // он пропустит создание дефолтного и не наложит его поверх
+        // импортированного конфига. Если уже прошёл — сигнал бесполезен,
+        // но applyBrelokConfig выше уже удалил все объекты кроме
+        // frontRect, так что дефолтный textbox тоже снят.
+        window.__pendingConfigImport = Promise.resolve(true);
         showConfigToast('✅ Конфиг загружен');
         const maket = document.getElementById('create-maket');
         if (maket) {

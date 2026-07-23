@@ -537,14 +537,30 @@ export function initFrameOverlay(canvas, PLATE_W, PLATE_H, scaledInnerRadius, fr
     // остаются прежними, меняется только scale), и стоп-кран
     // работает корректно. Для них оставляем прежнее поведение.
     //
-    // Только боковые ручки textbox'а через RESIZING (changeWidth →
-    // объект:resizing) ловят новой live-логикой
-    // (clampTextboxScaleLiveToPlate).
+    // Для textbox:
+    //   • Угловые ручки (tl/tr/bl/br через scalingEqually → SCALING) →
+    //     стоп-кран (как у логотипов). При выходе за plate — откат scale.
+    //   • mt/mb (scalingYOrSkewingX → SCALING) → live-shrink через
+    //     scaleX=scaleY=ratio. Иначе ручное увеличение/уменьшение
+    //     scaleY никогда бы не уменьшилось при выходе за plate.
+    //   • ml/mr (changeWidth → RESIZING) → live-shrink через тот же
+    //     механизм (wrap пересчитывает height → bbox вылезает).
+    // Для остальных объектов (логотипы, изображения) используется
+    // стоп-кран (clampObjectScaleToPlate) для всех событий.
     canvas.on('object:scaling', (e) => {
         if (currentMode !== 'clamp') return;
         const obj = e.target;
         if (!obj || obj.__guide || obj.__frameStrip || obj.__isFrontRect) return;
-        clampObjectScaleToPlate(obj, plate);
+        if (obj.type === 'textbox') {
+            const corner = e.transform && e.transform.corner;
+            if (corner === 'tl' || corner === 'tr' || corner === 'bl' || corner === 'br') {
+                clampObjectScaleToPlate(obj, plate);
+            } else {
+                clampTextboxScaleLiveToPlate(obj, plate);
+            }
+        } else {
+            clampObjectScaleToPlate(obj, plate);
+        }
     });
     canvas.on('object:resizing', (e) => {
         if (currentMode !== 'clamp') return;
