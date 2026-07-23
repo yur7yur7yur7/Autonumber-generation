@@ -37,7 +37,18 @@ async function applyBackSnapshot(canvas, snapshot) {
     if (elements.length) {
         await new Promise((resolve) => {
             fabric.util.enlivenObjects(elements, (objects) => {
-                objects.filter(Boolean).forEach((object) => canvas.add(object));
+                objects.filter(Boolean).forEach((object) => {
+                    // Preserve user-applied width across undo. The object:added
+                    // handler chain re-runs `styleTextbox` → `fitTextboxWidthToContent`
+                    // which silently overwrites width to single-line text-content
+                    // width — undoing the user's wrap. Same opt-out flag as
+                    // `applyBrelokConfig`; cleared automatically on first user edit
+                    // (see selection-style.js `styleTextbox` 'changed' handler).
+                    if (object && object.type === 'textbox') {
+                        object.__userLockedWidth = true;
+                    }
+                    canvas.add(object);
+                });
                 resolve();
             }, 'fabric');
         });
@@ -112,8 +123,8 @@ export function initHistory(canvas) {
     async function undo() {
         if (applying) return;
         const side = currentSide();
-        commit(side);
         const history = histories[side];
+        commit(side);
         if (!history.past.length) return;
         history.future.push(history.present);
         history.present = history.past.pop();
