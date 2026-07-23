@@ -304,6 +304,133 @@ function clampObjectScaleFirstTime(obj, plate) {
     if (lastValid) obj.__scaleCap = lastValid;
 }
 
+// То же, что fitsAtOriginalScale, но с допуском tol (px) — «влезает
+// если каждая грань bbox не выходит за plate больше чем на tol».
+// Используется в live-логике для textbox, чтобы подавить дребезг
+// wrap'а на границе.
+function fitsAtOriginalScaleWithTolerance(obj, orig, plate, tol) {
+    if (!orig) return false;
+    const prevSx = obj.scaleX;
+    const prevSy = obj.scaleY;
+    obj.scaleX = orig.scaleX;
+    obj.scaleY = orig.scaleY;
+    obj.setCoords();
+    const b = obj.getBoundingRect(true, true);
+    obj.scaleX = prevSx;
+    obj.scaleY = prevSy;
+    obj.setCoords();
+    return b.left >= plate.left - tol
+        && b.left + b.width <= plate.right + tol
+        && b.top >= plate.top - tol
+        && b.top + b.height <= plate.bottom + tol;
+}
+
+// Максимальное (по модулю) отклонение bbox за plate в пикселях.
+// 0 = bbox точно по границе, >0 = вылез. Используется в live-логике
+// textbox, чтобы не дёргать scale при микро-выходах меньше TOL_PX.
+function overflowByAxisMax(obj, plate) {
+    const b = obj.getBoundingRect(true, true);
+    let dx = 0, dy = 0;
+    if (b.left < plate.left) dx = Math.max(dx, plate.left - b.left);
+    else if (b.left + b.width > plate.right) {
+        dx = Math.max(dx, b.left + b.width - plate.right);
+    }
+    if (b.top < plate.top) dy = Math.max(dy, plate.top - b.top);
+    else if (b.top + b.height > plate.bottom) {
+        dy = Math.max(dy, b.top + b.height - plate.bottom);
+    }
+    return Math.max(dx, dy);
+}
+
+/**
+ * Live-уменьшение scale для textbox при включённом clamp.
+ *
+ * При object:resizing (боковые ручки ml/mr через Fabric changeWidth)
+ * wrap пересчитывает height → bbox может вылезти за plate.
+ * Уменьшаем scaleX=scaleY=ratio пропорционально через бинарный поиск
+ * fitScaleForCurrentPosition (как в rotation-логике). textbox визуально
+ * сжимается равномерно по обеим осям.
+ *
+ * Подавление дребезга wrap'а:
+ *   • TOL_PX (5 px bbox) — если bbox вылез меньше чем на TOL_PX, не
+ *     трогаем scale (подавляет subpixel-rounding при пересечении границы).
+ *   • STABLE_PX (6 px bbox.bottom) — если bbox.bottom изменился меньше
+ *     чем на STABLE_PX между тиками, это дрожание wrap'а между N и
+ *     N+1 строками; возвращаемся к зафиксированному __stableScale.
+ *     Реальный переход добавляет целую строку (~25px) и не подавляется.
+ *   • HYSTERESIS (0.5%) — подавляет шум бинарного поиска.
+ *
+ * Snapshot: на первом тике запоминаем __scaleOriginal = {scaleX, scaleY,
+ * left, top}. Шаг 0: если при orig.scaleX bbox влезает в plate с
+ * TOL_PX допуском — возвращаем scale и позицию к оригиналу.
+ */
+function clampTextboxScaleLiveToPlate(obj, plate) {
+    const HYSTERESIS = 0.005;
+    const TOL_PX = 5;
+    const STABLE_PX = 6;
+    obj.setCoords();
+    if (obj.__scaleOriginal === undefined) {
+        obj.__scaleOriginal = {
+            scaleX: obj.scaleX || 1,
+            scaleY: obj.scaleY || 1,
+            left: obj.left,
+            top: obj.top
+        };
+        obj.__stableScale = obj.scaleX || 1;
+        obj.__stableBboxBottom = obj.getBoundingRect(true, true).bottom;
+    }
+    const orig = obj.__scaleOriginal;
+    const currentScale = obj.scaleX || 1;
+    const currentBottom = obj.getBoundingRect(true, true).bottom;
+
+    // Шаг 0. Узкий участок пройден — возвращаем scaleX=scaleY к оригиналу.
+    if (currentScale < orig.scaleX - HYSTERESIS
+        && fitsAtOriginalScaleWithTolerance(obj, orig, plate, TOL_PX)) {
+        obj.set({
+            scaleX: orig.scaleX,
+            scaleY: orig.scaleY,
+            left: orig.left,
+            top: orig.top
+        });
+        obj.setCoords();
+        obj.__stableScale = orig.scaleX;
+        obj.__stableBboxBottom = obj.getBoundingRect(true, true).bottom;
+        return;
+    }
+
+    // Антидребезг wrap'а.
+    if (Math.abs(currentBottom - obj.__stableBboxBottom) < STABLE_PX
+        && obj.__stableScale < orig.scaleX - HYSTERESIS) {
+        const stableRatio = obj.__stableScale / (obj.scaleX || 1);
+        if (Math.abs(stableRatio - 1) > HYSTERESIS) {
+            obj.set({
+                scaleX: obj.__stableScale,
+                scaleY: obj.__stableScale,
+                left: orig.left,
+                top: orig.top
+            });
+            obj.setCoords();
+        }
+        return;
+    }
+
+    // Шаг 1. Уменьшаем scaleX=scaleY пропорционально.
+    if (overflowByAxisMax(obj, plate) <= TOL_PX) {
+        return;
+    }
+    const ratio = fitScaleForCurrentPosition(obj, plate, orig.scaleX);
+    if (Math.abs(ratio - currentScale) > HYSTERESIS) {
+        obj.set({
+            scaleX: ratio,
+            scaleY: ratio
+        });
+        obj.setCoords();
+        obj.__stableScale = ratio;
+        obj.__stableBboxBottom = obj.getBoundingRect(true, true).bottom;
+    }
+}
+
+
 /**
  * Создаёт 4 чёрных прямоугольника по периметру frontRect:
  *   - верхняя полоса: y ∈ [0, frontRect.top]
@@ -396,11 +523,36 @@ export function initFrameOverlay(canvas, PLATE_W, PLATE_H, scaledInnerRadius, fr
     // Блокируем увеличение объекта за якорями так, чтобы bbox не вылезал
     // за frontRect. В 'cover'-режиме clamp отключён → объект можно
     // свободно растягивать (вылезающее скрывается за чёрными полосами).
+    //
+    // Для textbox используем live-уменьшение (по аналогии с rotation) —
+    // стоп-кран не справляется, потому что при сужении ширины scaleX
+    // меняется высота (добавляются строки wrap'а), bbox может
+    // скачкообразно вылезти за plate, и откат к scaleCap оставит
+    // позицию textbox'а неподвижной → противоположная грань уйдёт
+    // за границу. Для остальных объектов (логотипы, изображения)
+    // стоп-кран работает корректно — bbox меняется плавно.
+    //
+    // Угловые ручки textbox'а (tl/tr/bl/br) по-прежнему используют
+    // SCALING (scalingEqually) — там wrap не меняется (width и height
+    // остаются прежними, меняется только scale), и стоп-кран
+    // работает корректно. Для них оставляем прежнее поведение.
+    //
+    // Только боковые ручки textbox'а через RESIZING (changeWidth →
+    // объект:resizing) ловят новой live-логикой
+    // (clampTextboxScaleLiveToPlate).
     canvas.on('object:scaling', (e) => {
         if (currentMode !== 'clamp') return;
         const obj = e.target;
         if (!obj || obj.__guide || obj.__frameStrip || obj.__isFrontRect) return;
         clampObjectScaleToPlate(obj, plate);
+    });
+    canvas.on('object:resizing', (e) => {
+        if (currentMode !== 'clamp') return;
+        const obj = e.target;
+        if (!obj || obj.__guide || obj.__frameStrip || obj.__isFrontRect) return;
+        if (obj.type === 'textbox') {
+            clampTextboxScaleLiveToPlate(obj, plate);
+        }
     });
 
     // Clamp при повороте: удерживаем bbox внутри frontRect. Если объект
@@ -436,6 +588,11 @@ export function initFrameOverlay(canvas, PLATE_W, PLATE_H, scaledInnerRadius, fr
         obj.setCoords();
         delete obj.__scaleCap;
         delete obj.__rotationOriginal;
+        if (obj.type === 'textbox') {
+            delete obj.__scaleOriginal;
+            delete obj.__stableScale;
+            delete obj.__stableBboxBottom;
+        }
     });
 
     // После добавления нового объекта (логотип, текстбокс) — полосы
