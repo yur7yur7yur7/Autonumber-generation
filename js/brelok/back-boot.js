@@ -166,9 +166,29 @@ window.applyBackToBody?.();
 // ----------------------------------------------------------------
 initEmojiHint(canvas);
 initLogoPanel(canvas, PLATE_W, PLATE_H, frontRect);
-initFontPanel(canvas, frontRect).then(() => {
+initFontPanel(canvas, frontRect).then(async () => {
     // Дефолтная подпись при загрузке — после того как панель шрифтов
-    // прогрела font-faces (await в initFontPanel).
+    // прогрела font-faces (await в initFontPanel). Но: если в URL есть
+    // ?config=… (пришли по inline-кнопке из Telegram или через index.html),
+    // tryAutoImportFromQuery() зарезолвит window.__pendingConfigImport после
+    // applyBrelokConfig. Ждём его — иначе дефолтный textbox добавится
+    // ПОВЕРХ импортированных объектов, потому что applyBrelokConfig уже
+    // отработал раньше, на «пустом» (после инициализации канваса) состоянии,
+    // и ему было нечего удалять.
+    let imported = false;
+    if (window.__pendingConfigImport) {
+        try {
+            imported = await window.__pendingConfigImport;
+        } catch (_e) {
+            imported = false;
+        }
+    }
+    if (imported) {
+        // Канвас уже содержит объекты из конфига — дефолтный textbox не нужен.
+        window.__historyReady = true;
+        window.dispatchEvent(new Event('history:ready'));
+        return;
+    }
     const fontOptions = getFontOptions();
     const defaultFont = fontOptions.find((f) => f.name === 'Everlasting')
         || fontOptions[fontOptions.length - 1];

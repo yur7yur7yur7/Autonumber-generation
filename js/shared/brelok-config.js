@@ -240,6 +240,22 @@ export function applyBrelokConfig(canvas, config, expectedType = BRELOK_TYPE) {
     // 4. Восстанавливаем back-objects через enlivenObjects.
     const elements = Array.isArray(config.backSide?.elements) ? config.backSide.elements : [];
 
+    // Дожидаемся загрузки реальных font-face для каждого textbox'а, прежде чем
+    // fabric начнёт их измерять. Без этого fitTextboxWidthToContent на первом
+    // styleTextbox посчитает ширину по fallback-шрифту (Arial/Inter),
+    // перезапишет ширину textbox'а — и перенос строк сломается. Особенно
+    // заметно в Telegram WebView / SFSafariViewController, где @font-face с
+    // CDN подгружаются с задержкой.
+    const fontLoadPromise = (typeof document !== 'undefined' && document.fonts && typeof document.fonts.load === 'function')
+        ? Promise.all(elements.map((el) => {
+            if (!el || el.type !== 'textbox') return null;
+            const family = el.fontFamily || 'Arial';
+            const size = el.fontSize || 16;
+            const text = (typeof el.text === 'string' ? el.text : '').slice(0, 64);
+            return document.fonts.load(`${size}px "${family}"`, text).catch(() => null);
+        }))
+        : Promise.resolve();
+
     // Bare-filename src из images/logos/ (новый формат конфигов) →
     // полный относительный путь, чтобы fabric загрузил картинку
     // относительно текущего origin. Старые конфиги с абсолютными URL
@@ -257,7 +273,7 @@ export function applyBrelokConfig(canvas, config, expectedType = BRELOK_TYPE) {
         canvas.requestRenderAll();
         return Promise.resolve();
     }
-    return new Promise((resolve, reject) => {
+    return fontLoadPromise.then(() => new Promise((resolve, reject) => {
         try {
             fabricGlobal.util.enlivenObjects(elements, (enlivened) => {
                 try {
@@ -266,7 +282,10 @@ export function applyBrelokConfig(canvas, config, expectedType = BRELOK_TYPE) {
                         // Блокируем fitTextboxWidthToContent на первый apply,
                         // иначе он развернёт textbox до ширины текста в одну
                         // строку и перенос сломается. Флаг снимется в
-                        // selection-style.js при первом changed-событии.
+                        // selection-style.js при первом изменении пользователем
+                        // (scaling/moving/text-editing), не на любом changed —
+                        // иначе блокировка снимается на первом рендере и
+                        // ширина тут же пересчитывается по fallback-шрифту.
                         if (obj.type === 'textbox' && !('__userLockedWidth' in obj)) {
                             obj.__userLockedWidth = true;
                         }
@@ -281,7 +300,7 @@ export function applyBrelokConfig(canvas, config, expectedType = BRELOK_TYPE) {
         } catch (e) {
             reject(e);
         }
-    });
+    }));
 }
 
 /**

@@ -224,7 +224,13 @@ function tryAutoImportFromQuery() {
     const params = new URLSearchParams(location.search);
     const configKey = params.get('config');
     const incomingType = params.get('type');
-    if (!configKey) return;
+
+    // Если ?config= нет — резолвим «false» немедленно, чтобы
+    // back-boot.js после initFontPanel без ожидания добавил дефолтный textbox.
+    if (!configKey) {
+        window.__pendingConfigImport = Promise.resolve(false);
+        return;
+    }
     console.warn('[brelok-tg] tryAutoImportFromQuery start, key=' + configKey);
 
     // Путь 1: ключ лежит в sessionStorage — старый сценарий (index.html
@@ -244,10 +250,14 @@ function tryAutoImportFromQuery() {
             cfg = JSON.parse(text);
         } catch (e) {
             console.error('[brelok-tg] parse failed', e);
+            window.__pendingConfigImport = Promise.resolve(false);
             showConfigToast('⚠️ Файл конфига повреждён', true);
             return;
         }
-        if (!cfg || typeof cfg !== 'object') return;
+        if (!cfg || typeof cfg !== 'object') {
+            window.__pendingConfigImport = Promise.resolve(false);
+            return;
+        }
 
         function waitFor(predicate, cb, attempts = 60) {
             if (predicate()) return cb();
@@ -260,6 +270,7 @@ function tryAutoImportFromQuery() {
                 (async () => {
                     try {
                         await applyBrelokConfig(window.__backCanvas, cfg, incomingType);
+                        window.__pendingConfigImport = Promise.resolve(true);
                         showConfigToast('✅ Макет загружен');
                         const maket = document.getElementById('create-maket');
                         if (maket) {
@@ -268,6 +279,7 @@ function tryAutoImportFromQuery() {
                         }
                     } catch (err) {
                         console.error('[brelok-tg] apply err', err);
+                        window.__pendingConfigImport = Promise.resolve(false);
                         showConfigToast(`⚠️ Не получилось: ${err.message}`, true);
                     }
                 })();
@@ -308,6 +320,7 @@ function tryAutoImportFromQuery() {
         })
         .catch((err) => {
             console.error('[brelok-tg] KV import failed:', err);
+            window.__pendingConfigImport = Promise.resolve(false);
             // Показываем тост в ЛЮБОМ случае — и для сетевой ошибки, и для
             // нераспознанного исключения. iOS Safari без этого рискует
             // показать «‎тишину» (no toast, no console), и оператор думает,
